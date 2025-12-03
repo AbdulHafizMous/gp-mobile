@@ -10,7 +10,7 @@ import 'package:grand_public_v2/app/modules/profile/controllers/profile_controll
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  
   await GetStorage.init();
 
   runApp(const MainApp());
