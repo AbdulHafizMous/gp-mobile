@@ -214,7 +214,7 @@ class _VidDetailState extends State<VidDetail> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: items.length,
-                separatorBuilder: (_, __) => const Divider(),
+                separatorBuilder: (_, _) => const Divider(),
                 itemBuilder: (context, index) {
                   final c = items[index];
                   return ListTile(

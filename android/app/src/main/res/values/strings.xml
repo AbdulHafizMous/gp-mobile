@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Grand Public</string>
+    <string name="facebook_app_id">1490444422472747</string>
+    <string name="fb_login_protocol_scheme">fb1490444422472747</string>
+    <string name="facebook_client_token">596c64b58dd44e3d0d01ee14ad50b6d9</string>
+</resources>

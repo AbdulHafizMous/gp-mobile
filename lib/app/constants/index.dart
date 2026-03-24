@@ -1,8 +1,11 @@
 const LOGO_PIXEL = 'assets/images/logo_pixel.png';
-const LOGO = 'assets/images/logo.png';
+const LOGO = 'assets/images/logo_new.jpeg';
+// const LOGO_PIXEL = 'assets/images/logo_pixel.png';
+// const LOGO = 'assets/images/logo.png';
 const GOOGLE_LOGO = 'assets/icons/google.png';
 const FACEBOOK_LOGO = 'assets/icons/facebook.png';
-const API_URL = "https://grandpublic.bj/api";
+const API_URL = "http://192.168.100.13:8000/api";
+// const API_URL = "https://grandpublic.bj/api";
 const PUSHER_API_KEY = "0fe44ac921bf1cf4b22e";
 const PUSHER_API_CLUSTER = "eu";
 // const FEEX_API_KEY =

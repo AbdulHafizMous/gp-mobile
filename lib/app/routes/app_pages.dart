@@ -1,5 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/modules/forgot_password/bindings/forgot_password_binding.dart';
+import 'package:grand_public_v2/app/modules/forgot_password/views/forgot_password_view.dart';
+import 'package:grand_public_v2/app/modules/main_page/bindings/main_page_binding.dart';
+import 'package:grand_public_v2/app/modules/main_page/views/main_page_view.dart';
+import 'package:grand_public_v2/app/modules/reset_password/bindings/reset_password_binding.dart';
+import 'package:grand_public_v2/app/modules/reset_password/views/reset_password_view.dart';
+import 'package:grand_public_v2/app/modules/update_required/bindings/update_required_binding.dart';
+import 'package:grand_public_v2/app/modules/update_required/views/update_required_view.dart';
 
 import '../modules/confirm/bindings/confirm_binding.dart';
 import '../modules/confirm/views/confirm_view.dart';
@@ -60,6 +68,16 @@ class AppPages {
       binding: HomeBinding(),
     ),
     GetPage(
+      name: _Paths.UPDATE_REQUIRED,
+      page: () => UpdateRequiredView(),
+      binding: UpdateRequiredBinding(),
+    ),
+    GetPage(
+      name: _Paths.MAIN_PAGE,
+      page: () => MainPageView(),
+      binding: MainPageBinding(),
+    ),
+    GetPage(
       name: _Paths.SPLASH,
       page: () => const SplashView(),
       binding: SplashBinding(),
@@ -83,6 +101,16 @@ class AppPages {
       name: _Paths.CONFIRM,
       page: () => const ConfirmView(),
       binding: ConfirmBinding(),
+    ),
+    GetPage(
+      name: _Paths.FORGOT_PASSWORD,
+      page: () => const ForgotPasswordView(),
+      binding: ForgotPasswordBinding(),
+    ),
+    GetPage(
+      name: _Paths.RESET_PASSWORD,
+      page: () => const ResetPasswordView(),
+      binding: ResetPasswordBinding(),
     ),
     GetPage(
       name: _Paths.SUCESS_PAGE,

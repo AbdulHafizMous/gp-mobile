@@ -1,15 +1,24 @@
+import 'package:country_pickers/country.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/components/country_picker.dart';
 import 'package:grand_public_v2/app/components/primary_button.dart';
 import 'package:grand_public_v2/app/components/primary_loading_button.dart';
+import 'package:grand_public_v2/app/components/toogle_tab.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
+import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 import '../controllers/login_controller.dart';
 
+// ─────────────────────────────────────────────
+// Login View
+// ─────────────────────────────────────────────
 class LoginView extends GetView<LoginController> {
   const LoginView({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -18,17 +27,20 @@ class LoginView extends GetView<LoginController> {
         child: Container(
           padding: const EdgeInsets.all(10),
           width: double.infinity,
-          height: MediaQuery.of(context).size.height,
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const SizedBox(height: 20),
               Image.asset(
                 LOGO_PIXEL,
-                height: 150,
-                width: 150,
-                cacheHeight: 150,
-                cacheWidth: 150,
+                height: 120,
+                width: 120,
+                cacheHeight: 120,
+                cacheWidth: 120,
               ),
               const SizedBox(height: 20),
               const Text(
@@ -39,119 +51,325 @@ class LoginView extends GetView<LoginController> {
                   fontSize: 20,
                 ),
               ),
+              const SizedBox(height: 20),
+
+              // ── Toggle Téléphone / Email ──────────────────────────────
+              ValueListenableBuilder<LoginType>(
+                valueListenable: controller.loginType,
+                builder: (_, type, _) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Stack(
+                          children: [
+                            /// Sliding highlight
+                            AnimatedAlign(
+                              duration: const Duration(milliseconds: 280),
+                              curve: Curves.easeInOut,
+                              alignment: type == LoginType.phone
+                                  ? Alignment.centerLeft
+                                  : Alignment.centerRight,
+                              child: Container(
+                                width: constraints.maxWidth / 2,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                            ),
+
+                            /// Tabs
+                            Row(
+                              children: [
+                                Expanded(
+                                  flex: 1,
+                                  child: GestureDetector(
+                                    onTap: () => controller.loginType.value =
+                                        LoginType.phone,
+                                    child: ToggleTab(
+                                      label: "Par Téléphone",
+                                      icon: Icons.phone_outlined,
+                                      isActive: type == LoginType.phone,
+                                    ),
+                                  ),
+                                ),
+
+                                Expanded(
+                                  flex: 1,
+                                  child: GestureDetector(
+                                    onTap: () => controller.loginType.value =
+                                        LoginType.email,
+                                    child: ToggleTab(
+                                      label: "Par Mail",
+                                      icon: Icons.mail_outline,
+                                      isActive: type == LoginType.email,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+
+              // ── Form ─────────────────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Form(
                   key: controller.formKey,
                   child: Column(
                     children: [
-                      TextFormField(
-                        controller: controller.emailController,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Veuillez saisir votre email";
-                          }
-                          if (!RegExp(
-                            r"^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
-                          ).hasMatch(value)) {
-                            return "Veuillez saisir un email valide";
-                          }
-                          return null;
-                        },
-                        decoration: const InputDecoration(
-                          hintText: "Email",
-                          prefixIcon: Icon(Icons.mail_outline),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Obx(
-                        () => TextFormField(
-                          controller: controller.passwordController,
-                          obscureText: controller.isObscure.value,
-                          validator: (value) => value!.length < 8
-                              ? "Le mot de passe doit contenir au moins 8 caractères"
-                              : null,
-                          decoration: InputDecoration(
-                            hintText: "Mot de passe",
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              onPressed: () {
-                                controller.isObscure.value =
-                                    !controller.isObscure.value;
+                      // ── Phone field OR Email field ──────────────────
+                      ValueListenableBuilder<LoginType>(
+                        valueListenable: controller.loginType,
+                        builder: (_, type, _) {
+                          if (type == LoginType.phone) {
+                            // Phone field with country picker
+                            return ValueListenableBuilder<Country>(
+                              valueListenable: controller.selectedCountry,
+                              builder: (_, country, _) {
+                                return Container(
+                                  constraints: BoxConstraints(minHeight: 50),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // Country picker
+                                      // CountryPickerWidget(
+                                      //   selectedCountry: country,
+                                      //   onChanged: (c) =>
+                                      //       controller.selectedCountry.value =
+                                      //           c,
+                                      // ),
+                                      // Phone number input
+                                      Expanded(
+                                        child: TextFormField(
+                                          controller:
+                                              controller.phoneController,
+                                          keyboardType: TextInputType.phone,
+                                          inputFormatters: [
+                                            FilteringTextInputFormatter
+                                                .digitsOnly,
+                                            SimplePhoneFormatter(),
+                                          ],
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.isEmpty) {
+                                              return "Veuillez saisir votre téléphone";
+                                            }
+                                            if (value.length < 6) {
+                                              return "Numéro invalide";
+                                            }
+                                            return null;
+                                          },
+                                          decoration: InputDecoration(
+                                            hintText: "Téléphone",
+                                            prefixIcon: CountryPickerWidget(
+                                              selectedCountry: country,
+                                              onChanged: (c) =>
+                                                  controller
+                                                          .selectedCountry
+                                                          .value =
+                                                      c,
+                                            ),
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  const BorderRadius.horizontal(
+                                                    right: Radius.circular(30),
+                                                    left: Radius.circular(30),
+                                                  ),
+                                              borderSide: BorderSide(
+                                                color: Colors.white.withValues(
+                                                  alpha: 0.2,
+                                                ),
+                                              ),
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  const BorderRadius.horizontal(
+                                                    right: Radius.circular(30),
+                                                    left: Radius.circular(30),
+                                                  ),
+                                              borderSide: BorderSide(
+                                                color: Colors.white.withValues(
+                                                  alpha: 0.2,
+                                                ),
+                                              ),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  const BorderRadius.horizontal(
+                                                    right: Radius.circular(30),
+                                                    left: Radius.circular(30),
+                                                  ),
+                                              borderSide: const BorderSide(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
                               },
-                              icon: Icon(
-                                controller.isObscure.value
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
+                            );
+                          } else {
+                            // Email field
+                            return Container(
+                              constraints: BoxConstraints(minHeight: 50),
+                              child: TextFormField(
+                                controller: controller.emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return "Veuillez saisir votre email";
+                                  }
+                                  if (!RegExp(
+                                    r"^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+                                  ).hasMatch(value)) {
+                                    return "Veuillez saisir un email valide";
+                                  }
+                                  return null;
+                                },
+                                decoration: const InputDecoration(
+                                  hintText: "Adresse email",
+                                  prefixIcon: Icon(Icons.mail_outline),
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // ── Password ──────────────────────────────────
+                      Obx(
+                        () => Container(
+                          constraints: BoxConstraints(minHeight: 50),
+                          child: TextFormField(
+                            controller: controller.passwordController,
+                            obscureText: controller.isObscure.value,
+                            validator: (value) => value!.isEmpty
+                                ? "Veuillez renseigner le mot de passe"
+                                : null,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              hintText: "Mot de passe",
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                onPressed: () {
+                                  controller.isObscure.value =
+                                      !controller.isObscure.value;
+                                },
+                                icon: Icon(
+                                  controller.isObscure.value
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 20),
+
+                      // ── Remember me + Forgot password ────────────
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Obx(
-                                () => Checkbox(
-                                  checkColor: Colors.white,
-                                  shape: const RoundedRectangleBorder(
-                                    side: BorderSide(
-                                      style: BorderStyle.solid,
+                          Obx(
+                            () => InkWell(
+                              onTap: () {
+                                controller.isRemember.value =
+                                    !controller.isRemember.value;
+                              },
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Checkbox(
+                                    checkColor: Colors.white,
+                                    shape: const RoundedRectangleBorder(
+                                      side: BorderSide(
+                                        style: BorderStyle.solid,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    value: controller.isRemember.value,
+                                    onChanged: (value) {
+                                      controller.isRemember.value = value!;
+                                    },
+                                  ),
+                                  const Text(
+                                    "Se souvenir de moi",
+                                    style: TextStyle(
                                       color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w300,
                                     ),
                                   ),
-                                  value: controller.isRemember.value,
-                                  onChanged: (value) {
-                                    controller.isRemember.value = value!;
-                                  },
-                                ),
+                                ],
                               ),
-                              const Text(
-                                "Se souvenir de moi",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w100,
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                           const Spacer(),
                           TextButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              Get.offAllNamed('/forgot-password');
+                            },
                             child: const Text(
                               "Mot de passe oublié ?",
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
-                                fontWeight: FontWeight.w100,
+                                fontWeight: FontWeight.w300,
                               ),
                             ),
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 20),
-                      !controller.isLoading.value
-                          ? PrimaryButton(
-                              text: "SE CONNECTER",
-                              callback: controller.login,
-                            )
-                          : const PrimaryLoadingButton(),
+
+                      // ── Submit button ─────────────────────────────
+                      Obx(
+                        () => (!controller.isLoading.value && !controller.isSocialLoading.value)
+                            ? PrimaryButton(
+                                text: "SE CONNECTER",
+                                callback: () => controller.login(),
+                              )
+                            : const PrimaryLoadingButton(),
+                      ),
                     ],
                   ),
                 ),
               ),
+
               const SizedBox(height: 10),
               const Text(
                 "Ou continuez avec",
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 12,
-                  fontWeight: FontWeight.w100,
+                  fontWeight: FontWeight.w300,
                 ),
               ),
               const SizedBox(height: 10),
@@ -159,19 +377,14 @@ class LoginView extends GetView<LoginController> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   GestureDetector(
-                    onTap: () {
-                      debugPrint("Google");
-                    },
+                    onTap: () => controller.loginWithGoogle(),
                     child: Image.asset(GOOGLE_LOGO, height: 48, width: 48),
                   ),
                   const SizedBox(width: 25),
                   GestureDetector(
-                    onTap: () {
-                      debugPrint("Facebook");
-                    },
+                    onTap: () => controller.loginWithFacebook(),
                     child: Image.asset(FACEBOOK_LOGO, height: 48, width: 48),
                   ),
-                  const SizedBox(height: 10),
                 ],
               ),
               const SizedBox(height: 10),
@@ -185,9 +398,7 @@ class LoginView extends GetView<LoginController> {
               ),
               const SizedBox(height: 10),
               TextButton(
-                onPressed: () {
-                  Get.offNamed("/register");
-                },
+                onPressed: () => Get.offNamed("/register"),
                 child: const Text(
                   "INSCRIVEZ-VOUS",
                   style: TextStyle(

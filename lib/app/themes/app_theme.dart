@@ -4,6 +4,7 @@ class GPTheme {
   static TextTheme lightTextTheme = const TextTheme();
 
   static Color primaryColor = const Color(0xFFEF193B);
+  static Color secondaryColor = const Color.fromARGB(85, 239, 25, 61);
 
   static TextTheme darkTextTheme = const TextTheme();
 
@@ -19,10 +20,7 @@ class GPTheme {
       fontFamily: 'Ghotam',
       primaryColor: primaryColor,
       appBarTheme: const AppBarTheme(
-        iconTheme: IconThemeData(
-          color: Colors.white,
-          size: 25,
-        ),
+        iconTheme: IconThemeData(color: Colors.white, size: 25),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         type: BottomNavigationBarType.shifting,
@@ -37,46 +35,45 @@ class GPTheme {
         ),
       ),
       checkboxTheme: CheckboxThemeData(
-          fillColor: WidgetStateProperty.resolveWith(
-            (states) => Colors.transparent,
-          ),
-          checkColor: WidgetStateProperty.all(Colors.black),
-          side: WidgetStateBorderSide.resolveWith(
-            (states) => const BorderSide(color: Colors.white, width: 1),
-          ),
-          shape: const RoundedRectangleBorder(
-            side: BorderSide(
-                color: Colors.white, width: 1, style: BorderStyle.solid),
-          )),
-      inputDecorationTheme: const InputDecorationTheme(
-          labelStyle: TextStyle(color: Colors.black, fontSize: 12),
-          fillColor: Colors.white,
-          filled: true,
-          errorStyle: TextStyle(color: Colors.white, fontSize: 12),
-          iconColor: Colors.white,
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(50),
-            ),
-            borderSide: BorderSide(color: Colors.white),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(50),
-            ),
-            borderSide: BorderSide(color: Colors.white),
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(50),
-            ),
-            borderSide: BorderSide(color: Colors.white),
-          ),
-          outlineBorder: BorderSide(
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => Colors.transparent,
+        ),
+        checkColor: WidgetStateProperty.all(Colors.black),
+        side: WidgetStateBorderSide.resolveWith(
+          (states) => const BorderSide(color: Colors.white, width: 1),
+        ),
+        shape: const RoundedRectangleBorder(
+          side: BorderSide(
             color: Colors.white,
             width: 1,
             style: BorderStyle.solid,
-          )),
+          ),
+        ),
+      ),
+      inputDecorationTheme: const InputDecorationTheme(
+        labelStyle: TextStyle(color: Colors.black, fontSize: 12),
+        fillColor: Colors.white,
+        filled: true,
+        errorStyle: TextStyle(color: Colors.white, fontSize: 12),
+        iconColor: Colors.white,
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(50)),
+          borderSide: BorderSide(color: Colors.white),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(50)),
+          borderSide: BorderSide(color: Colors.white),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(50)),
+          borderSide: BorderSide(color: Colors.white),
+        ),
+        outlineBorder: BorderSide(
+          color: Colors.white,
+          width: 1,
+          style: BorderStyle.solid,
+        ),
+      ),
     );
   }
 
@@ -91,10 +88,7 @@ class GPTheme {
       fontFamily: 'Ghotam',
       primaryColor: primaryColor,
       appBarTheme: const AppBarTheme(
-        iconTheme: IconThemeData(
-          color: Colors.white,
-          size: 25,
-        ),
+        iconTheme: IconThemeData(color: Colors.white, size: 25),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         type: BottomNavigationBarType.shifting,
@@ -109,46 +103,45 @@ class GPTheme {
         ),
       ),
       checkboxTheme: CheckboxThemeData(
-          fillColor: WidgetStateProperty.resolveWith(
-            (states) => Colors.transparent,
-          ),
-          checkColor: WidgetStateProperty.all(Colors.black),
-          side: WidgetStateBorderSide.resolveWith(
-            (states) => const BorderSide(color: Colors.white, width: 1),
-          ),
-          shape: const RoundedRectangleBorder(
-            side: BorderSide(
-                color: Colors.white, width: 1, style: BorderStyle.solid),
-          )),
-      inputDecorationTheme: const InputDecorationTheme(
-          labelStyle: TextStyle(color: Colors.black, fontSize: 12),
-          fillColor: Colors.white,
-          filled: true,
-          errorStyle: TextStyle(color: Colors.white, fontSize: 12),
-          iconColor: Colors.white,
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(50),
-            ),
-            borderSide: BorderSide(color: Colors.white),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(50),
-            ),
-            borderSide: BorderSide(color: Colors.white),
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(50),
-            ),
-            borderSide: BorderSide(color: Colors.white),
-          ),
-          outlineBorder: BorderSide(
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => Colors.transparent,
+        ),
+        checkColor: WidgetStateProperty.all(Colors.black),
+        side: WidgetStateBorderSide.resolveWith(
+          (states) => const BorderSide(color: Colors.white, width: 1),
+        ),
+        shape: const RoundedRectangleBorder(
+          side: BorderSide(
             color: Colors.white,
             width: 1,
             style: BorderStyle.solid,
-          )),
+          ),
+        ),
+      ),
+      inputDecorationTheme: const InputDecorationTheme(
+        labelStyle: TextStyle(color: Colors.black, fontSize: 12),
+        fillColor: Colors.white,
+        filled: true,
+        errorStyle: TextStyle(color: Colors.white, fontSize: 12),
+        iconColor: Colors.white,
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(50)),
+          borderSide: BorderSide(color: Colors.white),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(50)),
+          borderSide: BorderSide(color: Colors.white),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(50)),
+          borderSide: BorderSide(color: Colors.white),
+        ),
+        outlineBorder: BorderSide(
+          color: Colors.white,
+          width: 1,
+          style: BorderStyle.solid,
+        ),
+      ),
     );
   }
 }

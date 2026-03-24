@@ -52,8 +52,8 @@ class _BaseVCardState extends State<BaseVCard> {
                     fit: BoxFit.cover,
                   ),
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10),
+                    topLeft: Radius.circular(30),
+                    topRight: Radius.circular(30),
                   ),
                 ),
                 child: Center(

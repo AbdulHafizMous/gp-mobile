@@ -13,26 +13,29 @@ class SucessPageView extends GetView<SucessPageController> {
     return Scaffold(
       backgroundColor: GPTheme.primaryColor,
       body: Container(
-        padding: const EdgeInsets.all(30),
+        padding: const EdgeInsets.all(20),
         width: double.infinity,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 50),
-            Card(
-              color: Colors.white,
-              child: SizedBox(
-                width: double.infinity,
-                child: Padding(
-                  padding: const EdgeInsets.all(30),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 60),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
                   child: Column(
                     children: [
+                      const SizedBox(height: 30),
                       Image.asset(
                         "assets/images/success_logo.png",
-                        width: 250,
-                        height: 250,
-                        cacheHeight: 250,
-                        cacheWidth: 250,
+                        width: 190,
+                        height: 180,
+                        cacheHeight: 180,
+                        cacheWidth: 190,
                       ),
                       const SizedBox(height: 20),
                       Text(
@@ -40,7 +43,7 @@ class SucessPageView extends GetView<SucessPageController> {
                         style: TextStyle(
                           color: GPTheme.primaryColor,
                           fontWeight: FontWeight.bold,
-                          fontSize: 20,
+                          fontSize: 30,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -50,10 +53,10 @@ class SucessPageView extends GetView<SucessPageController> {
                         style: TextStyle(
                           color: Color.fromARGB(255, 122, 121, 121),
                           fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                          fontSize: 14,
                         ),
                       ),
-                      const SizedBox(height: 25),
+                      const SizedBox(height: 30),
                       Image.asset(
                         "assets/images/checked.png",
                         width: 40,
@@ -61,20 +64,21 @@ class SucessPageView extends GetView<SucessPageController> {
                         cacheHeight: 40,
                         cacheWidth: 40,
                       ),
-                      const SizedBox(height: 25),
+                      const SizedBox(height: 30),
                     ],
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            PrimaryButton(
-              text: "COMMENCEZ",
-              callback: () {
-                Get.offAllNamed('/interest');
-              },
-            ),
-          ],
+              const SizedBox(height: 50),
+              PrimaryButton(
+                text: "COMMENCEZ",
+                callback: () {
+                  // If we should remove Interest Step Here - Just send to /main-page
+                  Get.offAllNamed('/interest');
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

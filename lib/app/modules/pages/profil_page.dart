@@ -99,7 +99,7 @@ class _ProfilPageState extends State<ProfilPage> {
                                 "Ajouter une description",
                                 style: TextStyle(
                                   fontStyle: FontStyle.italic,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w300,
                                 ),
                               ),
                             ),

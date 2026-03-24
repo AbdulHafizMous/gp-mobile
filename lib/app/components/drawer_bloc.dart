@@ -64,7 +64,7 @@ class _DrawerBlocState extends State<DrawerBloc> {
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: GPTheme.primaryColor,
-      width: MediaQuery.of(context).size.width / 2,
+      width: MediaQuery.of(context).size.width * 0.7,
       child: ListView(
         children: [
           Container(
@@ -165,6 +165,7 @@ class _DrawerBlocState extends State<DrawerBloc> {
             onTap: () => Get.offAllNamed("/home"),
             child: Image.asset('assets/images/logo_pixel.png', height: 125),
           ),
+          const SizedBox(height: 20),
         ],
       ),
     );
