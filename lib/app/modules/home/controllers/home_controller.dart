@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -168,28 +169,52 @@ class HomeController extends GetxController {
     return [];
   }
 
-  Future<User> getUser() async {
+    Future<User> getUser() async {
     try {
-      final response = await RequestService().get('/user');
-      activeUser.value = User.fromJson(response.data);
-      GetStorage().write('username', response.data["first_name"]);
-      GetStorage().write('email', response.data["email"]);
-      // Normalize has_active_subscriptions to a Dart bool
-      final rawHas = response.data["has_active_subscriptions"];
-      bool normalizedHas = false;
-      if (rawHas is bool) {
-        normalizedHas = rawHas;
-      } else if (rawHas is num) {
-        normalizedHas = rawHas != 0;
-      } else if (rawHas is String) {
-        final lower = rawHas.toLowerCase();
-        normalizedHas = (lower == '1' || lower == 'true' || lower == 'yes');
+      // For Test Purposes
+      dynamic jsonVal;
+      if (useMock) {
+        jsonVal = {
+          "id": 1,
+          "first_name": "Hafiz",
+          "last_name": "MOUSTAPHA",
+          "email": "hafizmoustapha64@gmail.com",
+          "google_id": null,
+          "facebook_id": null,
+          "terms_accepted": 1,
+          "created_at": "2026-03-16T10:30:00.000000Z",
+          "updated_at": "2026-03-16T10:30:00.000000Z",
+          "email_verified_at": null,
+          "has_active_subscriptions": false,
+        };
+      } else {
+        final response = await RequestService().get('/auth/me');
+        jsonVal = response.data;
       }
-      GetStorage().write("has_active_subscriptions", normalizedHas);
-      debugPrint(
-        'Stored has_active_subscriptions in HomeController: $normalizedHas (raw: $rawHas)',
-      );
-      return User.fromJson(response.data);
+
+      debugPrint("Fetched User from Home Page --- response : $jsonVal");
+      final data = jsonVal['data']['user'];
+      activeUser.value = User.fromJson(data);
+      GetStorage().write('username', data['name']);
+      GetStorage().write('email', data['email']);
+
+      // Normalize has_active_subscriptions to a Dart bool
+      // final rawHas = jsonVal["has_active_subscriptions"];
+      // bool normalizedHas = false;
+      // if (rawHas is bool) {
+      //   normalizedHas = rawHas;
+      // } else if (rawHas is num) {
+      //   normalizedHas = rawHas != 0;
+      // } else if (rawHas is String) {
+      //   final lower = rawHas.toLowerCase();
+      //   normalizedHas = (lower == '1' || lower == 'true' || lower == 'yes');
+      // }
+      // GetStorage().write("has_active_subscriptions", normalizedHas);
+      // debugPrint(
+      //   'Stored has_active_subscriptions in HomeController: $normalizedHas (raw: $rawHas)',
+      // );
+
+      return User.fromJson(jsonVal);
     } on DioException catch (e) {
       if (e.response != null) {
         debugPrint(

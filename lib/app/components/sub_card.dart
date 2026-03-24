@@ -20,6 +20,32 @@ class SubCard extends StatefulWidget {
 class _SubCardState extends State<SubCard> {
   var uuid = const Uuid();
 
+
+  Future<void> _fetchAndStoreUser() async {
+    try {
+      final userResp = await RequestService().get('/auth/me');
+      if (userResp.statusCode == 200 && userResp.data is Map) {
+        debugPrint("data --- ${userResp.data}");
+        final data = userResp.data['data']['user'] as Map;
+        GetStorage().write('username', data['name']);
+        GetStorage().write('email', data['email']);
+
+        // final rawHas = data['has_active_subscriptions'];
+        // bool normalized = false;
+        // if (rawHas is bool) {
+        //   normalized = rawHas;
+        // } else if (rawHas is num) {
+        //   normalized = rawHas != 0;
+        // } else if (rawHas is String) {
+        //   normalized = ['1', 'true', 'yes'].contains(rawHas.toLowerCase());
+        // }
+        // GetStorage().write('has_active_subscriptions', normalized);
+      }
+    } catch (e) {
+      debugPrint('Error fetching user after verify: $e');
+    }
+  }
+
   // `KKiaPay` will be instantiated on demand in `onPressed` so we can
   // provide subscription-specific values (amount, data, trans_key, etc.).
 
@@ -99,45 +125,7 @@ class _SubCardState extends State<SubCard> {
                               // After a successful payment we must refresh the user
                               // info and store `has_active_subscriptions` in GetStorage.
                               try {
-                                final userResp = await RequestService().get(
-                                  '/user',
-                                );
-                                debugPrint(
-                                  'User fetch after payment: ${userResp.statusCode} ${userResp.data}',
-                                );
-                                if (userResp.statusCode == 200) {
-                                  final data = userResp.data;
-                                  if (data is Map) {
-                                    // Persist useful user fields and the subscription flag
-                                    GetStorage().write(
-                                      'username',
-                                      data['first_name'],
-                                    );
-                                    GetStorage().write('email', data['email']);
-                                    // Normalize has_active_subscriptions to a Dart bool
-                                    final rawHas =
-                                        data['has_active_subscriptions'];
-                                    bool normalizedHas = false;
-                                    if (rawHas is bool) {
-                                      normalizedHas = rawHas;
-                                    } else if (rawHas is num) {
-                                      normalizedHas = rawHas != 0;
-                                    } else if (rawHas is String) {
-                                      final lower = rawHas.toLowerCase();
-                                      normalizedHas =
-                                          (lower == '1' ||
-                                          lower == 'true' ||
-                                          lower == 'yes');
-                                    }
-                                    GetStorage().write(
-                                      'has_active_subscriptions',
-                                      normalizedHas,
-                                    );
-                                    debugPrint(
-                                      'Updated has_active_subscriptions: $normalizedHas (raw: $rawHas)',
-                                    );
-                                  }
-                                }
+                                await _fetchAndStoreUser();
                               } catch (e, st) {
                                 debugPrint(
                                   'Error fetching user after payment: $e\n$st',
@@ -213,7 +201,7 @@ class _SubCardState extends State<SubCard> {
               width: 75,
               height: 75,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(30),
               ),
               child: RotationTransition(
                 turns: const AlwaysStoppedAnimation(15 / 360),
@@ -222,7 +210,7 @@ class _SubCardState extends State<SubCard> {
                     color: widget.subscription.price >= 10000
                         ? Colors.black
                         : GPTheme.primaryColor,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(30),
                   ),
                 ),
               ),

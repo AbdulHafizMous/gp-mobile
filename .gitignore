@@ -47,3 +47,5 @@ app.*.map.json
 # Keystore files
 android/app/*.jks
 android/key.properties
+
+tmp.md

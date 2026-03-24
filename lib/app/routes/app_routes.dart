@@ -4,10 +4,14 @@ part of 'app_pages.dart';
 abstract class Routes {
   Routes._();
   static const HOME = _Paths.HOME;
+  static const UPDATE_REQUIRED = _Paths.UPDATE_REQUIRED;
+  static const MAIN_PAGE = _Paths.MAIN_PAGE;
   static const SPLASH = _Paths.SPLASH;
   static const ONBOARDING = _Paths.ONBOARDING;
   static const LOGIN = _Paths.LOGIN;
   static const REGISTER = _Paths.REGISTER;
+  static const FORGOT_PASSWORD = _Paths.FORGOT_PASSWORD;
+  static const RESET_PASSWORD = _Paths.RESET_PASSWORD;
   static const CONFIRM = _Paths.CONFIRM;
   static const SUCESS_PAGE = _Paths.SUCESS_PAGE;
   static const INTEREST = _Paths.INTEREST;
@@ -31,11 +35,15 @@ abstract class Routes {
 abstract class _Paths {
   _Paths._();
   static const HOME = '/home';
+  static const UPDATE_REQUIRED = '/update-required';
+  static const MAIN_PAGE = '/main-page';
   static const SPLASH = '/splash';
   static const ONBOARDING = '/onboarding';
   static const LOGIN = '/login';
   static const REGISTER = '/register';
   static const CONFIRM = '/confirm';
+  static const FORGOT_PASSWORD = '/forgot-password';
+  static const RESET_PASSWORD = '/reset-password';
   static const SUCESS_PAGE = '/sucess-page';
   static const INTEREST = '/interest';
   static const PAYEMENT = '/payement';
