@@ -49,7 +49,7 @@ class RegisterController extends GetxController {
       canChangeMail.value = true;
     }
 
-    debugPrint("welcome on register --- token : ${_socialToken}");
+    debugPrint("welcome on register --- token : $_socialToken");
 
     if (_socialToken != null && _socialToken!.isNotEmpty) {
       registerMode.value = RegisterMode.socialCompletion;

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:grand_public_v2/app/services/notification_service.dart';
+// import 'package:grand_public_v2/app/services/notification_service.dart';
 import 'package:grand_public_v2/firebase_options.dart';
 
 import 'app/routes/app_pages.dart';
@@ -39,9 +39,8 @@ Future<void> main() async {
   // 4. GetStorage
   await GetStorage.init();
 
-  // 5. Notifications
-  await NotificationService.init();
-
+  // 5. Notifications (Done in Main Page Ctrl)
+  // await NotificationService.init();
 
   // Tests Notification
 
@@ -87,7 +86,7 @@ class _MainAppState extends State<MainApp> {
   Widget build(BuildContext context) {
     return Obx(
       () => GetMaterialApp(
-        title: "Grand Public",
+        title: "Grand Public Bénin",
         theme: controller.isDark.value ? darktheme : theme,
         // darkTheme: darktheme,
         initialRoute: AppPages.INITIAL,

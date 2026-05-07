@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
@@ -19,7 +20,7 @@ class _AppBarWiState extends State<AppBarWi> {
       title: InkWell(
         onTap: () => Get.offAllNamed('/home'),
         child: Image.asset(
-          'assets/images/logo_pixel.png',
+          LOGO,
           width: 50,
           height: 50,
         ),

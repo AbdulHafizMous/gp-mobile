@@ -1,199 +1,112 @@
-import 'package:uuid/uuid.dart';
+// lib/app/components/sub_card.dart
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'dart:convert';
 import 'package:grand_public_v2/app/constants/index.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:grand_public_v2/app/data/models/subscription.dart';
-import 'package:grand_public_v2/app/services/dio.services.dart';
+import 'package:grand_public_v2/app/modules/social_premium/controllers/social_premium_controller.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
-import 'package:kkiapay_flutter_sdk/kkiapay_flutter_sdk.dart';
 
-class SubCard extends StatefulWidget {
-  const SubCard({super.key, required this.subscription});
-
-  final Subscription subscription;
-  @override
-  State<SubCard> createState() => _SubCardState();
+// ─────────────────────────────────────────────────────────────────────────────
+// THEME HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+extension _ThemeX on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+  Color get subtleText => Theme.of(this).hintColor;
 }
 
-class _SubCardState extends State<SubCard> {
-  var uuid = const Uuid();
+class SubCard extends StatelessWidget {
+  const SubCard({
+    super.key,
+    required this.subscription,
+    this.isActivePlan = false,
+    this.hasActiveSubscription = false,
+  });
 
+  final Subscription subscription;
 
-  Future<void> _fetchAndStoreUser() async {
-    try {
-      final userResp = await RequestService().get('/auth/me');
-      if (userResp.statusCode == 200 && userResp.data is Map) {
-        debugPrint("data --- ${userResp.data}");
-        final data = userResp.data['data']['user'] as Map;
-        GetStorage().write('username', data['name']);
-        GetStorage().write('email', data['email']);
+  /// Ce plan est-il le plan actif de l'utilisateur ?
+  final bool isActivePlan;
 
-        // final rawHas = data['has_active_subscriptions'];
-        // bool normalized = false;
-        // if (rawHas is bool) {
-        //   normalized = rawHas;
-        // } else if (rawHas is num) {
-        //   normalized = rawHas != 0;
-        // } else if (rawHas is String) {
-        //   normalized = ['1', 'true', 'yes'].contains(rawHas.toLowerCase());
-        // }
-        // GetStorage().write('has_active_subscriptions', normalized);
-      }
-    } catch (e) {
-      debugPrint('Error fetching user after verify: $e');
-    }
-  }
-
-  // `KKiaPay` will be instantiated on demand in `onPressed` so we can
-  // provide subscription-specific values (amount, data, trans_key, etc.).
+  /// L'utilisateur a-t-il un abonnement actif (peu importe le plan) ?
+  final bool hasActiveSubscription;
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDark;
+
+    // Ancienne logique : price >= 10000  →  remplacée par : c'est le plan actif
+    final Color accentColor = isActivePlan
+        ? (isDark ? Colors.white : Colors.black)
+        : GPTheme.primaryColor;
+
     return Card(
+      color: context.theme.cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(30)),
+      ),
       clipBehavior: Clip.hardEdge,
+      elevation: 5,
       child: Stack(
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            width: 300,
-            height: 400,
+            width: 280,
+            height: 350,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 40),
-                Image.asset('assets/images/logo.png', width: 50),
+                const SizedBox(height: 20),
+                Image.asset(LOGO_PIXEL, width: 70),
+                const SizedBox(height: 8),
                 Text(
-                  widget.subscription.duration,
-                  style: const TextStyle(
+                  subscription.duration,
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: isDark ? Colors.white : Colors.black,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
-                  '${widget.subscription.price}-XOF',
-                  style: const TextStyle(
+                  '${subscription.price.toStringAsFixed(0)} - XOF',
+                  style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: isDark ? Colors.white : Colors.black,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  widget.subscription.shortDescription,
+                  subscription.shortDescription,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey[700],
+                    color: isDark ? context.subtleText : Colors.grey[700],
                   ),
                 ),
                 const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    // Build a fresh KKiaPay instance with subscription data.
-                    final kkiapay = KKiaPay(
-                      // make the callback async so we can perform follow-up API calls
-                      callback: (dynamic response, BuildContext ctx) async {
-                        debugPrint('kkiapay callback: $response');
-                        final status = response['status']?.toString() ?? '';
-                        try {
-                          switch (status) {
-                            case 'PAYMENT_CANCELLED':
-                              // close the payment view
-                              try {
-                                Get.back();
-                              } catch (_) {}
-                              debugPrint('PAYMENT_CANCELLED');
-                              break;
-                            case 'PAYMENT_INIT':
-                              debugPrint('PAYMENT_INIT');
-                              break;
-                            case 'PENDING_PAYMENT':
-                              debugPrint('PENDING_PAYMENT');
-                              break;
-                            case 'PAYMENT_SUCCESS':
-                              // close payment view then navigate to success screen
-                              try {
-                                Get.back();
-                              } catch (_) {}
-                              // After a successful payment we must refresh the user
-                              // info and store `has_active_subscriptions` in GetStorage.
-                              try {
-                                await _fetchAndStoreUser();
-                              } catch (e, st) {
-                                debugPrint(
-                                  'Error fetching user after payment: $e\n$st',
-                                );
-                              }
-                              try {
-                                Get.toNamed(
-                                  '/pay-suc',
-                                  arguments: {
-                                    'amount':
-                                        response['requestData']?['amount'],
-                                    'transactionId': response['transactionId'],
-                                  },
-                                );
-                              } catch (_) {}
-                              break;
-                            default:
-                              debugPrint('UNKNOWN_EVENT');
-                              break;
-                          }
-                        } catch (e, st) {
-                          debugPrint(
-                            'Error handling kkiapay callback: $e\n$st',
-                          );
-                        }
-                      },
-                      amount: widget.subscription.price,
-                      apikey: FEEX_API_KEY,
-                      sandbox: true,
-                      // include a trans_key and callback_info in data for backend tracing
-                      data: jsonEncode({
-                        'trans_key': uuid.v4(),
-                        'subscription_id': widget.subscription.id,
-                      }),
-                      phone: GetStorage().read('phone') ?? '',
-                      name: GetStorage().read('username') ?? '',
-                      reason: widget.subscription.name,
-                      email: GetStorage().read('email') ?? '',
-                      countries: const ['BJ'],
-                    );
 
-                    // Use GetX navigation to open the payment widget.
-                    Get.to(() => kkiapay);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: widget.subscription.price >= 10000
-                        ? Colors.black
-                        : GPTheme.primaryColor,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 24,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'S\'abonner',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+                // ── Bouton : désactivé si c'est le plan actif ────────────
+                isActivePlan
+                    ? _ActivePlanButton(
+                        accentColor: accentColor,
+                        isDark: isDark,
+                      )
+                    : _SubscribeButton(
+                        subscription: subscription,
+                        accentColor: accentColor,
+                        isDark: isDark,
+                        hasActiveSubscription: hasActiveSubscription,
+                      ),
               ],
             ),
           ),
+
+          // ── Le petit carré incliné (design original intact) ────────────
           Positioned(
             top: -20,
             left: -10,
@@ -207,9 +120,7 @@ class _SubCardState extends State<SubCard> {
                 turns: const AlwaysStoppedAnimation(15 / 360),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: widget.subscription.price >= 10000
-                        ? Colors.black
-                        : GPTheme.primaryColor,
+                    color: accentColor,
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
@@ -220,4 +131,97 @@ class _SubCardState extends State<SubCard> {
       ),
     );
   }
+}
+
+// ── Bouton "Plan actuel" (plan déjà actif) ────────────────────────────────────
+class _ActivePlanButton extends StatelessWidget {
+  const _ActivePlanButton({required this.accentColor, required this.isDark});
+
+  final Color accentColor;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: null, // désactivé
+      icon: Icon(
+        Icons.check_circle_rounded,
+        size: 16,
+        color: isDark ? Colors.white54 : Colors.black38,
+      ),
+      label: Text(
+        'Plan actuel',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: isDark ? Colors.white54 : Colors.black38,
+        ),
+      ),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+        side: BorderSide(color: isDark ? Colors.white24 : Colors.black12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+}
+
+// ── Bouton "S'abonner" / "Changer de plan" ────────────────────────────────────
+class _SubscribeButton extends StatelessWidget {
+  const _SubscribeButton({
+    required this.subscription,
+    required this.accentColor,
+    required this.isDark,
+    required this.hasActiveSubscription,
+  });
+
+  final Subscription subscription;
+  final Color accentColor;
+  final bool isDark;
+  final bool hasActiveSubscription;
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = Get.isRegistered<SocialPremiumController>()
+        ? Get.find<SocialPremiumController>()
+        : Get.put(SocialPremiumController());
+
+    return Obx(
+      () => ElevatedButton(
+        onPressed: ctrl.isSubscribing.value
+            ? null
+            : () => ctrl.handleSubscribeWithKkiapay(
+                context: context,
+                plan: subscription,
+              ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: accentColor,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child:
+            ctrl.isSubscribing.value &&
+                ctrl.selectedPlan.value?.id == subscription.id
+            ? const SizedBox(
+                height: 18,
+                width: 18,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : Text(
+                hasActiveSubscription ? 'Changer de plan' : 'S\'abonner',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: (isActivePlan && isDark) ? Colors.black : Colors.white,
+                ),
+              ),
+      ),
+    );
+  }
+
+  // ignore: unused_element
+  bool get isActivePlan => false; // non actif ici par définition
 }

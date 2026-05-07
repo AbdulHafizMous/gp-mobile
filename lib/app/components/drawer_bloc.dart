@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:grand_public_v2/app/components/drawer_btn.dart';
+import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 class DrawerBloc extends StatefulWidget {
@@ -163,7 +164,7 @@ class _DrawerBlocState extends State<DrawerBloc> {
           const SizedBox(height: 30),
           InkWell(
             onTap: () => Get.offAllNamed("/home"),
-            child: Image.asset('assets/images/logo_pixel.png', height: 125),
+            child: Image.asset(LOGO, height: 125),
           ),
           const SizedBox(height: 20),
         ],

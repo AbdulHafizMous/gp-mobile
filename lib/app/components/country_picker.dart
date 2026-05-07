@@ -7,6 +7,10 @@ import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 final List<Country> _countries = countryList;
 
+extension _ThemeX on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+}
+
 // ─────────────────────────────────────────────
 // Country Picker Widget
 // ─────────────────────────────────────────────
@@ -32,14 +36,14 @@ class CountryPickerWidgetState extends State<CountryPickerWidget> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: context.isDark ? Colors.black54 : Colors.transparent,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
             return Container(
               height: MediaQuery.of(context).size.height * 0.65,
               decoration: BoxDecoration(
-                color: GPTheme.primaryColor,
+                color: context.isDark ? Colors.black54 : GPTheme.primaryColor,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(24),
                 ),
@@ -205,8 +209,8 @@ class CountryPickerWidgetState extends State<CountryPickerWidget> {
             const SizedBox(width: 6),
             Text(
               "+${widget.selectedCountry.phoneCode}",
-              style: const TextStyle(
-                // color: Colors.white,
+              style: TextStyle(
+                color: Colors.black,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),

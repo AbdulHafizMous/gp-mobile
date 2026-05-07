@@ -11,6 +11,13 @@ import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 import '../controllers/register_controller.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// THEME HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+extension _ThemeX on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+}
+
 class RegisterView extends GetView<RegisterController> {
   const RegisterView({super.key});
 
@@ -20,7 +27,7 @@ class RegisterView extends GetView<RegisterController> {
       final isSocial = controller.isSocialCompletion;
 
       return Scaffold(
-        backgroundColor: GPTheme.primaryColor,
+        backgroundColor: context.isDark ? null : GPTheme.primaryColor,
         body: SingleChildScrollView(
           child: Container(
             padding: const EdgeInsets.all(10),
@@ -72,6 +79,9 @@ class RegisterView extends GetView<RegisterController> {
                           child: TextFormField(
                             controller: controller.nameController,
                             textCapitalization: TextCapitalization.words,
+                            style: TextStyle(
+                              color: context.isDark ? Colors.black : null,
+                            ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
                                 return 'Veuillez saisir votre nom complet';
@@ -98,6 +108,7 @@ class RegisterView extends GetView<RegisterController> {
                             readOnly:
                                 (isSocial && !controller.canChangeMail.value),
                             style: TextStyle(
+                              color: context.isDark ? Colors.black : null,
                               fontWeight:
                                   (isSocial && !controller.canChangeMail.value)
                                   ? FontWeight.w300
@@ -141,6 +152,11 @@ class RegisterView extends GetView<RegisterController> {
                                     child: TextFormField(
                                       controller: controller.phoneController,
                                       keyboardType: TextInputType.phone,
+                                      style: TextStyle(
+                                        color: context.isDark
+                                            ? Colors.black
+                                            : null,
+                                      ),
                                       inputFormatters: [
                                         FilteringTextInputFormatter.digitsOnly,
                                         SimplePhoneFormatter(),

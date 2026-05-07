@@ -14,13 +14,13 @@ abstract class Routes {
   static const RESET_PASSWORD = _Paths.RESET_PASSWORD;
   static const CONFIRM = _Paths.CONFIRM;
   static const SUCESS_PAGE = _Paths.SUCESS_PAGE;
+  static const SPACE_PAGE = _Paths.SPACE_PAGE;
   static const INTEREST = _Paths.INTEREST;
   static const PAYEMENT = _Paths.PAYEMENT;
   static const VID_DETAIL = _Paths.VID_DETAIL;
   static const PAY_SUC = _Paths.PAY_SUC;
   static const PAY_FAIL = _Paths.PAY_FAIL;
   static const VIDEOS = _Paths.VIDEOS;
-  static const PORTRAIT = _Paths.PORTRAIT;
   static const OPINION = _Paths.OPINION;
   static const EVENTS = _Paths.EVENTS;
   static const INSOLITE = _Paths.INSOLITE;
@@ -30,6 +30,7 @@ abstract class Routes {
   static const SOCIAL_ABOUT = _Paths.SOCIAL_ABOUT;
   static const PROFILE = _Paths.PROFILE;
   static const SEARCH = _Paths.SEARCH;
+  static const NOTIFS = _Paths.NOTIFS;
 }
 
 abstract class _Paths {
@@ -45,13 +46,13 @@ abstract class _Paths {
   static const FORGOT_PASSWORD = '/forgot-password';
   static const RESET_PASSWORD = '/reset-password';
   static const SUCESS_PAGE = '/sucess-page';
+  static const SPACE_PAGE = '/home/spaces/:id';
   static const INTEREST = '/interest';
   static const PAYEMENT = '/payement';
   static const VID_DETAIL = '/vid-detail';
   static const PAY_SUC = '/pay-suc';
   static const PAY_FAIL = '/pay-fail';
   static const VIDEOS = '/videos';
-  static const PORTRAIT = '/portrait';
   static const OPINION = '/opinion';
   static const EVENTS = '/events';
   static const INSOLITE = '/insolite';
@@ -61,4 +62,5 @@ abstract class _Paths {
   static const SOCIAL_ABOUT = '/social-about';
   static const PROFILE = '/profile';
   static const SEARCH = '/search';
+  static const NOTIFS = '/notifs';
 }

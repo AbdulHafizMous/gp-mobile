@@ -134,6 +134,7 @@ class ConfirmController extends GetxController {
         );
 
         debugPrint('Cool until Here');
+        GetStorage().write('verification_code', trimmed);
 
         if (otpContext == 'reset_password') {
           // ← pas de token, pas de isLogged — l'user n'est pas encore connecté

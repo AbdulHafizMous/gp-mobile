@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 
 class NotificationService {
@@ -91,6 +92,7 @@ class NotificationService {
 
   static Future<void> _sendTokenToBackend(String token) async {
     try {
+      if (useMock) return;
       final String? authToken = GetStorage().read<String>('token');
       if (authToken == null) return;
       await RequestService().post(

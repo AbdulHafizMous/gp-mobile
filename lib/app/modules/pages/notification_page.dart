@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/notifcation_tile.dart';
 import 'package:grand_public_v2/app/data/models/notification.dart';
-import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
+import 'package:grand_public_v2/app/modules/notifs/controllers/notifs_controller.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 class NotificationPage extends StatefulWidget {
@@ -13,7 +13,7 @@ class NotificationPage extends StatefulWidget {
 }
 
 class _NotificationPageState extends State<NotificationPage> {
-  final controller = Get.put(HomeController());
+  final controller = Get.put(NotifsPageController());
 
   @override
   Widget build(BuildContext context) {
@@ -29,12 +29,14 @@ class _NotificationPageState extends State<NotificationPage> {
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 10),
         FutureBuilder(
           future: controller.fetchNotifications(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return Center(
+                child: CircularProgressIndicator(color: GPTheme.primaryColor),
+              );
             } else if (snapshot.hasError) {
               return Center(child: Text(snapshot.error.toString()));
             } else if (snapshot.hasData) {

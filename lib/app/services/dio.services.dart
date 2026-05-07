@@ -18,7 +18,7 @@ class RequestService {
         sendTimeout: const Duration(seconds: 60),
         headers: {
           "Accept": "application/json",
-          "Content-Type": "application/json",
+          // "Content-Type": "application/json",
         },
       ),
     );

@@ -6,12 +6,19 @@ import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 import '../controllers/sucess_page_controller.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// THEME HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+extension _ThemeX on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+}
+
 class SucessPageView extends GetView<SucessPageController> {
   const SucessPageView({super.key});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GPTheme.primaryColor,
+      backgroundColor: context.isDark ? null : GPTheme.primaryColor,
       body: Container(
         padding: const EdgeInsets.all(20),
         width: double.infinity,
@@ -22,7 +29,9 @@ class SucessPageView extends GetView<SucessPageController> {
               const SizedBox(height: 60),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.isDark
+                      ? Colors.white.withAlpha(30)
+                      : Colors.white,
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: SizedBox(

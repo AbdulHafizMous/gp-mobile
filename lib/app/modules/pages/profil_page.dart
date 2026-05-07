@@ -41,6 +41,7 @@ class _ProfilPageState extends State<ProfilPage> {
   void switchTheme() {
     controller.isDark.value = !controller.isDark.value;
     final bool isd = controller.isDark.value;
+    Get.changeTheme(controller.isDark.value ? GPTheme.dark() : GPTheme.light());
     GetStorage().write("isDark", isd);
   }
 

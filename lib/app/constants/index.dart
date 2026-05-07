@@ -1,14 +1,11 @@
-const LOGO_PIXEL = 'assets/images/logo_pixel.png';
-const LOGO = 'assets/images/logo_new.jpeg';
-// const LOGO_PIXEL = 'assets/images/logo_pixel.png';
-// const LOGO = 'assets/images/logo.png';
+const LOGO_PIXEL = 'assets/images/logo_gpb.png';
+const LOGO = 'assets/images/logo_gpb.png';
 const GOOGLE_LOGO = 'assets/icons/google.png';
 const FACEBOOK_LOGO = 'assets/icons/facebook.png';
-const API_URL = "http://192.168.100.13:8000/api";
+const API_IP = "192.168.100.25";
+const API_URL = "http://$API_IP:8000/api";
 // const API_URL = "https://grandpublic.bj/api";
 const PUSHER_API_KEY = "0fe44ac921bf1cf4b22e";
 const PUSHER_API_CLUSTER = "eu";
-// const FEEX_API_KEY =
-//     "fp_6zO343BC5JscBTckLjaaMlEWGxPwIgewApR2DpHdhFLJO2wde9jRjVmqh6jvOVOG";
-const FEEX_SHOP_ID = "67280572f85e5cda7c6ef90e";
-const FEEX_API_KEY = "a24b17c026b857963f31ff97539fc22c483ab6b3";
+const FEEX_SHOP_ID = "68499e0e4e10d69c0dbfd22d";
+const FEEX_API_KEY = "90366b50372111f189b307c79e518cc5";

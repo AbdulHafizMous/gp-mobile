@@ -7,13 +7,21 @@ import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 import '../controllers/forgot_password_controller.dart';
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THEME HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+extension _ThemeX on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+}
+
 class ForgotPasswordView extends GetView<ForgotPasswordController> {
   const ForgotPasswordView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GPTheme.primaryColor,
+       backgroundColor: context.isDark ? null : GPTheme.primaryColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -78,6 +86,9 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                     TextFormField(
                       controller: controller.emailController,
                       keyboardType: TextInputType.emailAddress,
+                       style: TextStyle(
+                              color: context.isDark ? Colors.black : null,
+                            ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Veuillez saisir votre email';

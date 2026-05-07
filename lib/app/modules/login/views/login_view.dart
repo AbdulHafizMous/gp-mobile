@@ -1,7 +1,6 @@
 import 'package:country_pickers/country.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/country_picker.dart';
 import 'package:grand_public_v2/app/components/primary_button.dart';
@@ -10,8 +9,14 @@ import 'package:grand_public_v2/app/components/toogle_tab.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
-
 import '../controllers/login_controller.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THEME HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+extension _ThemeX on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+}
 
 // ─────────────────────────────────────────────
 // Login View
@@ -22,7 +27,7 @@ class LoginView extends GetView<LoginController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GPTheme.primaryColor,
+      backgroundColor: context.isDark ? null : GPTheme.primaryColor,
       body: SingleChildScrollView(
         child: Container(
           padding: const EdgeInsets.all(10),
@@ -93,26 +98,38 @@ class LoginView extends GetView<LoginController> {
                               children: [
                                 Expanded(
                                   flex: 1,
-                                  child: GestureDetector(
+                                  child: InkWell(
                                     onTap: () => controller.loginType.value =
                                         LoginType.phone,
-                                    child: ToggleTab(
-                                      label: "Par Téléphone",
-                                      icon: Icons.phone_outlined,
-                                      isActive: type == LoginType.phone,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                      // color: Colors.green,
+                                      child: ToggleTab(
+                                        label: "Par Téléphone",
+                                        icon: Icons.phone_outlined,
+                                        isActive: type == LoginType.phone,
+                                      ),
                                     ),
                                   ),
                                 ),
 
                                 Expanded(
                                   flex: 1,
-                                  child: GestureDetector(
+                                  child: InkWell(
                                     onTap: () => controller.loginType.value =
                                         LoginType.email,
-                                    child: ToggleTab(
-                                      label: "Par Mail",
-                                      icon: Icons.mail_outline,
-                                      isActive: type == LoginType.email,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                      // color: Colors.yellow,
+                                      child: ToggleTab(
+                                        label: "Par Mail",
+                                        icon: Icons.mail_outline,
+                                        isActive: type == LoginType.email,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -161,6 +178,9 @@ class LoginView extends GetView<LoginController> {
                                           controller:
                                               controller.phoneController,
                                           keyboardType: TextInputType.phone,
+                                           style: TextStyle(
+                              color: context.isDark ? Colors.black : null,
+                            ),
                                           inputFormatters: [
                                             FilteringTextInputFormatter
                                                 .digitsOnly,
@@ -235,6 +255,9 @@ class LoginView extends GetView<LoginController> {
                               child: TextFormField(
                                 controller: controller.emailController,
                                 keyboardType: TextInputType.emailAddress,
+                                 style: TextStyle(
+                              color: context.isDark ? Colors.black : null,
+                            ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return "Veuillez saisir votre email";
@@ -265,6 +288,9 @@ class LoginView extends GetView<LoginController> {
                           child: TextFormField(
                             controller: controller.passwordController,
                             obscureText: controller.isObscure.value,
+                             style: TextStyle(
+                              color: context.isDark ? Colors.black : null,
+                            ),
                             validator: (value) => value!.isEmpty
                                 ? "Veuillez renseigner le mot de passe"
                                 : null,
@@ -293,65 +319,72 @@ class LoginView extends GetView<LoginController> {
                       const SizedBox(height: 20),
 
                       // ── Remember me + Forgot password ────────────
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Obx(
-                            () => InkWell(
-                              onTap: () {
-                                controller.isRemember.value =
-                                    !controller.isRemember.value;
-                              },
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Checkbox(
-                                    checkColor: Colors.white,
-                                    shape: const RoundedRectangleBorder(
-                                      side: BorderSide(
-                                        style: BorderStyle.solid,
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Obx(
+                              () => InkWell(
+                                onTap: () {
+                                  controller.isRemember.value =
+                                      !controller.isRemember.value;
+                                },
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Checkbox(
+                                      checkColor: Colors.white,
+                                      shape: const RoundedRectangleBorder(
+                                        side: BorderSide(
+                                          style: BorderStyle.solid,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      value: controller.isRemember.value,
+                                      onChanged: (value) {
+                                        controller.isRemember.value = value!;
+                                      },
+                                    ),
+                                    const Text(
+                                      "Se souvenir de moi",
+                                      style: TextStyle(
                                         color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w300,
                                       ),
                                     ),
-                                    value: controller.isRemember.value,
-                                    onChanged: (value) {
-                                      controller.isRemember.value = value!;
-                                    },
-                                  ),
-                                  const Text(
-                                    "Se souvenir de moi",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w300,
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                          const Spacer(),
-                          TextButton(
-                            onPressed: () {
-                              Get.offAllNamed('/forgot-password');
-                            },
-                            child: const Text(
-                              "Mot de passe oublié ?",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w300,
+                            const SizedBox(width: 4),
+                            TextButton(
+                              onPressed: () {
+                                Get.offAllNamed('/forgot-password');
+                              },
+                              child: const Text(
+                                "Mot de passe oublié ?",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w300,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
 
                       const SizedBox(height: 20),
 
                       // ── Submit button ─────────────────────────────
                       Obx(
-                        () => (!controller.isLoading.value && !controller.isSocialLoading.value)
+                        () =>
+                            (!controller.isLoading.value &&
+                                !controller.isSocialLoading.value)
                             ? PrimaryButton(
                                 text: "SE CONNECTER",
                                 callback: () => controller.login(),

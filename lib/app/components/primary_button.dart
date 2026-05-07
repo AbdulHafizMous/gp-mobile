@@ -13,38 +13,34 @@ class PrimaryButton extends StatelessWidget {
         callback();
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(50),
-        ),
+        // backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
       ),
       child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 0,
-            vertical: 5,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const SizedBox(),
-              Text(
-                text,
-                style: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 5),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const SizedBox(),
+            Text(
+              text,
+              style: TextStyle(
+                color: Theme.of(context).primaryColor,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
-              CircleAvatar(
-                backgroundColor: Theme.of(context).primaryColor,
-                radius: 20,
-                child: const Icon(
-                  Icons.arrow_forward,
-                  color: Colors.white,
-                ),
-              )
-            ],
-          )),
+            ),
+            CircleAvatar(
+              backgroundColor: Theme.of(context).primaryColor,
+              radius: 20,
+              child: Icon(
+                Icons.arrow_forward,
+                color: Theme.of(context).secondaryHeaderColor,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

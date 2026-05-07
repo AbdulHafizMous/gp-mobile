@@ -2,8 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/interest_item.dart';
 import 'package:grand_public_v2/app/components/primary_button.dart';
+import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 import '../controllers/interest_controller.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THEME HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+extension _ThemeX on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+}
 
 class InterestView extends GetView<InterestController> {
   const InterestView({super.key});
@@ -11,18 +19,14 @@ class InterestView extends GetView<InterestController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GPTheme.primaryColor,
+      backgroundColor: context.isDark ? null : GPTheme.primaryColor,
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             const SizedBox(height: 20),
 
-            Image.asset(
-              "assets/images/logo_pixel.png",
-              width: 150,
-              height: 150,
-            ),
+            Image.asset(LOGO_PIXEL, width: 150, height: 150),
 
             const SizedBox(height: 20),
 
@@ -50,9 +54,7 @@ class InterestView extends GetView<InterestController> {
                     child: Padding(
                       padding: EdgeInsets.all(8.0),
                       child: Center(
-                        child: CircularProgressIndicator(
-                          color: GPTheme.primaryColor,
-                        ),
+                        child: CircularProgressIndicator(color: Colors.white),
                       ),
                     ),
                   );

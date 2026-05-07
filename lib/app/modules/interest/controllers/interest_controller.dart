@@ -2,20 +2,14 @@ import 'package:get/get.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:grand_public_v2/app/data/mocks/interest_mock.dart';
+import 'package:grand_public_v2/app/data/models/profile_interest.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 
-class Interest {
-  final int id;
-  final String name;
-  bool isSelected;
-
-  Interest({required this.id, required this.name, this.isSelected = false});
-}
-
 class InterestController extends GetxController {
-  final interests = <Interest>[].obs;
+  final interests = <ProfileInterest>[].obs;
   final isLoading = false.obs;
 
   @override
@@ -34,25 +28,15 @@ class InterestController extends GetxController {
       //
       // MOCK
       if (useMock) {
-        await Future.delayed(const Duration(milliseconds: 500));
-
-        interests.value = [
-          Interest(id: 1, name: "Sport"),
-          Interest(id: 2, name: "Mode"),
-          Interest(id: 3, name: "Dance"),
-          Interest(id: 4, name: "Lecture"),
-          Interest(id: 5, name: "Sorties"),
-          Interest(id: 6, name: "Voyage"),
-          Interest(id: 7, name: "Shopping"),
-          Interest(id: 8, name: "Dessin"),
-          Interest(id: 9, name: "Cuisine"),
-          Interest(id: 10, name: "Réseaux sociaux"),
-          Interest(id: 11, name: "Musique"),
-          Interest(id: 12, name: "Cinéma"),
-          Interest(id: 13, name: "Tech"),
-          Interest(id: 14, name: "Gaming"),
-          Interest(id: 15, name: "Fitness"),
-        ];
+        await Future.delayed(const Duration(milliseconds: 400));
+        interests.value = List.generate(
+          mockInterests.length,
+          (i) => ProfileInterest(
+            id: i + 1,
+            name: mockInterests[i],
+            isSelected: i < 3, // 3 sélectionnés par défaut en mock
+          ),
+        );
         return;
       }
 
@@ -64,8 +48,8 @@ class InterestController extends GetxController {
         debugPrint("Data : ${response.data}");
         final data = response.data['data']['interest_centers'];
 
-        interests.value = List<Interest>.from(
-          data.map((item) => Interest(id: item['id'], name: item['name'])),
+        interests.value = List<ProfileInterest>.from(
+          data.map((item) => ProfileInterest(id: item['id'], name: item['name'])),
         );
       }
     } on DioException catch (e) {
@@ -89,7 +73,7 @@ class InterestController extends GetxController {
   // ─────────────────────────────────────────────
   // SELECT / UNSELECT
   // ─────────────────────────────────────────────
-  void toggleInterest(Interest interest) {
+  void toggleInterest(ProfileInterest interest) {
     interest.isSelected = !interest.isSelected;
     interests.refresh();
   }
@@ -128,7 +112,7 @@ class InterestController extends GetxController {
         '/interest-centers',
         data: {"interest_center_ids": selected.map((e) => e.id).toList()},
       );
-GetStorage().write('isLogged', true);
+      GetStorage().write('isLogged', true);
       Get.offAllNamed('/main-page');
     } catch (e) {
       Get.snackbar(

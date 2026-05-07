@@ -4,6 +4,7 @@ import 'package:grand_public_v2/app/themes/app_theme.dart';
 class InterestItem extends StatefulWidget {
   final String title;
   final bool isSelected;
+  final bool fromProfile;
   final VoidCallback onTap;
 
   const InterestItem({
@@ -11,6 +12,7 @@ class InterestItem extends StatefulWidget {
     required this.title,
     required this.isSelected,
     required this.onTap,
+    this.fromProfile = false,
   });
 
   @override
@@ -26,18 +28,21 @@ class _InterestItemState extends State<InterestItem> {
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
         decoration: BoxDecoration(
           color: widget.isSelected
-              ? Colors.white.withAlpha(240)
+              ? (widget.fromProfile ? GPTheme.primaryColor : Colors.white)
               : Colors.transparent,
-          border: !widget.isSelected
-              ? Border.all(width: 1, color: Colors.white)
-              : null,
+          border: Border.all(
+            width: 1,
+            color: widget.fromProfile ? GPTheme.primaryColor : Colors.white,
+          ),
           borderRadius: const BorderRadius.all(Radius.circular(30)),
         ),
         child: Center(
           child: Text(
             widget.title,
             style: TextStyle(
-              color: widget.isSelected ? GPTheme.primaryColor : Colors.white,
+              color: widget.isSelected
+                  ? (widget.fromProfile ? Colors.white : GPTheme.primaryColor)
+                  : (widget.fromProfile ? GPTheme.primaryColor : Colors.white),
               fontWeight: FontWeight.w600,
             ),
           ),
