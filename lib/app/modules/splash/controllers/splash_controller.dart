@@ -51,7 +51,7 @@ class SplashController extends GetxController {
   Future<bool> _checkVersion() async {
     try {
       // ── Mock ───────────────────────────────────────────────────────────
-      if (!useMock) {
+      if (useMock) {
         await Future.delayed(const Duration(milliseconds: 500));
         // 🔧 Change '1.0.0' par une version différente pour tester l'écran update
         const String mockBackendVersion = '1.0.0';

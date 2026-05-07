@@ -10,6 +10,7 @@ class GPTheme {
 
   static ThemeData light() {
     return ThemeData(
+      fontFamily: 'gotham_book',
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: <TargetPlatform, PageTransitionsBuilder>{
           // Set the predictive back transitions for Android.
@@ -17,8 +18,19 @@ class GPTheme {
         },
       ),
       scaffoldBackgroundColor: Colors.white,
-      fontFamily: 'Ghotam',
       primaryColor: primaryColor,
+      brightness: Brightness.light, // Crucial
+      cardColor: Colors.white,
+      dividerColor: Colors.grey.shade200,
+      hintColor: Colors.grey.shade600,
+      cardTheme: CardThemeData(
+        color: primaryColor,
+        surfaceTintColor: Colors.white,
+      ),
+      textTheme: const TextTheme(
+        bodyLarge: TextStyle(color: Colors.black),
+        bodyMedium: TextStyle(color: Colors.black87),
+      ),
       appBarTheme: const AppBarTheme(
         iconTheme: IconThemeData(color: Colors.white, size: 25),
       ),
@@ -85,8 +97,20 @@ class GPTheme {
         },
       ),
       scaffoldBackgroundColor: Colors.black,
-      fontFamily: 'Ghotam',
-      primaryColor: primaryColor,
+      fontFamily: 'gotham_book',
+      primaryColor: Colors.white,
+      brightness: Brightness.dark, // Crucial
+      cardColor: const Color(0xFF1A1A1A),
+      dividerColor: Colors.white10,
+      hintColor: Colors.white70,
+      cardTheme: CardThemeData(
+        color: Colors.white,
+        surfaceTintColor: primaryColor,
+      ),
+      textTheme: const TextTheme(
+        bodyLarge: TextStyle(color: Colors.white),
+        bodyMedium: TextStyle(color: Colors.white70),
+      ),
       appBarTheme: const AppBarTheme(
         iconTheme: IconThemeData(color: Colors.white, size: 25),
       ),

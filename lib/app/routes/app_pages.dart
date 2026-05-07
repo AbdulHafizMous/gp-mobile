@@ -4,10 +4,14 @@ import 'package:grand_public_v2/app/modules/forgot_password/bindings/forgot_pass
 import 'package:grand_public_v2/app/modules/forgot_password/views/forgot_password_view.dart';
 import 'package:grand_public_v2/app/modules/main_page/bindings/main_page_binding.dart';
 import 'package:grand_public_v2/app/modules/main_page/views/main_page_view.dart';
+import 'package:grand_public_v2/app/modules/notifs/bindings/notifs_binding.dart';
+import 'package:grand_public_v2/app/modules/notifs/views/notifs_view.dart';
 import 'package:grand_public_v2/app/modules/reset_password/bindings/reset_password_binding.dart';
 import 'package:grand_public_v2/app/modules/reset_password/views/reset_password_view.dart';
 import 'package:grand_public_v2/app/modules/update_required/bindings/update_required_binding.dart';
 import 'package:grand_public_v2/app/modules/update_required/views/update_required_view.dart';
+import 'package:grand_public_v2/app/modules/space/bindings/space_binding.dart';
+import 'package:grand_public_v2/app/modules/space/views/space_view.dart';
 
 import '../modules/confirm/bindings/confirm_binding.dart';
 import '../modules/confirm/views/confirm_view.dart';
@@ -31,8 +35,6 @@ import '../modules/pay_suc/bindings/pay_suc_binding.dart';
 import '../modules/pay_suc/views/pay_suc_view.dart';
 import '../modules/payement/bindings/payement_binding.dart';
 import '../modules/payement/views/payement_view.dart';
-import '../modules/portrait/bindings/portrait_binding.dart';
-import '../modules/portrait/views/portrait_view.dart';
 import '../modules/profile/bindings/profile_binding.dart';
 import '../modules/profile/views/profile_view.dart';
 import '../modules/register/bindings/register_binding.dart';
@@ -62,11 +64,7 @@ class AppPages {
   static const INITIAL = Routes.SPLASH;
 
   static final routes = [
-    GetPage(
-      name: _Paths.HOME,
-      page: () => HomeView(),
-      binding: HomeBinding(),
-    ),
+    GetPage(name: _Paths.HOME, page: () => HomeView(), binding: HomeBinding()),
     GetPage(
       name: _Paths.UPDATE_REQUIRED,
       page: () => UpdateRequiredView(),
@@ -76,6 +74,11 @@ class AppPages {
       name: _Paths.MAIN_PAGE,
       page: () => MainPageView(),
       binding: MainPageBinding(),
+    ),
+    GetPage(
+      name: _Paths.NOTIFS,
+      page: () => NotifsView(),
+      binding: NotifsBinding(),
     ),
     GetPage(
       name: _Paths.SPLASH,
@@ -118,6 +121,14 @@ class AppPages {
       binding: SucessPageBinding(),
     ),
     GetPage(
+      name: _Paths.SPACE_PAGE,
+      page: () => const SpaceView(),
+      binding: SpaceBinding(),
+      // transition optionnelle :
+      transition: Transition.rightToLeftWithFade,
+      transitionDuration: const Duration(milliseconds: 320),
+    ),
+    GetPage(
       name: _Paths.INTEREST,
       page: () => const InterestView(),
       binding: InterestBinding(),
@@ -146,11 +157,6 @@ class AppPages {
         return VideosView(videoId: id);
       },
       binding: VideosBinding(),
-    ),
-    GetPage(
-      name: _Paths.PORTRAIT,
-      page: () => const PortraitView(),
-      binding: PortraitBinding(),
     ),
     GetPage(
       name: _Paths.OPINION,

@@ -1,0 +1,301 @@
+// lib/app/data/mocks/spaces_mock.dart
+//
+// Source unique de toutes les données mockées pour les espaces.
+// Les vidéos sont issues de la base de données réelle fournie.
+
+const List<Map<String, dynamic>> kMockSpaces = [
+  {
+    "id": "1",
+    "name": "Grand Public Média",
+    "description":
+        "Un espace dynamique avec des contenus variés : actualités, divertissement et live.",
+    "logo_url": "https://www.grandpublic.bj/build/assets/logo-gp-old-DT3ShrPN.png",
+    "video_url": "https://youtu.be/R_HVJUUtNMc",
+    "categories": [
+      {
+        "id": "1",
+        "name": "Insolite",
+        "description": "Les faits les plus surprenants et inattendus du monde.",
+        "videos": [
+          {
+            "id": 23,
+            "youtube_id": "3shs6DYjXtY",
+            "title": "DAME BEATRICE, VICTIME DE PRATIQUES OBSCURES DÈS SON JEUNE ÂGE.",
+            "description": "Cette Dame, victime de pratiques obscures, s'est vue amputer de ses membres dès son jeune âge. Découvrez à travers cette vidéo la triste histoire de Dame Béatrice.",
+            "video_thumbnail": "https://img.youtube.com/vi/3shs6DYjXtY/maxresdefault.jpg",
+            "views": 8,
+            "publication_date": "2025-02-03",
+            "premium_video": 1,
+          },
+        ],
+      },
+      {
+        "id": "2",
+        "name": "Événements",
+        "description": "Suivez les grands événements en direct ou en replay.",
+        "videos": [
+          {
+            "id": 16,
+            "youtube_id": "Qzcr2SjfStw",
+            "title": "CHADO JAPON CONFIRME SA PRESENCE SUR COTONOU DRIP",
+            "description": null,
+            "video_thumbnail": "https://img.youtube.com/vi/Qzcr2SjfStw/maxresdefault.jpg",
+            "views": 14,
+            "publication_date": "2024-12-19",
+            "premium_video": 0,
+          },
+          {
+            "id": 18,
+            "youtube_id": "R6-ZRscEpBg",
+            "title": "BENIN : CHILL&GROOVE, L'EVENEMENT DE L'ANNÉE QUI A RASSEMBLÉ LES MEILLEURS DJ",
+            "description": null,
+            "video_thumbnail": "https://img.youtube.com/vi/R6-ZRscEpBg/maxresdefault.jpg",
+            "views": 7,
+            "publication_date": "2024-12-24",
+            "premium_video": 0,
+          },
+          {
+            "id": 25,
+            "youtube_id": "um8KJBRsj6Y",
+            "title": "LE FInaB DE CETTE ANNÉE S'ANNONCE FORT AVEC UN PREMIER SHOWCASE EXPLOSIF.",
+            "description": "Le FInaB de cette année s'annonce fort avec un premier showcase explosif.",
+            "video_thumbnail": "https://img.youtube.com/vi/um8KJBRsj6Y/maxresdefault.jpg",
+            "views": 9,
+            "publication_date": "2025-02-04",
+            "premium_video": 0,
+          },
+          {
+            "id": 31,
+            "youtube_id": "lPNdvcTl6Io",
+            "title": "LA 3ème ÉDITION DU FInAB OFFICIELLEMENT LANCÉE",
+            "description": "Le Festival International des Arts du Bénin FInAB est à sa troisième édition.",
+            "video_thumbnail": "https://img.youtube.com/vi/lPNdvcTl6Io/maxresdefault.jpg",
+            "views": 0,
+            "publication_date": "2025-02-27",
+            "premium_video": 0,
+          },
+          {
+            "id": 48,
+            "youtube_id": "WRgBNcrJtkk",
+            "title": "QUELQUES MOMENTS FORTS DU CONCERT ADJAPIANO",
+            "description": "Le concert ADJAPIANO a rassemblé un monde impressionnant autour du rythme.",
+            "video_thumbnail": "https://img.youtube.com/vi/WRgBNcrJtkk/maxresdefault.jpg",
+            "views": 6,
+            "publication_date": "2025-04-29",
+            "premium_video": 0,
+          },
+          {
+            "id": 45,
+            "youtube_id": "Kjk05VYwXwo",
+            "title": "AMBIANCE XXL AU EAT & DRINK 6.0",
+            "description": "Le plus grand rendez-vous de la gastronomie de cette année.",
+            "video_thumbnail": "https://img.youtube.com/vi/Kjk05VYwXwo/maxresdefault.jpg",
+            "views": 3,
+            "publication_date": "2025-04-10",
+            "premium_video": 0,
+          },
+        ],
+      },
+      {
+        "id": "3",
+        "name": "Portrait",
+        "description": "Des portraits inspirants de personnalités marquantes.",
+        "videos": [
+          {
+            "id": 20,
+            "youtube_id": "n4i_MvsL5VY",
+            "title": "Qui est CHADO JAPON, le Japonais qui maîtrise la culture béninoise ?",
+            "description": null,
+            "video_thumbnail": "https://img.youtube.com/vi/n4i_MvsL5VY/maxresdefault.jpg",
+            "views": 8,
+            "publication_date": "2025-01-16",
+            "premium_video": 0,
+          },
+          {
+            "id": 21,
+            "youtube_id": "Bc3gqaLWKL8",
+            "title": "Ce que vous ne savez pas de DJECOMON, le poulain de legend Beatz",
+            "description": null,
+            "video_thumbnail": "https://img.youtube.com/vi/Bc3gqaLWKL8/maxresdefault.jpg",
+            "views": 3,
+            "publication_date": "2025-01-23",
+            "premium_video": 0,
+          },
+          {
+            "id": 41,
+            "youtube_id": "LzplRgxaBnE",
+            "title": "TOUT SUR AMIR EL PRESIDENTE, LE RAPPEUR A MULTIPLES FACETTES",
+            "description": "Amir el président aborde plusieurs points relatifs au showbiz béninois.",
+            "video_thumbnail": "https://img.youtube.com/vi/LzplRgxaBnE/maxresdefault.jpg",
+            "views": 2,
+            "publication_date": "2025-04-03",
+            "premium_video": 0,
+          },
+          {
+            "id": 42,
+            "youtube_id": "kTS_1gs0fSc",
+            "title": "TOUT SUR YEWHE YETON, PRIX DECOUVERTE RFI 2025",
+            "description": "Prix découverte RFI 2025, un artiste qui sait mettre en harmonie le traditionnel et le moderne.",
+            "video_thumbnail": "https://img.youtube.com/vi/kTS_1gs0fSc/maxresdefault.jpg",
+            "views": 9,
+            "publication_date": "2025-04-04",
+            "premium_video": 0,
+          },
+          {
+            "id": 44,
+            "youtube_id": "tfcQwCnBEwU",
+            "title": "MADANO RACONTE LES DESSOUS DU FEAT SWEET VANILLA AVEC FANICKO DE JESUS",
+            "description": null,
+            "video_thumbnail": "https://img.youtube.com/vi/tfcQwCnBEwU/maxresdefault.jpg",
+            "views": 5,
+            "publication_date": "2025-04-09",
+            "premium_video": 0,
+          },
+        ],
+      },
+      {
+        "id": "4",
+        "name": "Opinion",
+        "description": "Points de vue, débats et analyses sur l'actualité.",
+        "videos": [
+          {
+            "id": 15,
+            "youtube_id": "wP2YTxYDuMM",
+            "title": "Epouser la femme de son défunt frère, est-ce une bonne pratique ?",
+            "description": null,
+            "video_thumbnail": "https://img.youtube.com/vi/wP2YTxYDuMM/maxresdefault.jpg",
+            "views": 12,
+            "publication_date": "2024-12-18",
+            "premium_video": 0,
+          },
+          {
+            "id": 33,
+            "youtube_id": "NDJMK6wi3Pg",
+            "title": "LES VÉRITÉS CRUES DE CRISBA SUR SON TITRE NUMERO UNO",
+            "description": null,
+            "video_thumbnail": "https://img.youtube.com/vi/NDJMK6wi3Pg/maxresdefault.jpg",
+            "views": 1,
+            "publication_date": "2025-02-27",
+            "premium_video": 0,
+          },
+          {
+            "id": 37,
+            "youtube_id": "PX-FuXdU0vg",
+            "title": "ADJAPIANO, FAUT-IL CHANGER LE NOM? L'AVIS DU MANAGER DE SESSIME",
+            "description": null,
+            "video_thumbnail": "https://img.youtube.com/vi/PX-FuXdU0vg/maxresdefault.jpg",
+            "views": 5,
+            "publication_date": "2025-03-20",
+            "premium_video": 0,
+          },
+          {
+            "id": 46,
+            "youtube_id": "xwUVdIfOsjE",
+            "title": "QUAND AMIR EL PRESIDENTE PARLE D'AXEL MERRYL",
+            "description": null,
+            "video_thumbnail": "https://img.youtube.com/vi/xwUVdIfOsjE/maxresdefault.jpg",
+            "views": 4,
+            "publication_date": "2025-04-10",
+            "premium_video": 0,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    "id": "2",
+    "name": "Tech World",
+    "description": "Découvrez les dernières innovations et tendances technologiques.",
+    "logo_url": null,
+    "video_url": null,
+    "categories": [
+      {
+        "id": "5",
+        "name": "Startups",
+        "description": "L'écosystème startup africain et mondial à la loupe.",
+        "videos": [],
+      },
+      {
+        "id": "6",
+        "name": "IA & Futur",
+        "description": "Intelligence artificielle, robotique et futur de l'humanité.",
+        "videos": [],
+      },
+      {
+        "id": "7",
+        "name": "Tutoriels",
+        "description": "Apprenez de nouvelles compétences tech pas à pas.",
+        "videos": [],
+      },
+    ],
+  },
+  {
+    "id": "3",
+    "name": "Culture & Art",
+    "description": "Plongez dans l'univers de l'art, de la mode et de la culture africaine.",
+    "logo_url": null,
+    "video_url": null,
+    "categories": [
+      {
+        "id": "8",
+        "name": "Mode",
+        "description": "Tendances, créateurs et défilés à la une.",
+        "videos": [],
+      },
+      {
+        "id": "9",
+        "name": "Cinéma",
+        "description": "Films, critiques et interviews du monde du cinéma.",
+        "videos": [],
+      },
+      {
+        "id": "10",
+        "name": "Arts Visuels",
+        "description": "Peinture, photographie et installations artistiques.",
+        "videos": [],
+      },
+    ],
+  },
+  {
+    "id": "4",
+    "name": "Sport & Santé",
+    "description": "Actualités sportives, bien-être et conseils nutrition pour une vie épanouie.",
+    "logo_url": null,
+    "video_url": null,
+    "categories": [
+      {
+        "id": "11",
+        "name": "Football",
+        "description": "Résultats, analyses et transferts du monde du foot.",
+        "videos": [],
+      },
+      {
+        "id": "12",
+        "name": "Fitness",
+        "description": "Entraînements, conseils et programmes personnalisés.",
+        "videos": [],
+      },
+      {
+        "id": "13",
+        "name": "Nutrition",
+        "description": "Alimentation saine, recettes et équilibre alimentaire.",
+        "videos": [],
+      },
+      {
+        "id": "14",
+        "name": "E-sport",
+        "description": "Le gaming compétitif et les tournois en live.",
+        "videos": [],
+      },
+    ],
+  },
+];
+
+/// Retrouve un espace par id dans le mock
+Map<String, dynamic>? kMockSpaceById(String id) {
+  try {
+    return kMockSpaces.firstWhere((s) => s['id'] == id);
+  } catch (_) {
+    return null;
+  }
+}

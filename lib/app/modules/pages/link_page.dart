@@ -17,37 +17,37 @@ class _LinkPageState extends State<LinkPage> {
       "title": "Facebook",
       "subtitle": "@grandpublic",
       "icon": "assets/icons/red_facebook.png",
-      "link": "https://www.facebook.com/grandpublic",
+      "link": "https://www.facebook.com/grandpublicofficiel/",
     },
     {
       "title": "Instagram",
       "subtitle": "@grandpublic",
       "icon": "assets/icons/red_insta.png",
-      "link": "https://www.instagram.com/grandpublic",
+      "link": "https://www.instagram.com/grandpublic1/",
     },
     {
       "title": "Youtube",
       "subtitle": "Grand Public TV",
       "icon": "assets/icons/red_youtube.png",
-      "link": "https://www.youtube.com/grandpublic",
+      "link": "https://www.youtube.com/@Grandpublic2024",
     },
     {
       "title": "Twitter",
       "subtitle": "@grandpublic",
       "icon": "assets/icons/red_tw.png",
-      "link": "https://www.twitter.com/grandpublic",
+      "link": "https://x.com/grandpublictv?lang=fr",
     },
     {
       "title": "Snapchat",
       "subtitle": "@grandpublic",
       "icon": "assets/icons/red_snap.png",
-      "link": "https://www.snapchat.com/grandpublic",
+      "link": "https://grandpublic.bj/",
     },
     {
       "title": "Tiktok",
       "subtitle": "@grandpublic",
       "icon": "assets/icons/red_tiktok.png",
-      "link": "https://www.tiktok.com/grandpublic",
+      "link": "https://www.tiktok.com/@grandpublic",
     },
   ];
 
@@ -67,44 +67,62 @@ class _LinkPageState extends State<LinkPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const SizedBox(height: 20),
-        Text(
-          "LIENS",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: GPTheme.primaryColor,
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const SizedBox(height: 20),
+          Text(
+            "LIENS",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: GPTheme.primaryColor,
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 20),
-        ListView.separated(
-          padding: const EdgeInsets.all(15),
-          separatorBuilder: (context, index) => const SizedBox(height: 10),
-          shrinkWrap: true,
-          itemCount: liens.length,
-          physics: const NeverScrollableScrollPhysics(),
-          itemBuilder: (context, index) {
-            return Card(
-              child: ListTile(
-                leading: Image.asset(
-                  liens[index]["icon"]!,
-                  width: 50,
-                  height: 50,
+          const SizedBox(height: 10),
+          ListView.separated(
+            padding: const EdgeInsets.all(15),
+            separatorBuilder: (context, index) => const SizedBox(height: 15),
+            shrinkWrap: true,
+            itemCount: liens.length,
+            physics: const NeverScrollableScrollPhysics(),
+            itemBuilder: (context, index) {
+              return Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(20),
+                    bottomLeft: Radius.circular(20),
+                  ),
+                  color: Colors.grey.withValues(alpha: 0.2),
                 ),
-                title: Text(liens[index]["title"]!),
-                subtitle: Text(liens[index]["subtitle"]!),
-                onTap: () {
-                  _launchUrl(Uri.parse(liens[index]["link"]!));
-                },
-                trailing: const Icon(Icons.arrow_outward_outlined),
-              ),
-            );
-          },
-        ),
-      ],
+                child: ListTile(
+                  leading: Image.asset(
+                    liens[index]["icon"]!,
+                    width: 50,
+                    height: 50,
+                  ),
+                  title: Text(
+                    liens[index]["title"]!,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: Text(
+                    liens[index]["subtitle"]!,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  onTap: () => _launchUrl(Uri.parse(liens[index]["link"]!)),
+                  trailing: Icon(
+                    Icons.arrow_outward_outlined,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }

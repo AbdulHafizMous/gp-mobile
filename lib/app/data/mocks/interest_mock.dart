@@ -1,0 +1,23 @@
+
+  const mockInterests = [
+    'Sport',
+    'Mode',
+    'Dance',
+    'Lecture',
+    'Sorties',
+    'Voyage',
+    'Shopping',
+    'Dessin',
+    'Cuisine',
+    'Réseaux sociaux',
+    'Musique',
+    'Cinéma',
+    'Tech',
+    'Gaming',
+    'Fitness',
+    'Photographie',
+    'Entrepreneuriat',
+    'Nature',
+    'Bien-être',
+    'Art',
+  ];

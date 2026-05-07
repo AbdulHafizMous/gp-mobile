@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/main_card.dart';
 import 'package:grand_public_v2/app/data/models/video.dart';
-import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
+import 'package:grand_public_v2/app/modules/home/controllers/home_controller_old.dart';
 
 class LatestSlider extends StatefulWidget {
   const LatestSlider({super.key, required this.cat});

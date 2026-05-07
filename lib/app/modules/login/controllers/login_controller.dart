@@ -25,7 +25,7 @@ class LoginController extends GetxController {
   );
 
   final isObscure = true.obs;
-  final isRemember = false.obs;
+  final isRemember = true.obs;
   final isLoading = false.obs;
   final isSocialLoading = false.obs;
 
@@ -93,47 +93,11 @@ class LoginController extends GetxController {
     try {
       if (useMock) {
         //
-        //
-        //
-
-        // 1. Obtient le Google ID Token
-        final GoogleSignInAccount googleUser = await GoogleSignIn.instance
-            .authenticate();
-        final GoogleSignInAuthentication googleAuth = googleUser.authentication;
-        final String? googleIdToken = googleAuth.idToken;
-
-        if (googleIdToken == null) {
-          _showError('Impossible de récupérer le token Google. Réessayez.');
-          return;
-        }
-
-        // 2. Échange contre un Firebase ID Token
-        final OAuthCredential credential = GoogleAuthProvider.credential(
-          idToken: googleIdToken,
-        );
-
-        final UserCredential userCredential = await FirebaseAuth.instance
-            .signInWithCredential(credential);
-
-        final String? firebaseToken = await userCredential.user?.getIdToken();
-
-        if (firebaseToken == null) {
-          _showError('Impossible d\'obtenir le token Firebase. Réessayez.');
-          return;
-        }
-
-        debugPrint('Firebase ID Token: $firebaseToken');
-        debugPrint('Firebase ID Token length: ${firebaseToken.length}');
-
-        //
-        //
-        //
-
         // await Future.delayed(const Duration(milliseconds: 800));
-        // await _handleSocialLoginResponse(
-        //   _mockSocialResponse(provider: 'google'),
-        //   provider: 'Google',
-        // );
+        await _handleSocialLoginResponse(
+          _mockSocialResponse(provider: 'google'),
+          provider: 'Google',
+        );
         return;
       }
 

@@ -2,23 +2,28 @@ import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 class SocialAboutController extends GetxController {
+  final scrollController = ScrollController();
 
-  final controller = ScrollController();
-  final count = 0.obs;
   @override
   void onInit() {
     super.onInit();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      debugPrint("scrolling to top");
-      controller.animateTo(
-        controller.position.maxScrollExtent,
-        duration: const Duration(seconds: 10),
-        curve: Curves.linear,
-      );
+      // On attend un peu pour que l'utilisateur voit le début avant le scroll auto
+      Future.delayed(const Duration(seconds: 1), () {
+        if (scrollController.hasClients) {
+          scrollController.animateTo(
+            scrollController.position.maxScrollExtent,
+            duration: const Duration(seconds: 15),
+            curve: Curves.linear,
+          );
+        }
+      });
     });
   }
 
-
-
-  void increment() => count.value++;
+  @override
+  void onClose() {
+    scrollController.dispose();
+    super.onClose();
+  }
 }

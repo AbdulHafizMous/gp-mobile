@@ -16,13 +16,14 @@ class _SerachPageState extends State<SerachPage> {
   bool isSearching = false;
 
   final TextEditingController inputcontroller = TextEditingController();
-  List<Video> _listResult = [];
+  final List<Video> _listResult = [];
   final controller = Get.put(HomeController());
 
   void searchVid() {
-    controller
-        .searchVideo(inputcontroller.text)
-        .then((value) => {_listResult = value});
+    debugPrint("Searching Video ...");
+    // controller
+    //     .searchVideo(inputcontroller.text)
+    //     .then((value) => {_listResult = value});
   }
 
   @override

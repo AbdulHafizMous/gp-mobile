@@ -1,3 +1,7 @@
+// lib/app/data/models/user.dart
+
+import 'package:flutter/cupertino.dart';
+import 'package:grand_public_v2/app/data/models/subscription.dart';
 
 class User {
   final int id;
@@ -22,6 +26,9 @@ class User {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// Abonnement actif. Null si l'utilisateur n'a pas d'abonnement.
+  final ActiveSubscription? activeSubscription;
+
   User({
     required this.id,
     required this.name,
@@ -44,6 +51,7 @@ class User {
     this.emailVerifiedAt,
     required this.createdAt,
     required this.updatedAt,
+    this.activeSubscription,
   });
 
   // ── Getters utiles ─────────────────────────────────────────────────────────
@@ -52,12 +60,14 @@ class User {
     return parts.length > 1 ? parts.sublist(1).join(' ') : name;
   }
 
-  String get lastName {
-    return name.trim().split(' ').first;
-  }
+  String get lastName => name.trim().split(' ').first;
 
   bool get isAdmin => role == 'admin';
   bool get hasAvatar => avatarUrl != null && avatarUrl!.isNotEmpty;
+
+  /// Vérifie si l'utilisateur a un abonnement actif et valide.
+  bool get hasActiveSubscription =>
+      activeSubscription != null && activeSubscription!.isValid;
 
   // ── Empty ──────────────────────────────────────────────────────────────────
   factory User.empty() {
@@ -76,6 +86,17 @@ class User {
 
   // ── fromJson ───────────────────────────────────────────────────────────────
   factory User.fromJson(Map<String, dynamic> json) {
+    debugPrint(
+      "----------------------------------------- Parsing User ;;;;;; $json ",
+    );
+    ActiveSubscription? activeSub;
+    if (json['active_subscription'] != null &&
+        json['active_subscription'] is Map<String, dynamic>) {
+      activeSub = ActiveSubscription.fromJson(
+        json['active_subscription'] as Map<String, dynamic>,
+      );
+    }
+
     return User(
       id: _parseInt(json['id']),
       name: json['name']?.toString() ?? '',
@@ -98,6 +119,7 @@ class User {
       emailVerifiedAt: json['email_verified_at']?.toString(),
       createdAt: _parseDate(json['created_at']),
       updatedAt: _parseDate(json['updated_at']),
+      activeSubscription: activeSub,
     );
   }
 
@@ -151,6 +173,7 @@ class User {
     String? emailVerifiedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
+    ActiveSubscription? activeSubscription,
   }) {
     return User(
       id: id ?? this.id,
@@ -174,6 +197,7 @@ class User {
       emailVerifiedAt: emailVerifiedAt ?? this.emailVerifiedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      activeSubscription: activeSubscription ?? this.activeSubscription,
     );
   }
 
@@ -204,7 +228,7 @@ class User {
 
   @override
   String toString() {
-    return 'User{id: $id, name: $name, email: $email, phone: $phone, '
-        'role: $role, isActive: $isActive, isOtpVerified: $isOtpVerified}';
+    return 'User{id: $id, name: $name, email: $email, '
+        'role: $role, isActive: $isActive, hasActiveSub: $hasActiveSubscription}';
   }
 }

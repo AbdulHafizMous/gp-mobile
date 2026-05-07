@@ -7,13 +7,20 @@ import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 import '../controllers/reset_password_controller.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// THEME HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+extension _ThemeX on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+}
+
 class ResetPasswordView extends GetView<ResetPasswordController> {
   const ResetPasswordView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GPTheme.primaryColor,
+       backgroundColor: context.isDark ? null : GPTheme.primaryColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -80,6 +87,9 @@ class ResetPasswordView extends GetView<ResetPasswordController> {
                       () => TextFormField(
                         controller: controller.passwordController,
                         obscureText: controller.isObscureNew.value,
+                         style: TextStyle(
+                              color: context.isDark ? Colors.black : null,
+                            ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Veuillez saisir un nouveau mot de passe';
@@ -111,6 +121,9 @@ class ResetPasswordView extends GetView<ResetPasswordController> {
                       () => TextFormField(
                         controller: controller.confirmController,
                         obscureText: controller.isObscureConfirm.value,
+                         style: TextStyle(
+                              color: context.isDark ? Colors.black : null,
+                            ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Veuillez confirmer votre mot de passe';
