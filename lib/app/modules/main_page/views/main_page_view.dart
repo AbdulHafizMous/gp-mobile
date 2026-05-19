@@ -269,9 +269,9 @@ class _MainPageViewState extends State<MainPageView>
   Widget _buildActiveContent() {
     final section = sections[_activeIndex];
     // Sinon la liste des espaces : Mais il existe pour cela 'package:grand_public_v2/app/modules/space/views/spaces_list_view.dart'; donc faut alléger
-    // if (section.hasSub) {
-    //   return _SpacesContent(ctrl: _ctrl, sectionIndex: _activeIndex);
-    // }
+    if (section.hasSub) {
+      return _SpacesContent(ctrl: _ctrl, sectionIndex: _activeIndex);
+    }
     return _SimpleContent(
       section: section,
       sectionIndex: _activeIndex,

@@ -15,20 +15,14 @@ import 'package:grand_public_v2/app/modules/space/views/space_view.dart';
 
 import '../modules/confirm/bindings/confirm_binding.dart';
 import '../modules/confirm/views/confirm_view.dart';
-import '../modules/events/bindings/events_binding.dart';
-import '../modules/events/views/events_view.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
-import '../modules/insolite/bindings/insolite_binding.dart';
-import '../modules/insolite/views/insolite_view.dart';
 import '../modules/interest/bindings/interest_binding.dart';
 import '../modules/interest/views/interest_view.dart';
 import '../modules/login/bindings/login_binding.dart';
 import '../modules/login/views/login_view.dart';
 import '../modules/onboarding/bindings/onboarding_binding.dart';
 import '../modules/onboarding/views/onboarding_view.dart';
-import '../modules/opinion/bindings/opinion_binding.dart';
-import '../modules/opinion/views/opinion_view.dart';
 import '../modules/pay_fail/bindings/pay_fail_binding.dart';
 import '../modules/pay_fail/views/pay_fail_view.dart';
 import '../modules/pay_suc/bindings/pay_suc_binding.dart';
@@ -39,8 +33,6 @@ import '../modules/profile/bindings/profile_binding.dart';
 import '../modules/profile/views/profile_view.dart';
 import '../modules/register/bindings/register_binding.dart';
 import '../modules/register/views/register_view.dart';
-import '../modules/search/bindings/search_binding.dart';
-import '../modules/search/views/search_view.dart';
 import '../modules/social_about/bindings/social_about_binding.dart';
 import '../modules/social_about/views/social_about_view.dart';
 import '../modules/social_link/bindings/social_link_binding.dart';
@@ -159,21 +151,6 @@ class AppPages {
       binding: VideosBinding(),
     ),
     GetPage(
-      name: _Paths.OPINION,
-      page: () => const OpinionView(),
-      binding: OpinionBinding(),
-    ),
-    GetPage(
-      name: _Paths.EVENTS,
-      page: () => const EventsView(),
-      binding: EventsBinding(),
-    ),
-    GetPage(
-      name: _Paths.INSOLITE,
-      page: () => const InsoliteView(),
-      binding: InsoliteBinding(),
-    ),
-    GetPage(
       name: _Paths.SOON,
       page: () => const SoonView(),
       binding: SoonBinding(),
@@ -197,11 +174,6 @@ class AppPages {
       name: _Paths.PROFILE,
       page: () => const ProfileView(),
       binding: ProfileBinding(),
-    ),
-    GetPage(
-      name: _Paths.SEARCH,
-      page: () => const SearchView(),
-      binding: SearchBinding(),
     ),
   ];
 }

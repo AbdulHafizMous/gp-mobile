@@ -35,7 +35,7 @@ class SplashController extends GetxController {
       if (user.id == 0) {
         Get.offAllNamed('/onboarding');
       } else {
-        Get.offAllNamed('/main-page');
+        Get.offAllNamed('/home'); // #Beno10
       }
     } else {
       Future.delayed(const Duration(seconds: 2), () {

@@ -10,7 +10,7 @@ class OnboardingController extends GetxController {
     final token = GetStorage().read('token');
     // Only redirect to home when isLogged is boolean true and token exists
     if (isLogged == true && token != null) {
-      Get.offAllNamed('/main-page');
+      Get.offAllNamed('/home'); // #Beno10
     }
   }
 

@@ -6,14 +6,24 @@ import 'package:get_storage/get_storage.dart';
 import 'package:grand_public_v2/app/data/models/section_model.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:grand_public_v2/app/globals/index.dart';
+import 'package:grand_public_v2/app/services/notification_service.dart';
+import 'package:grand_public_v2/app/constants/index.dart';
+import 'package:grand_public_v2/app/data/models/notification.dart';
+import 'package:grand_public_v2/app/data/models/user.dart';
+import 'package:grand_public_v2/app/services/dio.services.dart';
+import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
+
 // ─────────────────────────────────────────────────────────────────────────────
-// DESTINATION — unité de navigation dans le layout HomeView
+// DESTINATION
 // ─────────────────────────────────────────────────────────────────────────────
 class HomeDestination {
-  final String route; // clé unique → AnimatedSwitcher + debug
-  final int sectionIndex; // onglet bottom-bar actif
-  final bool isSubPage; // true → back-button AppBar visible
-  final Widget Function() builder; // construit lazily
+  final String route;
+  final int sectionIndex;
+  final bool isSubPage;
+  final Widget Function() builder;
 
   const HomeDestination({
     required this.route,
@@ -39,10 +49,6 @@ class HomeController extends GetxController {
   bool get canPop => _stack.length > 1;
 
   // ── Page registry ─────────────────────────────────────────────────────────
-  // HomeBinding enregistre ici les builders des pages internes.
-  // Clé = route logique (ex: '/profile', '/home/spaces').
-  // Valeur = fonction qui reçoit des params et retourne un Widget.
-  // → zéro import circulaire dans ce controller.
   final Map<String, Widget Function(Map<String, dynamic>)> _registry = {};
 
   void registerPage(
@@ -50,6 +56,141 @@ class HomeController extends GetxController {
     Widget Function(Map<String, dynamic> params) builder,
   ) {
     _registry[route] = builder;
+  }
+
+  // ── Back interceptors ─────────────────────────────────────────────────────
+  // Les pages internes peuvent enregistrer un callback ici pour gérer le
+  // bouton retour global à leur façon.
+  //
+  // Le callback doit retourner :
+  //   true  → la page a géré le retour elle-même (ex: revenir à main profil)
+  //           → HomeController ne fait rien
+  //   false → la page n'a rien à gérer → HomeController fait popPage() normal
+  final Map<String, bool Function()> _backInterceptors = {};
+
+  /// Enregistre un intercepteur pour une route.
+  /// Appelé par les pages dans leur initState / onInit.
+  void registerBackInterceptor(String route, bool Function() handler) {
+    _backInterceptors[route] = handler;
+  }
+
+  /// Supprime l'intercepteur. Appelé dans dispose().
+  void unregisterBackInterceptor(String route) {
+    _backInterceptors.remove(route);
+  }
+
+  //
+
+  List<AppNotification> notifications = [];
+
+  PusherChannelsFlutter pusher = PusherChannelsFlutter.getInstance();
+
+  Future<void> initialLoad() async {
+    await NotificationService.init();
+    debugPrint("Fetching User");
+    activeUser.value = await getUser();
+  }
+
+  Future<void> initPusherClient() async {
+    if (kIsWeb) {
+      debugPrint('Pusher not initialized on web');
+      return;
+    }
+    try {
+      await pusher.init(
+        apiKey: PUSHER_API_KEY,
+        cluster: PUSHER_API_CLUSTER,
+        logToConsole: true,
+        onConnectionStateChange: (state, _) =>
+            debugPrint('Connection state changed: $state'),
+        onError: (error, code, data) => debugPrint('Pusher error: $error'),
+        onSubscriptionSucceeded: (channel, _) =>
+            debugPrint('Subscription succeeded: $channel'),
+        onEvent: (PusherEvent event) {
+          debugPrint(event.data);
+          try {
+            notifications.add(
+              AppNotification(
+                id: DateTime.now().millisecondsSinceEpoch,
+                isRead: false,
+                body: event.data["description"],
+                title: event.data["title"],
+                createdAt: DateTime.now().toIso8601String(),
+                type: "general"
+              ),
+            );
+          } catch (e) {
+            debugPrint('Malformed pusher event: $e');
+          }
+        },
+      );
+      await pusher.subscribe(channelName: 'new-notification');
+      await pusher.connect();
+    } catch (e) {
+      debugPrint("ERROR: $e");
+    }
+  }
+
+  Future<User> getUser() async {
+    try {
+      dynamic jsonVal;
+      if (useMock) {
+        jsonVal = {
+          "id": 1,
+          "name": "Hafiz MOUSTAPHA",
+          "username": null,
+          "phone": "+2290161648007",
+          "avatar_url": null,
+          "birthday": null,
+          "city": null,
+          "gender": null,
+          "description": null,
+          "looking_for_gender": null,
+          "fcm_token": null,
+          "firebase_id": null,
+          "role": "user",
+          "email": "hafizmoustapha64@gmail.com",
+          "country_code": "BJ",
+          "is_otp_verified": true,
+          "is_active": true,
+          "needs_completion": false,
+          "email_verified_at": null,
+          "created_at": "2026-03-16T10:30:00.000000Z",
+          "updated_at": "2026-03-16T10:30:00.000000Z",
+        };
+      } else {
+        final response = await RequestService().get('/auth/me');
+        jsonVal = response.data;
+      }
+
+      final data = jsonVal['data']['user'];
+      User user = User.fromJson(data);
+      activeUser.value = user;
+      GetStorage().write('username', data['name']);
+      GetStorage().write('email', data['email']);
+      return user;
+    } on DioException catch (e) {
+      if (e.response != null) {
+        debugPrint(
+          'Error: ${e.response?.statusCode} ${e.response?.statusMessage}',
+        );
+        await ToastHelper.showToast(
+          'Server error: ${e.response?.statusCode} ${e.response?.statusMessage}',
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      } else {
+        debugPrint('Error: ${e.message}');
+        await ToastHelper.showToast(
+          'Error: ${e.message}',
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+    return User.empty();
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -60,7 +201,6 @@ class HomeController extends GetxController {
     super.onInit();
     _stack.add(_sectionDest(0));
 
-    // Section demandée depuis MainPageView
     final pending = _box.read<int>('_pendingSection');
     if (pending != null && pending >= 0 && pending < sections.length) {
       debugPrint('HomeController ▶ pending section: $pending');
@@ -72,10 +212,13 @@ class HomeController extends GetxController {
         textColor: Colors.white,
       );
     }
+    //
+    initPusherClient();
+    initialLoad();
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // SECTION  (bottom bar)
+  // SECTION (bottom bar)
   // ─────────────────────────────────────────────────────────────────────────
   void goToSection(int index, {bool showToast = true}) {
     if (index == activeSectionIndex && !canPop) return;
@@ -91,19 +234,16 @@ class HomeController extends GetxController {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // NAVIGATE TO — sous-page dans le layout
-  // params : données à passer au builder (ex: spaceId, categoryIndex…)
+  // NAVIGATE TO
   // ─────────────────────────────────────────────────────────────────────────
   void navigateTo(String route, {Map<String, dynamic> params = const {}}) {
     _closeDrawer();
 
-    // Routes qui sortent du layout (GetX router + propre Scaffold)
     if (_isExternalRoute(route)) {
       Get.toNamed(route, parameters: params.map((k, v) => MapEntry(k, '$v')));
       return;
     }
 
-    // Évite d'empiler la même destination exacte
     final uniqueKey = _routeKey(route, params);
     if (_stack.isNotEmpty && _stack.last.route == uniqueKey) return;
 
@@ -112,9 +252,23 @@ class HomeController extends GetxController {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // BACK
+  // POP PAGE — avec délégation aux intercepteurs internes
   // ─────────────────────────────────────────────────────────────────────────
   void popPage() {
+    // La route de base sans query params
+    final baseRoute = currentRoute.split('?').first;
+
+    // Cherche d'abord un intercepteur enregistré pour cette route
+    final interceptor = _backInterceptors[baseRoute];
+    if (interceptor != null) {
+      final handled = interceptor();
+      if (handled) {
+        // La page a géré le retour elle-même → on ne dépile pas
+        return;
+      }
+    }
+
+    // Comportement normal : dépiler
     if (canPop) _stack.removeLast();
   }
 
@@ -151,16 +305,12 @@ class HomeController extends GetxController {
     );
   }
 
-  /// Route key unique = route + params sérialisés
-  /// Permet à AnimatedSwitcher de détecter qu'on navigue vers un espace différent.
   String _routeKey(String route, Map<String, dynamic> params) {
     if (params.isEmpty) return route;
     final q = params.entries.map((e) => '${e.key}=${e.value}').join('&');
     return '$route?$q';
   }
 
-  /// Résolution générique : cherche dans le registry,
-  /// sinon délègue à GetX (qui affichera la route GetX enregistrée).
   HomeDestination? _resolveDest(
     String route,
     String routeKey,
@@ -179,23 +329,19 @@ class HomeController extends GetxController {
       route: routeKey,
       sectionIndex: activeSectionIndex,
       isSubPage: true,
-      // Le Scaffold transparent permet aux pages qui ont leur propre
-      // couleur de fond (ProfileView, SpacesListView…) de s'afficher
-      // correctement sans double fond.
       builder: () => builder(params),
     );
   }
 
   bool _isExternalRoute(String route) {
     if (route == '/login' || route == '/register') return true;
-    // SpaceView (détail) a son propre SliverAppBar + Scaffold complet
     if (route.startsWith('/home/spaces/')) return true;
     return false;
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COMING SOON WIDGET
+// COMING SOON WIDGET (inchangé)
 // ─────────────────────────────────────────────────────────────────────────────
 class _ComingSoonWidget extends StatefulWidget {
   final SectionModel section;

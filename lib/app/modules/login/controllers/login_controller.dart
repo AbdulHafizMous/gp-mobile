@@ -209,11 +209,11 @@ class LoginController extends GetxController {
         return;
       }
 
-      debugPrint('Facebook Access Token: ${facebookAccessToken.token}');
+      debugPrint('Facebook Access Token: ${facebookAccessToken.tokenString}');
 
       // 2. Échange contre un Firebase ID Token
       final OAuthCredential credential = FacebookAuthProvider.credential(
-        facebookAccessToken.token,
+        facebookAccessToken.tokenString,
       );
 
       final UserCredential userCredential = await FirebaseAuth.instance
@@ -407,7 +407,7 @@ class LoginController extends GetxController {
       textColor: Colors.white,
     );
 
-    Get.offAllNamed('/main-page');
+    Get.offAllNamed('/home'); // #Beno10
   }
 
   // ══════════════════════════════════════════════════════════════════════════
