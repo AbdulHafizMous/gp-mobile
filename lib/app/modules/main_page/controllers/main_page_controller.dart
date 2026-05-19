@@ -18,7 +18,7 @@ class MainPageController extends GetxController {
   final spaces = <SpaceModel>[].obs;
   final isSpacesLoading = true.obs;
 
-  List<CustomNotification> notifications = [];
+  List<AppNotification> notifications = [];
 
   PusherChannelsFlutter pusher = PusherChannelsFlutter.getInstance();
 
@@ -26,11 +26,11 @@ class MainPageController extends GetxController {
   Future<void> loadSpaces() async {
     isSpacesLoading.value = true;
     try {
-      if (!useMock) {
+      if (useMock) {
         spaces.value = kMockSpaces.map(SpaceModel.fromJson).toList();
       } else {
-        final response = await RequestService().get('/spaces');
-        final list = (response.data['data'] as List<dynamic>? ?? [])
+        final r = await RequestService().get('/spaces');
+        final list = (r.data['data']['spaces'] as List<dynamic>? ?? [])
             .map((j) => SpaceModel.fromJson(j as Map<String, dynamic>))
             .toList();
         spaces.value = list;
@@ -70,9 +70,13 @@ class MainPageController extends GetxController {
           debugPrint(event.data);
           try {
             notifications.add(
-              CustomNotification(
-                description: event.data["description"],
+              AppNotification(
+                id: DateTime.now().millisecondsSinceEpoch,
+                isRead: false,
+                body: event.data["description"],
                 title: event.data["title"],
+                createdAt: DateTime.now().toIso8601String(),
+                type: "general"
               ),
             );
           } catch (e) {

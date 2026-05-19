@@ -317,7 +317,7 @@ class RegisterController extends GetxController {
         '/auth/social',
         data: {
           'provider': 'facebook',
-          'token': accessToken.token,
+          'token': accessToken.tokenString,
           'device_name': 'mobile',
         },
       );
