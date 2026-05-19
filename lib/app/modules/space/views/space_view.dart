@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/modules/videos/views/videos_view.dart';
 import 'package:grand_public_v2/app/data/models/space_model.dart';
 import 'package:grand_public_v2/app/modules/space/controllers/space_controller.dart';
