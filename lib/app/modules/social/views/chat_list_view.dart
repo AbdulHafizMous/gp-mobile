@@ -13,14 +13,14 @@ import 'package:grand_public_v2/app/themes/app_theme.dart';
 extension _ThemeX on BuildContext {
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
   Color get bg => isDark ? const Color(0xFF111111) : Colors.white;
-  Color get surface => isDark ? const Color(0xFF1E1E1E) : Colors.grey.shade50;
+  // Color get surface => isDark ? const Color(0xFF1E1E1E) : Colors.grey.shade50;
   Color get primaryText =>
       Theme.of(this).textTheme.bodyLarge?.color ??
       (isDark ? Colors.white : Colors.black87);
   Color get subtleText => Theme.of(this).hintColor;
   Color get divColor => Theme.of(this).dividerColor;
-  Color get cardColor =>
-      isDark ? const Color(0xFF1E1E1E) : Colors.white;
+  // Color get cardColor =>
+  //     isDark ? const Color(0xFF1E1E1E) : Colors.white;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
