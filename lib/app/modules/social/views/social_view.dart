@@ -46,7 +46,7 @@ class _SocialTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       color: GPTheme.primaryColor,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),

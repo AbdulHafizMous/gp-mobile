@@ -16,8 +16,8 @@ extension _ThemeX on BuildContext {
       Theme.of(this).textTheme.bodyLarge?.color ??
       (isDark ? Colors.white : Colors.black87);
   Color get subtleText => Theme.of(this).hintColor;
-  Color get surface =>
-      isDark ? const Color(0xFF1E1E1E) : Colors.white;
+  // Color get surface =>
+  //     isDark ? const Color(0xFF1E1E1E) : Colors.white;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -229,7 +229,7 @@ class _SwipeCardState extends State<_SwipeCard>
   late AnimationController _animCtrl;
   Offset _dragOffset = Offset.zero;
   double _rotation = 0;
-  bool _swiping = false;
+  bool swiping = false;
 
   @override
   void initState() {
@@ -267,24 +267,24 @@ class _SwipeCardState extends State<_SwipeCard>
   }
 
   Future<void> _swipeRight() async {
-    setState(() => _swiping = true);
+    setState(() => swiping = true);
     await Future.delayed(const Duration(milliseconds: 200));
     widget.ctrl.likeProfile(widget.profile);
     setState(() {
       _dragOffset = Offset.zero;
       _rotation = 0;
-      _swiping = false;
+      swiping = false;
     });
   }
 
   Future<void> _swipeLeft() async {
-    setState(() => _swiping = true);
+    setState(() => swiping = true);
     await Future.delayed(const Duration(milliseconds: 200));
     widget.ctrl.skipProfile(widget.profile);
     setState(() {
       _dragOffset = Offset.zero;
       _rotation = 0;
-      _swiping = false;
+      swiping = false;
     });
   }
 

@@ -1,6 +1,7 @@
 // lib/app/data/models/section_model.dart
 
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/modules/club/views/club_view.dart';
 import 'package:grand_public_v2/app/modules/space/views/spaces_list_view.dart';
 import 'package:grand_public_v2/app/modules/social/views/social_view.dart';
 
@@ -103,7 +104,9 @@ final sections = [
     description:
         "Profitez d'offres exclusives, promotions et avantages uniques.",
     icon: Icons.local_offer_outlined,
-    route: "/home/club",
+       isLive: true,
+    page: ClubView(),
+    // route: "/home/club",
     drawerItems: [
       DrawerItem(
         title: "Promotions",
