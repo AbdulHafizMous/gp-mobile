@@ -303,6 +303,7 @@ class _DynamicDrawer extends StatelessWidget {
                 child: DrawerBtn(
                   title: item.title,
                   icon: _dynamicIcon(item),
+                  flutterIcon: item.icon,
                   callback: () => ctrl.navigateTo(item.route ?? ''),
                 ),
               ),

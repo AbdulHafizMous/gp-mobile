@@ -56,11 +56,11 @@ final sections = [
         icon: Icons.grid_view_rounded,
         route: "/home/spaces",
       ),
-      DrawerItem(
-        title: "Mes espaces",
-        icon: Icons.favorite_border_rounded,
-        route: "/home/spaces/favorites",
-      ),
+      // DrawerItem(
+      //   title: "Mes espaces",
+      //   icon: Icons.favorite_border_rounded,
+      //   route: "/home/spaces/favorites",
+      // ),
       DrawerItem(
         title: "Gérer les espaces",
         icon: Icons.settings_outlined,
@@ -104,32 +104,33 @@ final sections = [
     description:
         "Profitez d'offres exclusives, promotions et avantages uniques.",
     icon: Icons.local_offer_outlined,
-       isLive: true,
+    hasSub: true,
+    isLive: true,
     page: ClubView(),
     // route: "/home/club",
     drawerItems: [
       DrawerItem(
         title: "Promotions",
         icon: Icons.local_offer_outlined,
-        route: "/home/club/promotions",
+        route: "/home/club",
       ),
-      DrawerItem(
-        title: "Mes avantages",
-        icon: Icons.card_giftcard_rounded,
-        route: "/home/club/benefits",
-      ),
+      // DrawerItem(
+      //   title: "Mes avantages",
+      //   icon: Icons.card_giftcard_rounded,
+      //   route: "/home/club/benefits",
+      // ),
       DrawerItem(
         title: "Validations",
         icon: Icons.verified_outlined,
         route: "/home/club/validations",
         requiredRoles: ["admin", "moderator"],
       ),
-      DrawerItem(
-        title: "Gestion des offres",
-        icon: Icons.manage_accounts_outlined,
-        route: "/home/club/manage",
-        requiredRoles: ["admin"],
-      ),
+      // DrawerItem(
+      //   title: "Gestion des offres",
+      //   icon: Icons.manage_accounts_outlined,
+      //   route: "/home/club/manage",
+      //   // requiredRoles: ["admin"],
+      // ),
     ],
   ),
   SectionModel(
@@ -189,11 +190,7 @@ const fixedDrawerItems = [
     icon: Icons.workspace_premium_outlined,
     route: "/social-premium",
   ),
-  DrawerItem(
-    title: "Liens",
-    icon: Icons.link_rounded,
-    route: "/social-link",
-  ),
+  DrawerItem(title: "Liens", icon: Icons.link_rounded, route: "/social-link"),
   DrawerItem(
     title: "À propos",
     icon: Icons.info_outline_rounded,
