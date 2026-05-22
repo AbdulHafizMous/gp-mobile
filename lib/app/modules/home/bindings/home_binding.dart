@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/modules/club/views/club_view.dart';
+import 'package:grand_public_v2/app/modules/club/views/partner_scanner_view.dart';
 import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
 import 'package:grand_public_v2/app/modules/notifs/views/notifs_view.dart';
 import 'package:grand_public_v2/app/modules/profile/controllers/profile_controller.dart';
@@ -33,6 +35,10 @@ class HomeBinding extends Bindings {
 
       // ── Espaces ────────────────────────────────────────────────────────
       ctrl.registerPage('/home/spaces', (_) => const SpacesListView());
+
+      // ── Club ────────────────────────────────────────────────────────────
+      ctrl.registerPage('/home/club', (_) => const ClubView());
+      ctrl.registerPage('/home/club/validations', (_) => const PartnerScannerView());
 
       // ── Notifications ──────────────────────────────────────────────────
       ctrl.registerPage('/notifs', (_) => const NotifsView());

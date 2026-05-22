@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/modules/club/bindings/club_binding.dart';
+import 'package:grand_public_v2/app/modules/club/views/club_view.dart';
 import 'package:grand_public_v2/app/modules/forgot_password/bindings/forgot_password_binding.dart';
 import 'package:grand_public_v2/app/modules/forgot_password/views/forgot_password_view.dart';
 import 'package:grand_public_v2/app/modules/main_page/bindings/main_page_binding.dart';
@@ -116,6 +118,14 @@ class AppPages {
       name: _Paths.SPACE_PAGE,
       page: () => const SpaceView(),
       binding: SpaceBinding(),
+      // transition optionnelle :
+      transition: Transition.rightToLeftWithFade,
+      transitionDuration: const Duration(milliseconds: 320),
+    ),
+     GetPage(
+      name: _Paths.CLUB_PAGE,
+      page: () => const ClubView(),
+      binding: ClubBinding(),
       // transition optionnelle :
       transition: Transition.rightToLeftWithFade,
       transitionDuration: const Duration(milliseconds: 320),

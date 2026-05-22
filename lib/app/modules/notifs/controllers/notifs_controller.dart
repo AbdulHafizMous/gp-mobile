@@ -7,9 +7,9 @@ import 'package:grand_public_v2/app/services/dio.services.dart';
 
 class NotifsPageController extends GetxController {
   final notifications = <AppNotification>[].obs;
-  final isLoading     = false.obs;
-  final unreadCount   = 0.obs;
-  final hasMore       = false.obs;
+  final isLoading = false.obs;
+  final unreadCount = 0.obs;
+  final hasMore = false.obs;
 
   int _currentPage = 1;
 
@@ -28,20 +28,33 @@ class NotifsPageController extends GetxController {
       notifications.clear();
     }
 
+    debugPrint('Fetching notifications - page $_currentPage');
+
     isLoading.value = true;
 
     try {
       if (useMock) {
         await Future.delayed(const Duration(milliseconds: 600));
-        final mock = List.generate(20, (i) => AppNotification(
-          id:        i + 1,
-          title:     i % 3 == 0 ? '🎬 Nouveau contenu' : i % 3 == 1 ? '🔔 Notification' : '🎁 Offre spéciale',
-          body:      'Description de la notification numéro ${i + 1}.',
-          type:      i % 3 == 0 ? 'media' : i % 3 == 1 ? 'general' : 'promo',
-          route:     i % 3 == 0 ? '/videos/${i + 1}' : null,
-          isRead:    i % 4 == 0,
-          createdAt: 'Il y a ${i + 1}h',
-        ));
+        final mock = List.generate(
+          20,
+          (i) => AppNotification(
+            id: i + 1,
+            title: i % 3 == 0
+                ? '🎬 Nouveau contenu'
+                : i % 3 == 1
+                ? '🔔 Notification'
+                : '🎁 Offre spéciale',
+            body: 'Description de la notification numéro ${i + 1}.',
+            type: i % 3 == 0
+                ? 'media'
+                : i % 3 == 1
+                ? 'general'
+                : 'promo',
+            route: i % 3 == 0 ? '/videos/${i + 1}' : null,
+            isRead: i % 4 == 0,
+            createdAt: 'Il y a ${i + 1}h',
+          ),
+        );
         notifications.value = mock;
         unreadCount.value = mock.where((n) => !n.isRead).length;
         return;
@@ -50,6 +63,10 @@ class NotifsPageController extends GetxController {
       final response = await RequestService().get(
         '/notifications',
         queryParameters: {'page': _currentPage, 'per_page': 20},
+      );
+
+      debugPrint(
+        'Notifications response: ${response.statusCode} - ${response.data}',
       );
 
       if (response.statusCode == 200) {
@@ -64,7 +81,7 @@ class NotifsPageController extends GetxController {
         }
 
         unreadCount.value = data['unread_count'] as int? ?? 0;
-        hasMore.value     = data['pagination']['has_more_pages'] as bool? ?? false;
+        hasMore.value = data['pagination']['has_more_pages'] as bool? ?? false;
         _currentPage++;
       }
     } on DioException catch (e) {
@@ -85,7 +102,10 @@ class NotifsPageController extends GetxController {
     // Optimistic update
     final idx = notifications.indexWhere((n) => n.id == notif.id);
     if (idx != -1) {
-      notifications[idx] = notif.copyWith(isRead: true, readAt: DateTime.now().toIso8601String());
+      notifications[idx] = notif.copyWith(
+        isRead: true,
+        readAt: DateTime.now().toIso8601String(),
+      );
       unreadCount.value = (unreadCount.value - 1).clamp(0, 9999);
     }
 
@@ -105,7 +125,9 @@ class NotifsPageController extends GetxController {
   // ══════════════════════════════════════════════════════════════════════════
   Future<void> markAllAsRead() async {
     // Optimistic update
-    notifications.value = notifications.map((n) => n.copyWith(isRead: true)).toList();
+    notifications.value = notifications
+        .map((n) => n.copyWith(isRead: true))
+        .toList();
     unreadCount.value = 0;
 
     if (useMock) return;
