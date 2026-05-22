@@ -256,7 +256,7 @@ class _DynamicDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final ctrl = Get.find<HomeController>();
     final isDark = context.isDark;
-    final userRole = GetStorage().read<String>('role') ?? 'user';
+    final userRole = activeUser.value.role; // GetStorage().read<String>('userRole') ?? 'user';
     final section = sections[activeSectionIndex];
 
     final dynamicItems = section.drawerItems.where((item) {
