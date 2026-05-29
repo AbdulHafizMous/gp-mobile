@@ -8,6 +8,7 @@ import 'package:grand_public_v2/app/components/primary_loading_button.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
+// import 'package:grand_public_v2/app/utils/toast_helper.dart';
 
 import '../controllers/register_controller.dart';
 
@@ -299,15 +300,22 @@ class RegisterView extends GetView<RegisterController> {
                                   width: 48,
                                 ),
                               ),
-                              const SizedBox(width: 25),
-                              GestureDetector(
-                                onTap: controller.loginWithFacebook,
-                                child: Image.asset(
-                                  FACEBOOK_LOGO,
-                                  height: 48,
-                                  width: 48,
-                                ),
-                              ),
+                              // const SizedBox(width: 25),
+                              // GestureDetector(
+                              //   // onTap: controller.loginWithFacebook,
+                              //   onTap: () async {
+                              //     await ToastHelper.showToast(
+                              //       'Bientôt disponible',
+                              //       backgroundColor: Colors.orange,
+                              //       textColor: Colors.white,
+                              //     );
+                              //   },
+                              //   child: Image.asset(
+                              //     FACEBOOK_LOGO,
+                              //     height: 48,
+                              //     width: 48,
+                              //   ),
+                              // ),
                             ],
                           ),
                   ),
