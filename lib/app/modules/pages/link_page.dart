@@ -37,12 +37,12 @@ class _LinkPageState extends State<LinkPage> {
       "icon": "assets/icons/red_tw.png",
       "link": "https://x.com/grandpublictv?lang=fr",
     },
-    {
-      "title": "Snapchat",
-      "subtitle": "@grandpublic",
-      "icon": "assets/icons/red_snap.png",
-      "link": "https://grandpublic.bj/",
-    },
+    // {
+    //   "title": "Snapchat",
+    //   "subtitle": "@grandpublic",
+    //   "icon": "assets/icons/red_snap.png",
+    //   "link": "https://grandpublic.bj/",
+    // },
     {
       "title": "Tiktok",
       "subtitle": "@grandpublic",

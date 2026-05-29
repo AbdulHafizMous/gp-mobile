@@ -57,27 +57,32 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 20),
                 Text(
-                  "Au menu, 4 grandes rubriques :",
+                  "Au menu, 5 grandes rubriques :",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
                 SizedBox(height: 20),
                 Text(
-                  "PORTRAIT : Rencontrez des personnes fascinantes et découvrez leurs parcours inspirants",
+                  "MEDIA : Explorez des univers riches avec des contenus variés : médias, lives et expériences immersives.",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
                 SizedBox(height: 20),
                 Text(
-                  "EVENTS : Transportez-vous au cœur des grands évènements comme si vous y étiez",
+                  "MUSIC : Découvrez les tendances musicales, artistes et contenus exclusifs.",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
                 SizedBox(height: 20),
                 Text(
-                  "OPINION : Partagez des avis et des réflexions sur les questions d’actualité",
+                  "SOCIAL : Discutez, échangez et connectez-vous avec la communauté.",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
                 SizedBox(height: 20),
                 Text(
-                  "INSOLITE : Vivez des moments extraordinaires à travers des témoignages hors du commun.",
+                  "CLUB : Profitez d'offres exclusives, promotions et avantages uniques.",
+                  style: TextStyle(color: Colors.white, fontSize: 15),
+                ),
+                SizedBox(height: 20),
+                Text(
+                  "SHOP : Achetez en live et explorez les produits tendance.",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
                 SizedBox(height: 20),
@@ -87,17 +92,12 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 20),
                 Text(
-                  "Dans my GP, votre réseau social sur GRAND PUBLIC, retrouvez :",
+                  "Dans SOCIAL, votre réseau social sur GRAND PUBLIC, retrouvez :",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
                 SizedBox(height: 20),
                 Text(
                   "CHAT : pour discuter en communauté sur des sujets d'intérêts",
-                  style: TextStyle(color: Colors.white, fontSize: 15),
-                ),
-                SizedBox(height: 20),
-                Text(
-                  "BIZZ : pour partager des annonces de particulier à particulier",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
                 SizedBox(height: 20),
@@ -126,11 +126,11 @@ class _AboutPageState extends State<AboutPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "www.grandpublic.online",
+                      "grandpublic.bj",
                       style: TextStyle(color: Colors.white, fontSize: 20),
                     ),
                     Text(
-                      "Tel: +229 63 63 44 44",
+                      "contact@grandpublic.bj",
                       style: TextStyle(color: Colors.white, fontSize: 10),
                     ),
                   ],

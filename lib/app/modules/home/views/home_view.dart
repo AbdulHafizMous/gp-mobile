@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:grand_public_v2/app/components/drawer_btn.dart';
 import 'package:grand_public_v2/app/data/models/section_model.dart';
 import 'package:grand_public_v2/app/globals/index.dart';

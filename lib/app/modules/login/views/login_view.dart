@@ -9,6 +9,7 @@ import 'package:grand_public_v2/app/components/toogle_tab.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
+// import 'package:grand_public_v2/app/utils/toast_helper.dart';
 import '../controllers/login_controller.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -178,9 +179,11 @@ class LoginView extends GetView<LoginController> {
                                           controller:
                                               controller.phoneController,
                                           keyboardType: TextInputType.phone,
-                                           style: TextStyle(
-                              color: context.isDark ? Colors.black : null,
-                            ),
+                                          style: TextStyle(
+                                            color: context.isDark
+                                                ? Colors.black
+                                                : null,
+                                          ),
                                           inputFormatters: [
                                             FilteringTextInputFormatter
                                                 .digitsOnly,
@@ -255,9 +258,9 @@ class LoginView extends GetView<LoginController> {
                               child: TextFormField(
                                 controller: controller.emailController,
                                 keyboardType: TextInputType.emailAddress,
-                                 style: TextStyle(
-                              color: context.isDark ? Colors.black : null,
-                            ),
+                                style: TextStyle(
+                                  color: context.isDark ? Colors.black : null,
+                                ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return "Veuillez saisir votre email";
@@ -288,7 +291,7 @@ class LoginView extends GetView<LoginController> {
                           child: TextFormField(
                             controller: controller.passwordController,
                             obscureText: controller.isObscure.value,
-                             style: TextStyle(
+                            style: TextStyle(
                               color: context.isDark ? Colors.black : null,
                             ),
                             validator: (value) => value!.isEmpty
@@ -413,11 +416,18 @@ class LoginView extends GetView<LoginController> {
                     onTap: () => controller.loginWithGoogle(),
                     child: Image.asset(GOOGLE_LOGO, height: 48, width: 48),
                   ),
-                  const SizedBox(width: 25),
-                  GestureDetector(
-                    onTap: () => controller.loginWithFacebook(),
-                    child: Image.asset(FACEBOOK_LOGO, height: 48, width: 48),
-                  ),
+                  // const SizedBox(width: 25),
+                  // GestureDetector(
+                  //   // onTap: () => controller.loginWithFacebook(),
+                  //   onTap: () async {
+                  //     await ToastHelper.showToast(
+                  //       'Bientôt disponible',
+                  //       backgroundColor: Colors.orange,
+                  //       textColor: Colors.white,
+                  //     );
+                  //   },
+                  //   child: Image.asset(FACEBOOK_LOGO, height: 48, width: 48),
+                  // ),
                 ],
               ),
               const SizedBox(height: 10),
