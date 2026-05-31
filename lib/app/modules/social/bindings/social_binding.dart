@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/chat_controller.dart';
 import '../controllers/dating_controller.dart';
 
-class SocialAboutBinding extends Bindings {
+class SocialBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<ChatController>(
