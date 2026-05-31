@@ -1,7 +1,134 @@
 // lib/app/data/models/chat_models.dart
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CHAT CHANNEL (canal de discussion public/groupe)
+// MESSAGE TYPE
+// ─────────────────────────────────────────────────────────────────────────────
+enum MessageType { text, image, audio, video, file }
+
+extension MessageTypeX on MessageType {
+  static MessageType fromString(String? s) {
+    switch (s) {
+      case 'image':  return MessageType.image;
+      case 'audio':  return MessageType.audio;
+      case 'video':  return MessageType.video;
+      case 'file':   return MessageType.file;
+      default:       return MessageType.text;
+    }
+  }
+  String get label {
+    switch (this) {
+      case MessageType.image: return '📷 Photo';
+      case MessageType.audio: return '🎤 Audio';
+      case MessageType.video: return '🎬 Vidéo';
+      case MessageType.file:  return '📎 Fichier';
+      default:                return '';
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MESSAGE STATUS
+// ─────────────────────────────────────────────────────────────────────────────
+enum MessageStatus { sending, sent, delivered, read, failed }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAT MESSAGE
+// ─────────────────────────────────────────────────────────────────────────────
+class ChatMessage {
+  final int id;
+  final int channelId;
+  final int? conversationId;
+  final int senderId;
+  final String senderName;
+  final String? senderAvatar;
+  final String content;       // texte ou URL (pour médias)
+  final String? mediaUrl;     // URL du média si type != text
+  final String? fileName;     // nom du fichier (pour type = file)
+  final int? fileSizeBytes;
+  final int? audioDurationSec;
+  final DateTime sentAt;
+  final bool isMe;
+  final MessageType type;
+  final MessageStatus status;
+  // Optimistic ID avant confirmation serveur
+  final bool isPending;
+
+  const ChatMessage({
+    required this.id,
+    required this.channelId,
+    this.conversationId,
+    required this.senderId,
+    required this.senderName,
+    this.senderAvatar,
+    required this.content,
+    this.mediaUrl,
+    this.fileName,
+    this.fileSizeBytes,
+    this.audioDurationSec,
+    required this.sentAt,
+    this.isMe = false,
+    this.type = MessageType.text,
+    this.status = MessageStatus.sent,
+    this.isPending = false,
+  });
+
+  String get timeLabel {
+    final now = DateTime.now();
+    final diff = now.difference(sentAt);
+    if (diff.inDays == 0) {
+      return '${sentAt.hour.toString().padLeft(2, '0')}:${sentAt.minute.toString().padLeft(2, '0')}';
+    }
+    if (diff.inDays == 1) return 'Hier';
+    return '${sentAt.day}/${sentAt.month}';
+  }
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    return ChatMessage(
+      id: _i(json['id']),
+      channelId: _i(json['channel_id']),
+      conversationId: json['conversation_id'] != null ? _i(json['conversation_id']) : null,
+      senderId: _i(json['sender_id'] ?? json['user_id']),
+      senderName: json['sender_name']?.toString() ??
+          json['user']?['name']?.toString() ?? 'Utilisateur',
+      senderAvatar: json['sender_avatar']?.toString() ??
+          json['user']?['avatar_url']?.toString(),
+      content: json['content']?.toString() ?? '',
+      mediaUrl: json['media_url']?.toString(),
+      fileName: json['file_name']?.toString(),
+      fileSizeBytes: json['file_size'] != null ? _i(json['file_size']) : null,
+      audioDurationSec: json['audio_duration'] != null ? _i(json['audio_duration']) : null,
+      sentAt: _d(json['sent_at'] ?? json['created_at']),
+      isMe: _b(json['is_me']),
+      type: MessageTypeX.fromString(json['type']?.toString()),
+      status: MessageStatus.sent,
+    );
+  }
+
+  ChatMessage copyWith({MessageStatus? status, bool? isPending, String? mediaUrl}) =>
+      ChatMessage(
+        id: id, channelId: channelId, conversationId: conversationId,
+        senderId: senderId, senderName: senderName, senderAvatar: senderAvatar,
+        content: content, mediaUrl: mediaUrl ?? this.mediaUrl,
+        fileName: fileName, fileSizeBytes: fileSizeBytes,
+        audioDurationSec: audioDurationSec, sentAt: sentAt, isMe: isMe, type: type,
+        status: status ?? this.status,
+        isPending: isPending ?? this.isPending,
+      );
+
+  static int _i(dynamic v) => v is int ? v : int.tryParse('$v') ?? 0;
+  static bool _b(dynamic v) {
+    if (v is bool) return v;
+    if (v is int) return v != 0;
+    return false;
+  }
+  static DateTime _d(dynamic v) {
+    if (v == null) return DateTime.now();
+    try { return DateTime.parse(v.toString()); } catch (_) { return DateTime.now(); }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAT CHANNEL
 // ─────────────────────────────────────────────────────────────────────────────
 class ChatChannel {
   final int id;
@@ -41,25 +168,20 @@ class ChatChannel {
           ? ChatMessage.fromJson(json['last_message'])
           : null,
       unreadCount: _i(json['unread_count']),
-      tags: (json['tags'] as List<dynamic>? ?? [])
-          .map((t) => t.toString())
-          .toList(),
+      tags: (json['tags'] as List<dynamic>? ?? []).map((t) => t.toString()).toList(),
     );
   }
 
-  ChatChannel copyWith({bool? isJoined, int? unreadCount, ChatMessage? lastMessage}) =>
-      ChatChannel(
-        id: id,
-        name: name,
-        description: description,
-        imageUrl: imageUrl,
-        membersCount: membersCount,
-        isJoined: isJoined ?? this.isJoined,
-        isOnline: isOnline,
-        lastMessage: lastMessage ?? this.lastMessage,
-        unreadCount: unreadCount ?? this.unreadCount,
-        tags: tags,
-      );
+  ChatChannel copyWith({
+    bool? isJoined,
+    int? unreadCount,
+    ChatMessage? lastMessage,
+  }) => ChatChannel(
+    id: id, name: name, description: description, imageUrl: imageUrl,
+    membersCount: membersCount, isJoined: isJoined ?? this.isJoined,
+    isOnline: isOnline, lastMessage: lastMessage ?? this.lastMessage,
+    unreadCount: unreadCount ?? this.unreadCount, tags: tags,
+  );
 
   static int _i(dynamic v) => v is int ? v : int.tryParse('$v') ?? 0;
   static bool _b(dynamic v) {
@@ -70,73 +192,7 @@ class ChatChannel {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CHAT MESSAGE
-// ─────────────────────────────────────────────────────────────────────────────
-class ChatMessage {
-  final int id;
-  final int channelId;
-  final int senderId;
-  final String senderName;
-  final String? senderAvatar;
-  final String content;
-  final DateTime sentAt;
-  final bool isMe;
-  final MessageType type;
-
-  const ChatMessage({
-    required this.id,
-    required this.channelId,
-    required this.senderId,
-    required this.senderName,
-    this.senderAvatar,
-    required this.content,
-    required this.sentAt,
-    this.isMe = false,
-    this.type = MessageType.text,
-  });
-
-  String get timeLabel {
-    final now = DateTime.now();
-    final diff = now.difference(sentAt);
-    if (diff.inDays == 0) {
-      return '${sentAt.hour.toString().padLeft(2, '0')}:${sentAt.minute.toString().padLeft(2, '0')}';
-    }
-    if (diff.inDays == 1) return 'Hier';
-    return '${sentAt.day}/${sentAt.month}';
-  }
-
-  factory ChatMessage.fromJson(Map<String, dynamic> json) {
-    return ChatMessage(
-      id: _i(json['id']),
-      channelId: _i(json['channel_id']),
-      senderId: _i(json['sender_id'] ?? json['user_id']),
-      senderName: json['sender_name']?.toString() ??
-          json['user']?['name']?.toString() ?? 'Utilisateur',
-      senderAvatar: json['sender_avatar']?.toString() ??
-          json['user']?['avatar_url']?.toString(),
-      content: json['content']?.toString() ?? '',
-      sentAt: _d(json['sent_at'] ?? json['created_at']),
-      isMe: _b(json['is_me']),
-      type: MessageType.text,
-    );
-  }
-
-  static int _i(dynamic v) => v is int ? v : int.tryParse('$v') ?? 0;
-  static bool _b(dynamic v) {
-    if (v is bool) return v;
-    if (v is int) return v != 0;
-    return false;
-  }
-  static DateTime _d(dynamic v) {
-    if (v == null) return DateTime.now();
-    try { return DateTime.parse(v.toString()); } catch (_) { return DateTime.now(); }
-  }
-}
-
-enum MessageType { text, image, audio }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PRIVATE CONVERSATION (chat 1-to-1 dating)
+// PRIVATE CONVERSATION
 // ─────────────────────────────────────────────────────────────────────────────
 class PrivateConversation {
   final int id;
@@ -146,6 +202,7 @@ class PrivateConversation {
   final bool otherIsOnline;
   final ChatMessage? lastMessage;
   final int unreadCount;
+  final DateTime? lastMessageAt;
 
   const PrivateConversation({
     required this.id,
@@ -155,6 +212,7 @@ class PrivateConversation {
     this.otherIsOnline = false,
     this.lastMessage,
     this.unreadCount = 0,
+    this.lastMessageAt,
   });
 
   factory PrivateConversation.fromJson(Map<String, dynamic> json) {
@@ -168,6 +226,9 @@ class PrivateConversation {
           ? ChatMessage.fromJson(json['last_message'])
           : null,
       unreadCount: _i(json['unread_count']),
+      lastMessageAt: json['last_message_at'] != null
+          ? DateTime.tryParse(json['last_message_at'].toString())
+          : null,
     );
   }
 

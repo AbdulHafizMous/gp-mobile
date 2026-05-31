@@ -116,7 +116,7 @@ class HomeController extends GetxController {
                 body: event.data["description"],
                 title: event.data["title"],
                 createdAt: DateTime.now().toIso8601String(),
-                type: "general"
+                type: "general",
               ),
             );
           } catch (e) {
@@ -276,9 +276,7 @@ class HomeController extends GetxController {
   // LOGOUT
   // ─────────────────────────────────────────────────────────────────────────
   void logout() {
-    GetStorage().remove('token');
-    GetStorage().remove('isDark');
-    GetStorage().remove('isLogged');
+    GetStorage().erase();
     Get.offAllNamed('/login');
   }
 

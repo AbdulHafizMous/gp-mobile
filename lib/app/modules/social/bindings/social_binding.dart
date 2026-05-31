@@ -1,16 +1,13 @@
-import 'package:get/get.dart';
+// lib/app/modules/social/bindings/social_binding.dart
 
+import 'package:get/get.dart';
 import '../controllers/chat_controller.dart';
 import '../controllers/dating_controller.dart';
 
 class SocialBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<ChatController>(
-      () => ChatController(),
-    );
-    Get.lazyPut<DatingController>(
-      () => DatingController(),
-    );
+    Get.lazyPut<ChatController>(() => ChatController());
+    Get.lazyPut<DatingController>(() => DatingController());
   }
 }
