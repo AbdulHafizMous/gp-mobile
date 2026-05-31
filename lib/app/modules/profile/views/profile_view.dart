@@ -36,8 +36,7 @@ class _ProfileViewState extends State<ProfileView> {
     // - Si on est sur une sous-page → revient au main profil (retourne true)
     // - Si on est déjà sur le main → laisse HomeController dépiler (retourne false)
     if (Get.isRegistered<HomeController>()) {
-      Get.find<HomeController>()
-          .registerBackInterceptor(_route, _handleBack);
+      Get.find<HomeController>().registerBackInterceptor(_route, _handleBack);
     }
   }
 
@@ -116,24 +115,24 @@ extension _ThemeX on BuildContext {
   Color get cardColor => Theme.of(this).cardColor;
 
   BoxDecoration get cardDecoration => BoxDecoration(
-        color: isDark ? GPTheme.primaryColor.withOpacity(0.05) : cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? GPTheme.primaryColor.withOpacity(0.5)
-              : Colors.transparent,
-          width: 2,
-        ),
-        boxShadow: isDark
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-      );
+    color: isDark ? GPTheme.primaryColor.withOpacity(0.05) : cardColor,
+    borderRadius: BorderRadius.circular(16),
+    border: Border.all(
+      color: isDark
+          ? GPTheme.primaryColor.withOpacity(0.5)
+          : Colors.transparent,
+      width: 2,
+    ),
+    boxShadow: isDark
+        ? null
+        : [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -287,22 +286,27 @@ class _GpField extends StatelessWidget {
             suffixIcon: readOnly
                 ? Icon(Icons.lock_outline, size: 16, color: context.subtleText)
                 : onToggleObscure != null
-                    ? IconButton(
-                        onPressed: onToggleObscure,
-                        icon: Icon(
-                          obscure
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: GPTheme.primaryColor,
-                          size: 20,
-                        ),
-                      )
-                    : maxLines == 1
-                        ? Icon(Icons.edit_outlined,
-                            color: GPTheme.primaryColor, size: 18)
-                        : null,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ? IconButton(
+                    onPressed: onToggleObscure,
+                    icon: Icon(
+                      obscure
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: GPTheme.primaryColor,
+                      size: 20,
+                    ),
+                  )
+                : maxLines == 1
+                ? Icon(
+                    Icons.edit_outlined,
+                    color: GPTheme.primaryColor,
+                    size: 18,
+                  )
+                : null,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(
@@ -350,30 +354,36 @@ class _GpDropdown extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: TextStyle(
-                color: GPTheme.primaryColor,
-                fontSize: 13,
-                fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: TextStyle(
+            color: GPTheme.primaryColor,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
           initialValue: value,
           onChanged: onChanged,
           dropdownColor: isDark ? Colors.grey.shade900 : Colors.white,
           style: TextStyle(
-              color: context.primaryText,
-              fontSize: 15,
-              fontWeight: FontWeight.w500),
+            color: context.primaryText,
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+          ),
           decoration: InputDecoration(
             filled: true,
             fillColor: isDark ? Colors.grey.shade800 : Colors.white,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(
-                  color:
-                      isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+                color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
@@ -381,8 +391,12 @@ class _GpDropdown extends StatelessWidget {
             ),
           ),
           items: options
-              .map((o) => DropdownMenuItem(
-                  value: o['value'], child: Text(o['label']!)))
+              .map(
+                (o) => DropdownMenuItem(
+                  value: o['value'],
+                  child: Text(o['label']!),
+                ),
+              )
               .toList(),
         ),
       ],
@@ -405,20 +419,23 @@ class _AvatarWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     if (pickedPath.isNotEmpty) {
       return CircleAvatar(
-          radius: radius,
-          backgroundImage: FileImage(File(pickedPath)),
-          backgroundColor: Colors.grey.shade200);
+        radius: radius,
+        backgroundImage: FileImage(File(pickedPath)),
+        backgroundColor: Colors.grey.shade200,
+      );
     }
     if (avatarUrl.isNotEmpty) {
       return CircleAvatar(
-          radius: radius,
-          backgroundImage: NetworkImage(avatarUrl),
-          backgroundColor: Colors.grey.shade200);
+        radius: radius,
+        backgroundImage: NetworkImage(avatarUrl),
+        backgroundColor: Colors.grey.shade200,
+      );
     }
     return CircleAvatar(
-        radius: radius,
-        backgroundImage: const AssetImage('assets/images/profile.png'),
-        backgroundColor: Colors.grey.shade200);
+      radius: radius,
+      backgroundImage: const AssetImage('assets/images/profile.png'),
+      backgroundColor: Colors.grey.shade200,
+    );
   }
 }
 
@@ -438,13 +455,19 @@ class _ActionTile extends StatelessWidget {
     return ListTile(
       onTap: onTap,
       leading: Icon(icon, color: context.subtleText, size: 22),
-      title: Text(title,
-          style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: context.primaryText)),
-      trailing:
-          Icon(Icons.arrow_forward_ios, size: 16, color: context.subtleText),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: context.primaryText,
+        ),
+      ),
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: context.subtleText,
+      ),
     );
   }
 }
@@ -467,7 +490,8 @@ class _MainProfilePage extends GetView<ProfileController> {
     return Obx(() {
       if (controller.isLoading.value) {
         return Center(
-            child: CircularProgressIndicator(color: GPTheme.primaryColor));
+          child: CircularProgressIndicator(color: GPTheme.primaryColor),
+        );
       }
       return SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -475,80 +499,100 @@ class _MainProfilePage extends GetView<ProfileController> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 24),
-            Text('MON COMPTE',
-                style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    color: GPTheme.primaryColor)),
+            Text(
+              'MON COMPTE',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                color: GPTheme.primaryColor,
+              ),
+            ),
             const SizedBox(height: 20),
 
             // Profile card
             Container(
               decoration: context.cardDecoration,
-              child: Column(children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: Row(children: [
-                    GestureDetector(
-                      onTap: () =>
-                          controller.goTo(ProfileSubPage.avatarPicker),
-                      child: Stack(children: [
-                        _AvatarWidget(
-                          avatarUrl: controller.displayAvatar
-                              .replaceAll("localhost", API_IP),
-                          pickedPath: controller.pickedAvatarPath.value,
-                          radius: 30,
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            width: 22,
-                            height: 22,
-                            decoration: BoxDecoration(
-                              color: GPTheme.primaryColor,
-                              shape: BoxShape.circle,
-                              border:
-                                  Border.all(color: context.cardColor, width: 2),
-                            ),
-                            child: const Icon(Icons.edit,
-                                color: Colors.white, size: 11),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () =>
+                              controller.goTo(ProfileSubPage.avatarPicker),
+                          child: Stack(
+                            children: [
+                              _AvatarWidget(
+                                avatarUrl: controller.displayAvatar.replaceAll(
+                                  "localhost",
+                                  API_IP,
+                                ),
+                                pickedPath: controller.pickedAvatarPath.value,
+                                radius: 30,
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                  width: 22,
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    color: GPTheme.primaryColor,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: context.cardColor,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.edit,
+                                    color: Colors.white,
+                                    size: 11,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ]),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(controller.displayName,
-                              style: TextStyle(
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                controller.displayName,
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: context.primaryText)),
-                          Text(
-                            activeUser.value.description?.isNotEmpty == true
-                                ? activeUser.value.description!
-                                : 'Ajouter une description',
-                            style: TextStyle(
-                                fontSize: 13,
-                                fontStyle: FontStyle.italic,
-                                color: context.subtleText),
+                                  color: context.primaryText,
+                                ),
+                              ),
+                              Text(
+                                activeUser.value.description?.isNotEmpty == true
+                                    ? activeUser.value.description!
+                                    : 'Ajouter une description',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontStyle: FontStyle.italic,
+                                  color: context.subtleText,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ]),
-                ),
-                Divider(height: 24, color: context.dividerColor),
-                _ActionTile(
-                  title: 'Avatar',
-                  icon: Icons.emoji_emotions_outlined,
-                  onTap: () => controller.goTo(ProfileSubPage.avatarPicker),
-                ),
-                const SizedBox(height: 8),
-              ]),
+                  ),
+                  Divider(height: 24, color: context.dividerColor),
+                  _ActionTile(
+                    title: 'Avatar',
+                    icon: Icons.emoji_emotions_outlined,
+                    onTap: () => controller.goTo(ProfileSubPage.avatarPicker),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -556,68 +600,85 @@ class _MainProfilePage extends GetView<ProfileController> {
             // Actions card
             Container(
               decoration: context.cardDecoration,
-              child: Column(children: [
-                _ActionTile(
-                  title: 'Modifier mon compte',
-                  icon: Icons.person_outline_rounded,
-                  onTap: () => controller.goTo(ProfileSubPage.editInfo),
-                ),
-                const _TileDivider(),
-                _ActionTile(
-                  title: "Centres d'intérêt",
-                  icon: Icons.favorite_border_rounded,
-                  onTap: () {
-                    controller.loadInterests();
-                    controller.goTo(ProfileSubPage.interests);
-                  },
-                ),
-                const _TileDivider(),
-                _ActionTile(
-                  title: 'Mes abonnements',
-                  icon: Icons.subscriptions_outlined,
-                  onTap: () =>
-                      controller.goTo(ProfileSubPage.manageSubscriptions),
-                ),
-                const _TileDivider(),
-                _ActionTile(
-                  title: 'Mes favoris',
-                  icon: Icons.bookmark_border_rounded,
-                  onTap: () => controller.goTo(ProfileSubPage.favorites),
-                ),
-                const _TileDivider(),
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: Row(children: [
-                    Icon(Icons.dark_mode_outlined,
-                        color: context.subtleText, size: 22),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Text('Mode sombre',
-                          style: TextStyle(
+              child: Column(
+                children: [
+                  _ActionTile(
+                    title: 'Modifier mon compte',
+                    icon: Icons.person_outline_rounded,
+                    onTap: () => controller.goTo(ProfileSubPage.editInfo),
+                  ),
+                  const _TileDivider(),
+                  _ActionTile(
+                    title: "Centres d'intérêt",
+                    icon: Icons.favorite_border_rounded,
+                    onTap: () {
+                      controller.loadInterests();
+                      controller.goTo(ProfileSubPage.interests);
+                    },
+                  ),
+                  const _TileDivider(),
+                  _ActionTile(
+                    title: 'Mes abonnements',
+                    icon: Icons.subscriptions_outlined,
+                    onTap: () =>
+                        controller.goTo(ProfileSubPage.manageSubscriptions),
+                  ),
+                  const _TileDivider(),
+                  _ActionTile(
+                    title: 'Mes favoris',
+                    icon: Icons.bookmark_border_rounded,
+                    onTap: () => controller.goTo(ProfileSubPage.favorites),
+                  ),
+                  const _TileDivider(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.dark_mode_outlined,
+                          color: context.subtleText,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            'Mode sombre',
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
-                              color: context.primaryText)),
+                              color: context.primaryText,
+                            ),
+                          ),
+                        ),
+                        Obx(
+                          () => Switch(
+                            value: controller.isDark.value,
+                            onChanged: (_) => controller.toggleTheme(),
+                            activeThumbColor: GPTheme.primaryColor,
+                          ),
+                        ),
+                      ],
                     ),
-                    Obx(() => Switch(
-                          value: controller.isDark.value,
-                          onChanged: (_) => controller.toggleTheme(),
-                          activeThumbColor: GPTheme.primaryColor,
-                        )),
-                  ]),
-                ),
-              ]),
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(height: 20),
 
             Align(
               alignment: Alignment.centerLeft,
-              child: Text('Paramètres',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: GPTheme.primaryColor)),
+              child: Text(
+                'Paramètres',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: GPTheme.primaryColor,
+                ),
+              ),
             ),
             const SizedBox(height: 10),
             Container(
@@ -639,13 +700,17 @@ class _MainProfilePage extends GetView<ProfileController> {
                   side: BorderSide(color: GPTheme.primaryColor),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: Text('Se déconnecter',
-                    style: TextStyle(
-                        color: GPTheme.primaryColor,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15)),
+                child: Text(
+                  'Se déconnecter',
+                  style: TextStyle(
+                    color: GPTheme.primaryColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
               ),
             ),
 
@@ -683,46 +748,62 @@ class _EditInfoPage extends GetView<ProfileController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(children: [
-                      _AvatarWidget(
-                        avatarUrl: controller.displayAvatar
-                            .replaceAll("localhost", API_IP),
-                        pickedPath: controller.pickedAvatarPath.value,
-                        radius: 38,
-                      ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: controller.pickAvatarFromGallery,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: GPTheme.primaryColor,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20)),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
+                    Row(
+                      children: [
+                        _AvatarWidget(
+                          avatarUrl: controller.displayAvatar.replaceAll(
+                            "localhost",
+                            API_IP,
+                          ),
+                          pickedPath: controller.pickedAvatarPath.value,
+                          radius: 38,
+                        ),
+                        const SizedBox(width: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: controller.pickAvatarFromGallery,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: GPTheme.primaryColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                              ),
+                              icon: const Icon(
+                                Icons.edit_outlined,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                              label: const Text(
+                                'Modifier',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
-                            icon: const Icon(Icons.edit_outlined,
-                                size: 16, color: Colors.white),
-                            label: const Text('Modifier',
+                            const SizedBox(height: 4),
+                            GestureDetector(
+                              onTap: () =>
+                                  controller.goTo(ProfileSubPage.avatarPicker),
+                              child: Text(
+                                'choisissez votre avatar...',
                                 style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700)),
-                          ),
-                          const SizedBox(height: 4),
-                          GestureDetector(
-                            onTap: () =>
-                                controller.goTo(ProfileSubPage.avatarPicker),
-                            child: Text('choisissez votre avatar...',
-                                style: TextStyle(
-                                    color: GPTheme.primaryColor,
-                                    fontSize: 12,
-                                    fontStyle: FontStyle.italic)),
-                          ),
-                        ],
-                      ),
-                    ]),
+                                  color: GPTheme.primaryColor,
+                                  fontSize: 12,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 28),
                     _GpField(
                       label: 'Nom & Prénom',
@@ -780,34 +861,43 @@ class _EditInfoPage extends GetView<ProfileController> {
                           label: 'Date de naissance',
                           ctrl: controller.birthdayController,
                           hint: 'AAAA-MM-JJ',
-                          prefixIcon: Icon(Icons.calendar_today_outlined,
-                              size: 18, color: GPTheme.primaryColor),
+                          prefixIcon: Icon(
+                            Icons.calendar_today_outlined,
+                            size: 18,
+                            color: GPTheme.primaryColor,
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Obx(() => _GpDropdown(
-                          label: 'Genre',
-                          value: controller.selectedGender.value,
-                          options: ProfileController.genderOptions.cast(),
-                          onChanged: (v) => controller.selectedGender.value = v,
-                        )),
+                    // Managed By Dating, can cause confusion if we allow editing here
+                    Obx(
+                      () => _GpDropdown(
+                        label: 'Genre',
+                        value: controller.selectedGender.value,
+                        options: ProfileController.genderOptions.cast(),
+                        onChanged: (v) => controller.selectedGender.value = v,
+                      ),
+                    ),
                     const SizedBox(height: 16),
-                    Obx(() => _GpDropdown(
-                          label: 'Je recherche',
-                          value: controller.selectedLookingFor.value,
-                          options:
-                              ProfileController.lookingForOptions.cast(),
-                          onChanged: (v) =>
-                              controller.selectedLookingFor.value = v,
-                        )),
-                    const SizedBox(height: 16),
+                    // Obx(() => _GpDropdown(
+                    //       label: 'Je recherche',
+                    //       value: controller.selectedLookingFor.value,
+                    //       options:
+                    //           ProfileController.lookingForOptions.cast(),
+                    //       onChanged: (v) =>
+                    //           controller.selectedLookingFor.value = v,
+                    //     )),
+                    // const SizedBox(height: 16),
                     _GpField(
                       label: 'Ville / Quartier',
                       ctrl: controller.cityController,
                       hint: 'Ex: Cotonou, Haie Vive',
-                      prefixIcon: Icon(Icons.location_on_outlined,
-                          size: 18, color: GPTheme.primaryColor),
+                      prefixIcon: Icon(
+                        Icons.location_on_outlined,
+                        size: 18,
+                        color: GPTheme.primaryColor,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     _GpField(
@@ -852,45 +942,47 @@ class _ChangePasswordPage extends GetView<ProfileController> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-                child: Column(children: [
-                  _GpField(
-                    label: 'Mot de passe actuel',
-                    ctrl: controller.oldPasswordController,
-                    obscure: controller.isOldObscure.value,
-                    onToggleObscure: () => controller.isOldObscure.value =
-                        !controller.isOldObscure.value,
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Champ requis' : null,
-                  ),
-                  const SizedBox(height: 20),
-                  _GpField(
-                    label: 'Nouveau mot de passe',
-                    ctrl: controller.newPasswordController,
-                    obscure: controller.isNewObscure.value,
-                    onToggleObscure: () => controller.isNewObscure.value =
-                        !controller.isNewObscure.value,
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Champ requis';
-                      if (v.length < 8) return 'Minimum 8 caractères';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  _GpField(
-                    label: 'Confirmer',
-                    ctrl: controller.confirmPasswordController,
-                    obscure: controller.isConfirmObscure.value,
-                    onToggleObscure: () => controller.isConfirmObscure.value =
-                        !controller.isConfirmObscure.value,
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Champ requis';
-                      if (v != controller.newPasswordController.text)
-                        return 'Les mots de passe ne correspondent pas';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 32),
-                ]),
+                child: Column(
+                  children: [
+                    _GpField(
+                      label: 'Mot de passe actuel',
+                      ctrl: controller.oldPasswordController,
+                      obscure: controller.isOldObscure.value,
+                      onToggleObscure: () => controller.isOldObscure.value =
+                          !controller.isOldObscure.value,
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Champ requis' : null,
+                    ),
+                    const SizedBox(height: 20),
+                    _GpField(
+                      label: 'Nouveau mot de passe',
+                      ctrl: controller.newPasswordController,
+                      obscure: controller.isNewObscure.value,
+                      onToggleObscure: () => controller.isNewObscure.value =
+                          !controller.isNewObscure.value,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Champ requis';
+                        if (v.length < 8) return 'Minimum 8 caractères';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    _GpField(
+                      label: 'Confirmer',
+                      ctrl: controller.confirmPasswordController,
+                      obscure: controller.isConfirmObscure.value,
+                      onToggleObscure: () => controller.isConfirmObscure.value =
+                          !controller.isConfirmObscure.value,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Champ requis';
+                        if (v != controller.newPasswordController.text)
+                          return 'Les mots de passe ne correspondent pas';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
             ],
           ),
@@ -911,8 +1003,7 @@ class _AvatarPickerPage extends GetView<ProfileController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _ProfileSubBar(
-            title: 'CHOISIR UN AVATAR', onCancel: controller.goBack),
+        _ProfileSubBar(title: 'CHOISIR UN AVATAR', onCancel: controller.goBack),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
           child: OutlinedButton.icon(
@@ -920,22 +1011,29 @@ class _AvatarPickerPage extends GetView<ProfileController> {
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: GPTheme.primaryColor),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 20, vertical: 12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
-            icon: Icon(Icons.photo_library_outlined,
-                color: GPTheme.primaryColor),
-            label: Text('Choisir depuis la galerie',
-                style: TextStyle(
-                    color: GPTheme.primaryColor,
-                    fontWeight: FontWeight.w600)),
+            icon: Icon(
+              Icons.photo_library_outlined,
+              color: GPTheme.primaryColor,
+            ),
+            label: Text(
+              'Choisir depuis la galerie',
+              style: TextStyle(
+                color: GPTheme.primaryColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: Text('ou sélectionnez un avatar',
-              style: TextStyle(color: context.subtleText, fontSize: 13)),
+          child: Text(
+            'ou sélectionnez un avatar',
+            style: TextStyle(color: context.subtleText, fontSize: 13),
+          ),
         ),
         Expanded(
           child: GridView.builder(
@@ -947,14 +1045,15 @@ class _AvatarPickerPage extends GetView<ProfileController> {
             ),
             itemCount: controller.avatars.length,
             itemBuilder: (_, i) {
-              final isSelected = controller.selectedAvatarIndex.value ==
+              final isSelected =
+                  controller.selectedAvatarIndex.value ==
                   controller.avatars[i].id;
               final isSavingThis = controller.isSaving.value;
               return GestureDetector(
                 onTap: isSavingThis
                     ? null
-                    : () => controller
-                        .selectPresetAvatar(controller.avatars[i]),
+                    : () =>
+                          controller.selectPresetAvatar(controller.avatars[i]),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   decoration: BoxDecoration(
@@ -968,8 +1067,9 @@ class _AvatarPickerPage extends GetView<ProfileController> {
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: GPTheme.primaryColor
-                                  .withValues(alpha: 0.3),
+                              color: GPTheme.primaryColor.withValues(
+                                alpha: 0.3,
+                              ),
                               blurRadius: 8,
                             ),
                           ]
@@ -987,8 +1087,10 @@ class _AvatarPickerPage extends GetView<ProfileController> {
                             ),
                           )
                         : Image.network(
-                            controller.avatars[i].url
-                                .replaceAll("localhost", API_IP),
+                            controller.avatars[i].url.replaceAll(
+                              "localhost",
+                              API_IP,
+                            ),
                             fit: BoxFit.cover,
                             loadingBuilder: (_, child, p) {
                               if (p == null) return child;
@@ -1003,7 +1105,7 @@ class _AvatarPickerPage extends GetView<ProfileController> {
                                       color: GPTheme.primaryColor,
                                       value: p.expectedTotalBytes != null
                                           ? p.cumulativeBytesLoaded /
-                                              p.expectedTotalBytes!
+                                                p.expectedTotalBytes!
                                           : null,
                                     ),
                                   ),
@@ -1012,8 +1114,10 @@ class _AvatarPickerPage extends GetView<ProfileController> {
                             },
                             errorBuilder: (_, __, ___) => Container(
                               color: Colors.grey.shade200,
-                              child: Icon(Icons.person,
-                                  color: Colors.grey.shade400),
+                              child: Icon(
+                                Icons.person,
+                                color: Colors.grey.shade400,
+                              ),
                             ),
                           ),
                   ),
@@ -1047,19 +1151,20 @@ class _InterestsPage extends GetView<ProfileController> {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text('Sélectionnez ce que vous aimez',
-              style: TextStyle(color: context.subtleText, fontSize: 14)),
+          child: Text(
+            'Sélectionnez ce que vous aimez',
+            style: TextStyle(color: context.subtleText, fontSize: 14),
+          ),
         ),
         Expanded(
           child: Obx(() {
             if (controller.isInterestsLoading.value) {
               return Center(
-                  child: CircularProgressIndicator(
-                      color: GPTheme.primaryColor));
+                child: CircularProgressIndicator(color: GPTheme.primaryColor),
+              );
             }
             return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               child: Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 10,
@@ -1097,8 +1202,7 @@ class _ManageSubscriptionsPage extends StatefulWidget {
       _ManageSubscriptionsPageState();
 }
 
-class _ManageSubscriptionsPageState
-    extends State<_ManageSubscriptionsPage> {
+class _ManageSubscriptionsPageState extends State<_ManageSubscriptionsPage> {
   final _premCtrl = Get.put(SocialPremiumController());
 
   @override
@@ -1108,10 +1212,9 @@ class _ManageSubscriptionsPageState
   }
 
   int _totalDays(List<ActiveSubscription> h) => h.fold(0, (s, e) {
-        final d =
-            (e.cancelledAt ?? e.endsAt).difference(e.startsAt).inDays;
-        return s + (d > 0 ? d : 0);
-      });
+    final d = (e.cancelledAt ?? e.endsAt).difference(e.startsAt).inDays;
+    return s + (d > 0 ? d : 0);
+  });
 
   String _mostUsedPlan(List<ActiveSubscription> h) {
     if (h.isEmpty) return '—';
@@ -1135,126 +1238,143 @@ class _ManageSubscriptionsPageState
   @override
   Widget build(BuildContext context) {
     final profileCtrl = Get.find<ProfileController>();
-    return Column(children: [
-      _ProfileSubBar(
-          title: 'MES ABONNEMENTS', onCancel: profileCtrl.goBack),
-      Expanded(
-        child: Obx(() {
-          if (_premCtrl.isLoadingHistory.value) {
-            return Center(
-                child: CircularProgressIndicator(
-                    color: GPTheme.primaryColor));
-          }
-          final history = _premCtrl.subscriptionHistory;
-          if (history.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.subscriptions_outlined,
-                      size: 56, color: context.subtleText),
-                  const SizedBox(height: 16),
-                  Text('Aucun abonnement trouvé',
+    return Column(
+      children: [
+        _ProfileSubBar(title: 'MES ABONNEMENTS', onCancel: profileCtrl.goBack),
+        Expanded(
+          child: Obx(() {
+            if (_premCtrl.isLoadingHistory.value) {
+              return Center(
+                child: CircularProgressIndicator(color: GPTheme.primaryColor),
+              );
+            }
+            final history = _premCtrl.subscriptionHistory;
+            if (history.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.subscriptions_outlined,
+                      size: 56,
+                      color: context.subtleText,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Aucun abonnement trouvé',
                       style: TextStyle(
-                          color: context.subtleText,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () =>
-                        profileCtrl.goTo(ProfileSubPage.main),
-                    child: Text('Voir les plans disponibles',
+                        color: context.subtleText,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => profileCtrl.goTo(ProfileSubPage.main),
+                      child: Text(
+                        'Voir les plans disponibles',
                         style: TextStyle(
-                            color: GPTheme.primaryColor,
-                            fontWeight: FontWeight.w600)),
-                  ),
-                ],
-              ),
-            );
-          }
-          return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Obx(() {
-                  final sub = activeUser.value.activeSubscription;
-                  if (sub == null || !sub.isValid) {
-                    return _NoActiveSubBanner(context: context);
-                  }
-                  return _ActiveSubCard(
-                      subscription: sub, context: context);
-                }),
-                const SizedBox(height: 20),
-                _SectionLabel(
-                    label: 'Statistiques', context: context),
-                const SizedBox(height: 10),
-                _buildStatsGrid(context, history),
-                const SizedBox(height: 24),
-                _SectionLabel(
+                          color: GPTheme.primaryColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Obx(() {
+                    final sub = activeUser.value.activeSubscription;
+                    if (sub == null || !sub.isValid) {
+                      return _NoActiveSubBanner(context: context);
+                    }
+                    return _ActiveSubCard(subscription: sub, context: context);
+                  }),
+                  const SizedBox(height: 20),
+                  _SectionLabel(label: 'Statistiques', context: context),
+                  const SizedBox(height: 10),
+                  _buildStatsGrid(context, history),
+                  const SizedBox(height: 24),
+                  _SectionLabel(
                     label: 'Historique (${history.length})',
-                    context: context),
-                const SizedBox(height: 10),
-                ...history.asMap().entries.map((e) =>
-                    _SubscriptionHistoryTile(
+                    context: context,
+                  ),
+                  const SizedBox(height: 10),
+                  ...history.asMap().entries.map(
+                    (e) => _SubscriptionHistoryTile(
                       subscription: e.value,
                       isFirst: e.key == 0,
                       isLast: e.key == history.length - 1,
                       context: context,
-                    )),
-              ],
-            ),
-          );
-        }),
-      ),
-    ]);
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ),
+      ],
+    );
   }
 
   Widget _buildStatsGrid(
-      BuildContext context, List<ActiveSubscription> history) {
+    BuildContext context,
+    List<ActiveSubscription> history,
+  ) {
     final stats = [
       _StatItem(
-          icon: Icons.calendar_today_rounded,
-          label: 'Total jours',
-          value: '${_totalDays(history)} j',
-          color: GPTheme.primaryColor),
+        icon: Icons.calendar_today_rounded,
+        label: 'Total jours',
+        value: '${_totalDays(history)} j',
+        color: GPTheme.primaryColor,
+      ),
       _StatItem(
-          icon: Icons.star_rounded,
-          label: 'Plan favori',
-          value: _mostUsedPlan(history),
-          color: Colors.amber.shade600),
+        icon: Icons.star_rounded,
+        label: 'Plan favori',
+        value: _mostUsedPlan(history),
+        color: Colors.amber.shade600,
+      ),
       _StatItem(
-          icon: Icons.cancel_outlined,
-          label: 'Annulés',
-          value: '${_cancelledCount(history)}',
-          color: Colors.red.shade400),
+        icon: Icons.cancel_outlined,
+        label: 'Annulés',
+        value: '${_cancelledCount(history)}',
+        color: Colors.red.shade400,
+      ),
       _StatItem(
-          icon: Icons.payments_outlined,
-          label: 'Total dépensé',
-          value: '${_totalSpent(history).toStringAsFixed(0)} XOF',
-          color: Colors.green.shade600),
+        icon: Icons.payments_outlined,
+        label: 'Total dépensé',
+        value: '${_totalSpent(history).toStringAsFixed(0)} XOF',
+        color: Colors.green.shade600,
+      ),
       _StatItem(
-          icon: Icons.timelapse_rounded,
-          label: 'Durée moy.',
-          value: '${_avgDuration(history).toStringAsFixed(0)} j',
-          color: Colors.blue.shade400),
+        icon: Icons.timelapse_rounded,
+        label: 'Durée moy.',
+        value: '${_avgDuration(history).toStringAsFixed(0)} j',
+        color: Colors.blue.shade400,
+      ),
       _StatItem(
-          icon: Icons.repeat_rounded,
-          label: 'Renouvellements',
-          value: '${history.length}',
-          color: Colors.purple.shade400),
+        icon: Icons.repeat_rounded,
+        label: 'Renouvellements',
+        value: '${history.length}',
+        color: Colors.purple.shade400,
+      ),
     ];
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 2.4),
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 2.4,
+      ),
       itemCount: stats.length,
-      itemBuilder: (_, i) =>
-          _StatCard(stat: stats[i], context: context),
+      itemBuilder: (_, i) => _StatCard(stat: stats[i], context: context),
     );
   }
 }
@@ -1267,30 +1387,31 @@ class _SectionLabel extends StatelessWidget {
   final BuildContext context;
   const _SectionLabel({required this.label, required this.context});
   @override
-  Widget build(BuildContext ctx) => Text(label,
-      style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
-          color: GPTheme.primaryColor,
-          letterSpacing: 0.4));
+  Widget build(BuildContext ctx) => Text(
+    label,
+    style: TextStyle(
+      fontSize: 15,
+      fontWeight: FontWeight.w700,
+      color: GPTheme.primaryColor,
+      letterSpacing: 0.4,
+    ),
+  );
 }
 
 class _ActiveSubCard extends StatelessWidget {
   final ActiveSubscription subscription;
   final BuildContext context;
-  const _ActiveSubCard(
-      {required this.subscription, required this.context});
+  const _ActiveSubCard({required this.subscription, required this.context});
   @override
   Widget build(BuildContext ctx) {
-    final daysLeft =
-        subscription.endsAt.difference(DateTime.now()).inDays;
+    final daysLeft = subscription.endsAt.difference(DateTime.now()).inDays;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
             GPTheme.primaryColor,
-            GPTheme.primaryColor.withOpacity(0.75)
+            GPTheme.primaryColor.withOpacity(0.75),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -1298,62 +1419,82 @@ class _ActiveSubCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: GPTheme.primaryColor.withOpacity(0.35),
-              blurRadius: 16,
-              offset: const Offset(0, 6))
+            color: GPTheme.primaryColor.withOpacity(0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
         ],
       ),
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              const Icon(Icons.verified_rounded,
-                  color: Colors.white, size: 20),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.verified_rounded, color: Colors.white, size: 20),
               const SizedBox(width: 8),
-              const Text('ABONNEMENT ACTIF',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
-                      letterSpacing: 1.2)),
+              const Text(
+                'ABONNEMENT ACTIF',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  letterSpacing: 1.2,
+                ),
+              ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 4),
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20)),
-                child: Text(subscription.plan?.name ?? 'Premium',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11)),
-              ),
-            ]),
-            const SizedBox(height: 14),
-            Text(
-                '${subscription.plan?.price.toStringAsFixed(0) ?? '—'} XOF',
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900)),
-            const SizedBox(height: 8),
-            Row(children: [
-              const Icon(Icons.schedule_rounded,
-                  color: Colors.white70, size: 14),
-              const SizedBox(width: 4),
-              Text('Expire le ${subscription.formattedExpiry}',
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  subscription.plan?.name ?? 'Premium',
                   style: const TextStyle(
-                      color: Colors.white70, fontSize: 13)),
-            ]),
-            const SizedBox(height: 6),
-            _SubscriptionProgressBar(subscription: subscription),
-            const SizedBox(height: 4),
-            Text(
-                '$daysLeft jour${daysLeft > 1 ? 's' : ''} restant${daysLeft > 1 ? 's' : ''}',
-                style: const TextStyle(
-                    color: Colors.white70, fontSize: 12)),
-          ]),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            '${subscription.plan?.price.toStringAsFixed(0) ?? '—'} XOF',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(
+                Icons.schedule_rounded,
+                color: Colors.white70,
+                size: 14,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Expire le ${subscription.formattedExpiry}',
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          _SubscriptionProgressBar(subscription: subscription),
+          const SizedBox(height: 4),
+          Text(
+            '$daysLeft jour${daysLeft > 1 ? 's' : ''} restant${daysLeft > 1 ? 's' : ''}',
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1363,20 +1504,15 @@ class _SubscriptionProgressBar extends StatelessWidget {
   const _SubscriptionProgressBar({required this.subscription});
   @override
   Widget build(BuildContext context) {
-    final total = subscription.endsAt
-        .difference(subscription.startsAt)
-        .inDays;
-    final elapsed =
-        DateTime.now().difference(subscription.startsAt).inDays;
-    final progress =
-        total > 0 ? (elapsed / total).clamp(0.0, 1.0) : 0.0;
+    final total = subscription.endsAt.difference(subscription.startsAt).inDays;
+    final elapsed = DateTime.now().difference(subscription.startsAt).inDays;
+    final progress = total > 0 ? (elapsed / total).clamp(0.0, 1.0) : 0.0;
     return ClipRRect(
       borderRadius: BorderRadius.circular(4),
       child: LinearProgressIndicator(
         value: progress,
         backgroundColor: Colors.white.withOpacity(0.25),
-        valueColor:
-            const AlwaysStoppedAnimation<Color>(Colors.white),
+        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
         minHeight: 5,
       ),
     );
@@ -1397,20 +1533,23 @@ class _NoActiveSubBanner extends StatelessWidget {
             : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: isDark
-                ? GPTheme.primaryColor.withOpacity(0.3)
-                : Colors.grey.shade200),
-      ),
-      child: Row(children: [
-        Icon(Icons.info_outline_rounded,
-            color: context.subtleText, size: 22),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text('Aucun abonnement actif en ce moment.',
-              style: TextStyle(
-                  color: context.subtleText, fontSize: 14)),
+          color: isDark
+              ? GPTheme.primaryColor.withOpacity(0.3)
+              : Colors.grey.shade200,
         ),
-      ]),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline_rounded, color: context.subtleText, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Aucun abonnement actif en ce moment.',
+              style: TextStyle(color: context.subtleText, fontSize: 14),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1420,11 +1559,12 @@ class _SubscriptionHistoryTile extends StatelessWidget {
   final bool isFirst;
   final bool isLast;
   final BuildContext context;
-  const _SubscriptionHistoryTile(
-      {required this.subscription,
-      required this.isFirst,
-      required this.isLast,
-      required this.context});
+  const _SubscriptionHistoryTile({
+    required this.subscription,
+    required this.isFirst,
+    required this.isLast,
+    required this.context,
+  });
 
   String _fd(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
@@ -1435,11 +1575,13 @@ class _SubscriptionHistoryTile extends StatelessWidget {
     if (_isCancelled) return Colors.orange.shade700;
     return Colors.grey.shade500;
   }
+
   String _sl() {
     if (_isActive) return 'Actif';
     if (_isCancelled) return 'Annulé';
     return 'Expiré';
   }
+
   IconData _si() {
     if (_isActive) return Icons.check_circle_rounded;
     if (_isCancelled) return Icons.cancel_rounded;
@@ -1462,137 +1604,181 @@ class _SubscriptionHistoryTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: _isActive
-              ? GPTheme.primaryColor
-                  .withOpacity(isDark ? 0.5 : 0.25)
+              ? GPTheme.primaryColor.withOpacity(isDark ? 0.5 : 0.25)
               : (isDark
-                  ? GPTheme.primaryColor.withOpacity(0.15)
-                  : Colors.grey.shade200),
+                    ? GPTheme.primaryColor.withOpacity(0.15)
+                    : Colors.grey.shade200),
           width: _isActive ? 1.5 : 1,
         ),
         boxShadow: isDark
             ? null
             : [
                 BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3))
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
               ],
       ),
       child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                  color: _sc().withOpacity(0.12),
-                  shape: BoxShape.circle),
-              child: Icon(_si(), color: _sc(), size: 18),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: _sc().withOpacity(0.12),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
+            child: Icon(_si(), color: _sc(), size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
                     Expanded(
-                        child: Text(
-                            subscription.plan?.name ?? 'Plan inconnu',
-                            style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                                color: context.primaryText))),
+                      child: Text(
+                        subscription.plan?.name ?? 'Plan inconnu',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: context.primaryText,
+                        ),
+                      ),
+                    ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
-                          color: _sc().withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(8)),
-                      child: Text(_sl(),
-                          style: TextStyle(
-                              color: _sc(),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700)),
-                    ),
-                  ]),
-                  const SizedBox(height: 4),
-                  Text(
-                      '${subscription.plan?.price.toStringAsFixed(0) ?? '—'} XOF',
-                      style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: GPTheme.primaryColor)),
-                  const SizedBox(height: 6),
-                  Row(children: [
-                    Icon(Icons.play_arrow_rounded,
-                        size: 13, color: context.subtleText),
-                    const SizedBox(width: 3),
-                    Text(_fd(subscription.startsAt),
+                        color: _sc().withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _sl(),
                         style: TextStyle(
-                            color: context.subtleText, fontSize: 12)),
-                    Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 6),
-                      child: Icon(Icons.arrow_forward_rounded,
-                          size: 12, color: context.subtleText),
+                          color: _sc(),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${subscription.plan?.price.toStringAsFixed(0) ?? '—'} XOF',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: GPTheme.primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
                     Icon(
-                        _isCancelled
-                            ? Icons.cancel_outlined
-                            : Icons.stop_circle_outlined,
-                        size: 13,
-                        color: _isCancelled
-                            ? Colors.orange.shade700
-                            : context.subtleText),
+                      Icons.play_arrow_rounded,
+                      size: 13,
+                      color: context.subtleText,
+                    ),
                     const SizedBox(width: 3),
                     Text(
-                        _fd(subscription.cancelledAt ??
-                            subscription.endsAt),
-                        style: TextStyle(
-                            color: _isCancelled
-                                ? Colors.orange.shade700
-                                : context.subtleText,
-                            fontSize: 12)),
-                  ]),
-                  const SizedBox(height: 4),
-                  Row(children: [
-                    Icon(Icons.timelapse_rounded,
-                        size: 12, color: context.subtleText),
+                      _fd(subscription.startsAt),
+                      style: TextStyle(color: context.subtleText, fontSize: 12),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 12,
+                        color: context.subtleText,
+                      ),
+                    ),
+                    Icon(
+                      _isCancelled
+                          ? Icons.cancel_outlined
+                          : Icons.stop_circle_outlined,
+                      size: 13,
+                      color: _isCancelled
+                          ? Colors.orange.shade700
+                          : context.subtleText,
+                    ),
                     const SizedBox(width: 3),
-                    Text('$dd jour${dd > 1 ? 's' : ''}',
-                        style: TextStyle(
-                            color: context.subtleText, fontSize: 11)),
+                    Text(
+                      _fd(subscription.cancelledAt ?? subscription.endsAt),
+                      style: TextStyle(
+                        color: _isCancelled
+                            ? Colors.orange.shade700
+                            : context.subtleText,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.timelapse_rounded,
+                      size: 12,
+                      color: context.subtleText,
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      '$dd jour${dd > 1 ? 's' : ''}',
+                      style: TextStyle(color: context.subtleText, fontSize: 11),
+                    ),
                     if (subscription.paymentRef.isNotEmpty) ...[
                       const SizedBox(width: 10),
-                      Icon(Icons.receipt_outlined,
-                          size: 12, color: context.subtleText),
+                      Icon(
+                        Icons.receipt_outlined,
+                        size: 12,
+                        color: context.subtleText,
+                      ),
                       const SizedBox(width: 3),
                       Expanded(
-                          child: Text(subscription.paymentRef,
-                              style: TextStyle(
-                                  color: context.subtleText,
-                                  fontSize: 11),
-                              overflow: TextOverflow.ellipsis)),
+                        child: Text(
+                          subscription.paymentRef,
+                          style: TextStyle(
+                            color: context.subtleText,
+                            fontSize: 11,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
-                  ]),
-                  if (_isCancelled) ...[
-                    const SizedBox(height: 4),
-                    Row(children: [
-                      Icon(Icons.info_outline_rounded,
-                          size: 12,
-                          color: Colors.orange.shade700),
+                  ],
+                ),
+                if (_isCancelled) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: 12,
+                        color: Colors.orange.shade700,
+                      ),
                       const SizedBox(width: 3),
                       Text(
-                          'Annulé le ${_fd(subscription.cancelledAt!)}',
-                          style: TextStyle(
-                              color: Colors.orange.shade700,
-                              fontSize: 11,
-                              fontStyle: FontStyle.italic)),
-                    ]),
-                  ],
+                        'Annulé le ${_fd(subscription.cancelledAt!)}',
+                        style: TextStyle(
+                          color: Colors.orange.shade700,
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
-              ),
+              ],
             ),
-          ]),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1602,11 +1788,12 @@ class _StatItem {
   final String label;
   final String value;
   final Color color;
-  const _StatItem(
-      {required this.icon,
-      required this.label,
-      required this.value,
-      required this.color});
+  const _StatItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 }
 
 class _StatCard extends StatelessWidget {
@@ -1617,43 +1804,48 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext ctx) {
     final isDark = context.isDark;
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: isDark
             ? stat.color.withOpacity(0.08)
             : stat.color.withOpacity(0.06),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: stat.color.withOpacity(isDark ? 0.35 : 0.2)),
+        border: Border.all(color: stat.color.withOpacity(isDark ? 0.35 : 0.2)),
       ),
-      child: Row(children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
               color: stat.color.withOpacity(0.15),
-              shape: BoxShape.circle),
-          child: Icon(stat.icon, color: stat.color, size: 16),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(stat.value,
-                  style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                      color: context.primaryText),
-                  overflow: TextOverflow.ellipsis),
-              Text(stat.label,
-                  style: TextStyle(
-                      fontSize: 10, color: context.subtleText)),
-            ],
+              shape: BoxShape.circle,
+            ),
+            child: Icon(stat.icon, color: stat.color, size: 16),
           ),
-        ),
-      ]),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  stat.value,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    color: context.primaryText,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  stat.label,
+                  style: TextStyle(fontSize: 10, color: context.subtleText),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
