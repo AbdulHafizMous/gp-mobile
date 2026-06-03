@@ -137,7 +137,7 @@ final sections = [
     title: "Social",
     description: "Discutez, échangez et connectez-vous avec la communauté.",
     icon: Icons.chat_bubble_outline,
-    isLive: true,
+    // isLive: true,
     page: SocialView(),
     drawerItems: [
       DrawerItem(
