@@ -11,6 +11,11 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+.gradle/
+.idea/
+.gradle/
+android/.gradle/
+
 
 # IntelliJ related
 *.iml

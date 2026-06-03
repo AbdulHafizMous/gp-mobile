@@ -7,28 +7,12 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:530288780124:android:251b848a859e0e7ef99799",
+        "mobilesdk_app_id": "1:530288780124:android:b6f11a19718dce2bf99799",
         "android_client_info": {
-          "package_name": "com.example.grand_public_v2"
+          "package_name": "com.maxafrica.gpbenin"
         }
       },
       "oauth_client": [
-        {
-          "client_id": "530288780124-jc2bbce3jtbi3i5l9qo1api0cmvou6fl.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.grand_public_v2",
-            "certificate_hash": "8a299891835996a6436d032cd3d3d227418e8aaf"
-          }
-        },
-        {
-          "client_id": "530288780124-k52v1m1c8hjt12rk5598ag8bcvfuctir.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.grand_public_v2",
-            "certificate_hash": "332c4427c134e516f1db0fe112a5b6e50499129a"
-          }
-        },
         {
           "client_id": "530288780124-v2m5pomu1iih003inicssigo0eqhrlup.apps.googleusercontent.com",
           "client_type": 3
