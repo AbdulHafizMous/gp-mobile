@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyB0cITq_E5O6gS3ebIm6HpQ2BQ7YXgWCZs',
-    appId: '1:530288780124:android:251b848a859e0e7ef99799',
+    appId: '1:530288780124:android:b6f11a19718dce2bf99799',
     messagingSenderId: '530288780124',
     projectId: 'grand-public-f4fd5',
     storageBucket: 'grand-public-f4fd5.firebasestorage.app',
@@ -60,13 +60,13 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyB69eJxyQLTvpZxJmApTckzWEEV55TlWPQ',
-    appId: '1:530288780124:ios:76379b2aa618d2c8f99799',
+    appId: '1:530288780124:ios:e8bb3ab3f29fe9dff99799',
     messagingSenderId: '530288780124',
     projectId: 'grand-public-f4fd5',
     storageBucket: 'grand-public-f4fd5.firebasestorage.app',
-    androidClientId: '530288780124-k52v1m1c8hjt12rk5598ag8bcvfuctir.apps.googleusercontent.com',
-    iosClientId: '530288780124-ge0togu9tue53lpgvb95n4fg56t0ooc0.apps.googleusercontent.com',
-    iosBundleId: 'com.example.grandPublicV2',
+    androidClientId: '530288780124-jc2bbce3jtbi3i5l9qo1api0cmvou6fl.apps.googleusercontent.com',
+    iosClientId: '530288780124-sohtqd98eq5rsdhvdpfcf5cepo81mjqt.apps.googleusercontent.com',
+    iosBundleId: 'com.maxafrica.gpbenin',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
