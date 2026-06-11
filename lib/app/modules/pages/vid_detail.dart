@@ -16,7 +16,7 @@ import 'package:grand_public_v2/app/themes/app_theme.dart';
 extension _ThemeX on BuildContext {
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
   Color get surface =>
-      isDark ? const Color(0xFF111111) : GPTheme.primaryColor.withOpacity(0.04);
+      isDark ? const Color(0xFF111111) : GPTheme.primaryColor.withOpacity(0.05);
   Color get surface2 =>
       isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5);
   Color get surface3 =>

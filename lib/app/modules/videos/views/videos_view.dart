@@ -22,6 +22,7 @@ class VideosView extends StatelessWidget {
     }
 
     return Scaffold(
+      // backgroundColor: Colors.black,
       body: FutureBuilder<SpaceVideo>(
         future: ctrl.fetchVideoById(id),
         builder: (context, snapshot) {

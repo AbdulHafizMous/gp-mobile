@@ -51,11 +51,10 @@ class _ChatListViewState extends State<ChatListView>
   }
 
   @override
- Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
     final isDark = context.isDark;
-    final headerBg = isDark
-        ? const Color(0xFF111111)
-        : GPTheme.primaryColor.withOpacity(0.9);
+    final headerBg = isDark ? const Color(0xFF111111) : Colors.black;
+
     return Scaffold(
       backgroundColor: context.bg,
       body: Column(
@@ -73,26 +72,38 @@ class _ChatListViewState extends State<ChatListView>
                     padding: const EdgeInsets.fromLTRB(16, 12, 12, 0),
                     child: Row(
                       children: [
-                        const Text('My GP',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5)),
+                        const Text(
+                          'My GP',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                         const Spacer(),
-                        Obx(() => _ctrl.isChannelsLoading.value
-                            ? const SizedBox(
-                                width: 18, height: 18,
-                                child: CircularProgressIndicator(
-                                    color: Colors.white54, strokeWidth: 2))
-                            : IconButton(
-                                onPressed: () {
-                                  _ctrl.loadChannels();
-                                  _ctrl.loadPrivateConversations();
-                                },
-                                icon: const Icon(Icons.refresh_rounded,
-                                    color: Colors.white60, size: 20),
-                              )),
+                        Obx(
+                          () => _ctrl.isChannelsLoading.value
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white54,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : IconButton(
+                                  onPressed: () {
+                                    _ctrl.loadChannels();
+                                    _ctrl.loadPrivateConversations();
+                                  },
+                                  icon: const Icon(
+                                    Icons.refresh_rounded,
+                                    color: Colors.white60,
+                                    size: 20,
+                                  ),
+                                ),
+                        ),
                       ],
                     ),
                   ),
@@ -114,15 +125,24 @@ class _ChatListViewState extends State<ChatListView>
                     labelColor: Colors.white,
                     unselectedLabelColor: Colors.white38,
                     labelStyle: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w700),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
                     unselectedLabelStyle: const TextStyle(fontSize: 14),
                     tabs: const [
                       Tab(
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.circle, size: 8, color: Colors.greenAccent),
-                          SizedBox(width: 6),
-                          Text('Canaux'),
-                        ]),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.circle,
+                              size: 8,
+                              color: Colors.greenAccent,
+                            ),
+                            SizedBox(width: 6),
+                            Text('Canaux'),
+                          ],
+                        ),
                       ),
                       Tab(text: 'Messages privés'),
                     ],
@@ -163,16 +183,29 @@ class _SearchBar extends StatelessWidget {
       decoration: InputDecoration(
         hintText: 'Rechercher: #Tech  #Musique  #Politique…',
         hintStyle: const TextStyle(color: Colors.white30, fontSize: 13),
-        prefixIcon: const Icon(Icons.search_rounded, color: Colors.white30, size: 18),
-        suffixIcon: Obx(() => ctrl.searchQuery.value.isNotEmpty
-            ? IconButton(
-                onPressed: ctrl.searchCtrl.clear,
-                icon: const Icon(Icons.close_rounded,
-                    color: Colors.white38, size: 16))
-            : const SizedBox.shrink()),
+        prefixIcon: const Icon(
+          Icons.search_rounded,
+          color: Colors.white30,
+          size: 18,
+        ),
+        suffixIcon: Obx(
+          () => ctrl.searchQuery.value.isNotEmpty
+              ? IconButton(
+                  onPressed: ctrl.searchCtrl.clear,
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: Colors.white38,
+                    size: 16,
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
         filled: true,
         fillColor: Colors.white10,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 10,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
@@ -194,17 +227,23 @@ class _ChannelsTab extends StatelessWidget {
     return Obx(() {
       if (ctrl.isChannelsLoading.value && ctrl.channels.isEmpty) {
         return Center(
-            child: CircularProgressIndicator(color: GPTheme.primaryColor));
+          child: CircularProgressIndicator(color: GPTheme.primaryColor),
+        );
       }
       final list = ctrl.filteredChannels;
       if (list.isEmpty) {
         return Center(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.search_off_rounded, size: 48, color: context.subtle),
-            const SizedBox(height: 12),
-            Text('Aucun canal trouvé',
-                style: TextStyle(color: context.subtle, fontSize: 15)),
-          ]),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.search_off_rounded, size: 48, color: context.subtle),
+              const SizedBox(height: 12),
+              Text(
+                'Aucun canal trouvé',
+                style: TextStyle(color: context.subtle, fontSize: 15),
+              ),
+            ],
+          ),
         );
       }
 
@@ -220,21 +259,25 @@ class _ChannelsTab extends StatelessWidget {
           children: [
             if (joined.isNotEmpty) ...[
               _SectionHeader(label: 'Mes canaux (${joined.length})'),
-              ...joined.map((c) => _ChannelTile(
-                    channel: c,
-                    onTap: () => _openChannel(context, c),
-                    onJoin: () => ctrl.joinChannel(c),
-                    onLeave: () => _confirmLeave(context, c),
-                  )),
+              ...joined.map(
+                (c) => _ChannelTile(
+                  channel: c,
+                  onTap: () => _openChannel(context, c),
+                  onJoin: () => ctrl.joinChannel(c),
+                  onLeave: () => _confirmLeave(context, c),
+                ),
+              ),
             ],
             if (others.isNotEmpty) ...[
               _SectionHeader(label: 'Découvrir (${others.length})'),
-              ...others.map((c) => _ChannelTile(
-                    channel: c,
-                    onTap: null,
-                    onJoin: () => ctrl.joinChannel(c),
-                    onLeave: null,
-                  )),
+              ...others.map(
+                (c) => _ChannelTile(
+                  channel: c,
+                  onTap: null,
+                  onJoin: () => ctrl.joinChannel(c),
+                  onLeave: null,
+                ),
+              ),
             ],
           ],
         ),
@@ -244,9 +287,11 @@ class _ChannelsTab extends StatelessWidget {
 
   void _openChannel(BuildContext context, ChatChannel channel) async {
     await ctrl.openChannel(channel);
-    Get.to(() => ChatRoomView(channel: channel),
-        transition: Transition.rightToLeft,
-        duration: const Duration(milliseconds: 300));
+    Get.to(
+      () => ChatRoomView(channel: channel),
+      transition: Transition.rightToLeft,
+      duration: const Duration(milliseconds: 300),
+    );
   }
 
   Future<void> _confirmLeave(BuildContext context, ChatChannel channel) async {
@@ -254,12 +299,21 @@ class _ChannelsTab extends StatelessWidget {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Quitter ce canal ?'),
-        content: Text('Vous ne recevrez plus les messages de "${channel.name}".'),
+        content: Text(
+          'Vous ne recevrez plus les messages de "${channel.name}".',
+        ),
         actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: const Text('Annuler')),
           TextButton(
-              onPressed: () => Get.back(result: true),
-              child: Text('Quitter', style: TextStyle(color: GPTheme.primaryColor))),
+            onPressed: () => Get.back(result: false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: Text(
+              'Quitter',
+              style: TextStyle(color: GPTheme.primaryColor),
+            ),
+          ),
         ],
       ),
     );
@@ -275,12 +329,15 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
-      child: Text(label,
-          style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: context.subtle,
-              letterSpacing: 0.8)),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: context.subtle,
+          letterSpacing: 0.8,
+        ),
+      ),
     );
   }
 }
@@ -313,7 +370,8 @@ class _ChannelTile extends StatelessWidget {
             Stack(
               children: [
                 Container(
-                  width: 52, height: 52,
+                  width: 52,
+                  height: 52,
                   decoration: BoxDecoration(
                     color: isDark
                         ? GPTheme.primaryColor.withOpacity(0.15)
@@ -322,7 +380,8 @@ class _ChannelTile extends StatelessWidget {
                     image: channel.imageUrl != null
                         ? DecorationImage(
                             image: NetworkImage(channel.imageUrl!),
-                            fit: BoxFit.cover)
+                            fit: BoxFit.cover,
+                          )
                         : null,
                   ),
                   child: channel.imageUrl == null
@@ -340,9 +399,11 @@ class _ChannelTile extends StatelessWidget {
                 ),
                 if (channel.isOnline)
                   Positioned(
-                    bottom: 2, right: 2,
+                    bottom: 2,
+                    right: 2,
                     child: Container(
-                      width: 11, height: 11,
+                      width: 11,
+                      height: 11,
                       decoration: BoxDecoration(
                         color: Colors.greenAccent.shade400,
                         shape: BoxShape.circle,
@@ -362,29 +423,33 @@ class _ChannelTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Text(channel.name,
-                            style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: context.primary),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
+                        child: Text(
+                          channel.name,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: context.primary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       if (channel.lastMessage != null)
-                        Text(channel.lastMessage!.timeLabel,
-                            style: TextStyle(
-                                fontSize: 11, color: context.subtle)),
+                        Text(
+                          channel.lastMessage!.timeLabel,
+                          style: TextStyle(fontSize: 11, color: context.subtle),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 3),
                   // Dernier message ou description
                   Text(
-                    channel.lastMessage?.content ??
-                        channel.description ?? '',
+                    channel.lastMessage?.content ?? channel.description ?? '',
                     style: TextStyle(
-                        fontSize: 13,
-                        color: context.subtle,
-                        height: 1.3),
+                      fontSize: 13,
+                      color: context.subtle,
+                      height: 1.3,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -392,43 +457,62 @@ class _ChannelTile extends StatelessWidget {
                   Row(
                     children: [
                       // Tags
-                      ...channel.tags.take(2).map((t) => Container(
-                            margin: const EdgeInsets.only(right: 6),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: GPTheme.primaryColor.withOpacity(
-                                  isDark ? 0.15 : 0.08),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text('#$t',
+                      ...channel.tags
+                          .take(2)
+                          .map(
+                            (t) => Container(
+                              margin: const EdgeInsets.only(right: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: GPTheme.primaryColor.withOpacity(
+                                  isDark ? 0.15 : 0.08,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '#$t',
                                 style: TextStyle(
-                                    fontSize: 10,
-                                    color: GPTheme.primaryColor,
-                                    fontWeight: FontWeight.w700)),
-                          )),
+                                  fontSize: 10,
+                                  color: GPTheme.primaryColor,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
                       // Membres
-                      Icon(Icons.people_outline_rounded,
-                          size: 13, color: context.subtle),
+                      Icon(
+                        Icons.people_outline_rounded,
+                        size: 13,
+                        color: context.subtle,
+                      ),
                       const SizedBox(width: 3),
-                      Text('${channel.membersCount}',
-                          style: TextStyle(
-                              fontSize: 11, color: context.subtle)),
+                      Text(
+                        '${channel.membersCount}',
+                        style: TextStyle(fontSize: 11, color: context.subtle),
+                      ),
                       const Spacer(),
                       // Badge unread
                       if (channel.unreadCount > 0)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 2),
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: GPTheme.primaryColor,
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Text('${channel.unreadCount}',
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800)),
+                          child: Text(
+                            '${channel.unreadCount}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                         ),
                       // Bouton rejoindre / quitter
                       const SizedBox(width: 8),
@@ -437,16 +521,21 @@ class _ChannelTile extends StatelessWidget {
                           onTap: onJoin,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 5),
+                              horizontal: 12,
+                              vertical: 5,
+                            ),
                             decoration: BoxDecoration(
                               color: GPTheme.primaryColor,
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: const Text('Rejoindre',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700)),
+                            child: const Text(
+                              'Rejoindre',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                         )
                       else if (onLeave != null)
@@ -454,20 +543,26 @@ class _ChannelTile extends StatelessWidget {
                           onTap: onLeave,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 5),
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
                             decoration: BoxDecoration(
                               color: GPTheme.primaryColor.withOpacity(
-                                  isDark ? 0.15 : 0.08),
+                                isDark ? 0.15 : 0.08,
+                              ),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                  color: GPTheme.primaryColor
-                                      .withOpacity(0.3)),
+                                color: GPTheme.primaryColor.withOpacity(0.3),
+                              ),
                             ),
-                            child: Text('Rejoint',
-                                style: TextStyle(
-                                    color: GPTheme.primaryColor,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700)),
+                            child: Text(
+                              'Rejoint',
+                              style: TextStyle(
+                                color: GPTheme.primaryColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                         ),
                     ],
@@ -494,7 +589,8 @@ class _MessagesTab extends StatelessWidget {
     return Obx(() {
       if (ctrl.isConvsLoading.value && ctrl.privateConversations.isEmpty) {
         return Center(
-            child: CircularProgressIndicator(color: GPTheme.primaryColor));
+          child: CircularProgressIndicator(color: GPTheme.primaryColor),
+        );
       }
       final convs = ctrl.privateConversations;
       if (convs.isEmpty) {
@@ -504,22 +600,31 @@ class _MessagesTab extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.chat_bubble_outline_rounded,
-                    size: 56, color: context.subtle),
+                Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  size: 56,
+                  color: context.subtle,
+                ),
                 const SizedBox(height: 16),
-                Text('Aucune conversation',
-                    style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: context.primary)),
+                Text(
+                  'Aucune conversation',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: context.primary,
+                  ),
+                ),
                 const SizedBox(height: 8),
-                Text('Likez des profils dans Dating pour démarrer !',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: context.subtle,
-                        fontSize: 13,
-                        fontStyle: FontStyle.italic,
-                        height: 1.5)),
+                Text(
+                  'Likez des profils dans Dating pour démarrer !',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: context.subtle,
+                    fontSize: 13,
+                    fontStyle: FontStyle.italic,
+                    height: 1.5,
+                  ),
+                ),
               ],
             ),
           ),
@@ -532,15 +637,17 @@ class _MessagesTab extends StatelessWidget {
         child: ListView.separated(
           padding: const EdgeInsets.only(bottom: 24),
           itemCount: convs.length,
-          separatorBuilder: (_, __) => Divider(
-              height: 1, indent: 76, color: context.divider),
+          separatorBuilder: (_, __) =>
+              Divider(height: 1, indent: 76, color: context.divider),
           itemBuilder: (_, i) => _ConvTile(
             conv: convs[i],
             onTap: () async {
               await ctrl.openPrivateConversation(convs[i]);
-              Get.to(() => ChatRoomView(privateConv: convs[i]),
-                  transition: Transition.rightToLeft,
-                  duration: const Duration(milliseconds: 300));
+              Get.to(
+                () => ChatRoomView(privateConv: convs[i]),
+                transition: Transition.rightToLeft,
+                duration: const Duration(milliseconds: 300),
+              );
             },
           ),
         ),
@@ -583,16 +690,20 @@ class _ConvTile extends StatelessWidget {
                               ? conv.otherUserName[0].toUpperCase()
                               : '?',
                           style: TextStyle(
-                              color: GPTheme.primaryColor,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 18))
+                            color: GPTheme.primaryColor,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                          ),
+                        )
                       : null,
                 ),
                 if (conv.otherIsOnline)
                   Positioned(
-                    bottom: 1, right: 1,
+                    bottom: 1,
+                    right: 1,
                     child: Container(
-                      width: 12, height: 12,
+                      width: 12,
+                      height: 12,
                       decoration: BoxDecoration(
                         color: Colors.greenAccent.shade400,
                         shape: BoxShape.circle,
@@ -614,21 +725,25 @@ class _ConvTile extends StatelessWidget {
                         child: Text(
                           conv.otherUserName,
                           style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: hasUnread
-                                  ? FontWeight.w800
-                                  : FontWeight.w600,
-                              color: context.primary),
+                            fontSize: 14,
+                            fontWeight: hasUnread
+                                ? FontWeight.w800
+                                : FontWeight.w600,
+                            color: context.primary,
+                          ),
                         ),
                       ),
                       Text(
                         conv.lastMessage?.timeLabel ?? '',
                         style: TextStyle(
-                            fontSize: 11,
-                            color: hasUnread
-                                ? GPTheme.primaryColor
-                                : context.subtle,
-                            fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w400),
+                          fontSize: 11,
+                          color: hasUnread
+                              ? GPTheme.primaryColor
+                              : context.subtle,
+                          fontWeight: hasUnread
+                              ? FontWeight.w700
+                              : FontWeight.w400,
+                        ),
                       ),
                     ],
                   ),
@@ -641,16 +756,21 @@ class _ConvTile extends StatelessWidget {
                       if (hasUnread)
                         Container(
                           margin: const EdgeInsets.only(left: 8),
-                          width: 20, height: 20,
+                          width: 20,
+                          height: 20,
                           decoration: BoxDecoration(
-                              color: GPTheme.primaryColor,
-                              shape: BoxShape.circle),
+                            color: GPTheme.primaryColor,
+                            shape: BoxShape.circle,
+                          ),
                           child: Center(
-                            child: Text('${conv.unreadCount}',
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800)),
+                            child: Text(
+                              '${conv.unreadCount}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                           ),
                         ),
                     ],
@@ -674,11 +794,20 @@ class _LastMessagePreview extends StatelessWidget {
     if (msg == null) return const SizedBox.shrink();
     String preview;
     switch (msg!.type) {
-      case MessageType.image:  preview = '📷 Photo';       break;
-      case MessageType.audio:  preview = '🎤 Message vocal'; break;
-      case MessageType.video:  preview = '🎬 Vidéo';       break;
-      case MessageType.file:   preview = '📎 Fichier';     break;
-      default:                 preview = msg!.content;
+      case MessageType.image:
+        preview = '📷 Photo';
+        break;
+      case MessageType.audio:
+        preview = '🎤 Message vocal';
+        break;
+      case MessageType.video:
+        preview = '🎬 Vidéo';
+        break;
+      case MessageType.file:
+        preview = '📎 Fichier';
+        break;
+      default:
+        preview = msg!.content;
     }
     return Text(
       preview,
