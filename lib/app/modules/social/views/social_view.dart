@@ -20,27 +20,27 @@ class SocialView extends StatelessWidget {
         ? Get.find<DatingController>()
         : Get.put(DatingController());
 
-    return Obx(() => Column(
-          children: [
-            _SocialTopTabBar(
-              activeTab: chatCtrl.socialTab.value,
-              onTap: (i) => chatCtrl.socialTab.value = i,
+    return Obx(
+      () => Column(
+        children: [
+          _SocialTopTabBar(
+            activeTab: chatCtrl.socialTab.value,
+            onTap: (i) => chatCtrl.socialTab.value = i,
+          ),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              switchInCurve: Curves.easeOut,
+              transitionBuilder: (child, anim) =>
+                  FadeTransition(opacity: anim, child: child),
+              child: chatCtrl.socialTab.value == 0
+                  ? const ChatListView(key: ValueKey('chat'))
+                  : const DatingView(key: ValueKey('dating')),
             ),
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                switchInCurve: Curves.easeOut,
-                transitionBuilder: (child, anim) => FadeTransition(
-                  opacity: anim,
-                  child: child,
-                ),
-                child: chatCtrl.socialTab.value == 0
-                    ? const ChatListView(key: ValueKey('chat'))
-                    : const DatingView(key: ValueKey('dating')),
-              ),
-            ),
-          ],
-        ));
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -56,26 +56,22 @@ class _SocialTopTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // color: GPTheme.primaryColor,
+      color: GPTheme.primaryColor,
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(
-            child: _TopTab(
-              label: 'Chat',
-              icon: Icons.chat_bubble_rounded,
-              active: activeTab == 0,
-              onTap: () => onTap(0),
-            ),
+          _TopTab(
+            label: 'Chat',
+            icon: Icons.chat_bubble_rounded,
+            active: activeTab == 0,
+            onTap: () => onTap(0),
           ),
-          Expanded(
-            child: _TopTab(
-              label: 'Dating',
-              icon: Icons.favorite_rounded,
-              active: activeTab == 1,
-              onTap: () => onTap(1),
-            ),
+          const SizedBox(width: 8),
+          _TopTab(
+            label: 'Dating',
+            icon: Icons.favorite_rounded,
+            active: activeTab == 1,
+            onTap: () => onTap(1),
           ),
         ],
       ),
@@ -110,8 +106,11 @@ class _TopTab extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 15,
-                color: active ? GPTheme.primaryColor : Colors.white70),
+            Icon(
+              icon,
+              size: 15,
+              color: active ? GPTheme.primaryColor : Colors.white70,
+            ),
             const SizedBox(width: 6),
             Text(
               label,

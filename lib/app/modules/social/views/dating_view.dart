@@ -53,8 +53,7 @@ class _DatingViewState extends State<DatingView>
         return Scaffold(
           backgroundColor: context.bg,
           body: Center(
-            child: CircularProgressIndicator(color: GPTheme.primaryColor),
-          ),
+              child: CircularProgressIndicator(color: GPTheme.primaryColor)),
         );
       }
 
@@ -96,34 +95,26 @@ class _DatingAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     return Container(
-      color: isDark
-          ? const Color(0xFF111111)
-          : GPTheme.primaryColor.withOpacity(0.9),
+      color: isDark ? const Color(0xFF141414) : Colors.black,
       child: SafeArea(
         bottom: false,
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  const Text(
-                    'Dating',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+                  const Text('Dating',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5)),
                   const Spacer(),
                   IconButton(
                     onPressed: () => _showPrefsSheet(context, ctrl),
-                    icon: const Icon(
-                      Icons.tune_rounded,
-                      color: Colors.white70,
-                      size: 22,
-                    ),
+                    icon: const Icon(Icons.tune_rounded,
+                        color: Colors.white70, size: 22),
                     tooltip: 'Préférences',
                   ),
                 ],
@@ -136,63 +127,35 @@ class _DatingAppBar extends StatelessWidget implements PreferredSizeWidget {
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white38,
               labelStyle: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
+                  fontSize: 13, fontWeight: FontWeight.w700),
               tabs: [
-                Tab(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(Icons.explore_rounded, size: 15),
-                      SizedBox(width: 5),
-                      Text('Découvrir'),
-                    ],
-                  ),
-                ),
-                Tab(
-                  child: Obx(
-                    () => Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.favorite_rounded, size: 15),
-                        const SizedBox(width: 5),
-                        const Text('Matches'),
-                        if (ctrl.matches.isNotEmpty) ...[
-                          const SizedBox(width: 5),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: GPTheme.primaryColor,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '${ctrl.matches.length}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                Tab(child: Row(mainAxisSize: MainAxisSize.min, children: const [
+                  Icon(Icons.explore_rounded, size: 15),
+                  SizedBox(width: 5),
+                  Text('Découvrir'),
+                ])),
+                Tab(child: Obx(() => Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.favorite_rounded, size: 15),
+                  const SizedBox(width: 5),
+                  const Text('Matches'),
+                  if (ctrl.matches.isNotEmpty) ...[
+                    const SizedBox(width: 5),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                          color: GPTheme.primaryColor,
+                          borderRadius: BorderRadius.circular(10)),
+                      child: Text('${ctrl.matches.length}',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
                     ),
-                  ),
-                ),
-                const Tab(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.thumb_up_rounded, size: 15),
-                      SizedBox(width: 5),
-                      Text('Likés'),
-                    ],
-                  ),
-                ),
+                  ],
+                ]))),
+                const Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.thumb_up_rounded, size: 15),
+                  SizedBox(width: 5),
+                  Text('Likés'),
+                ])),
               ],
             ),
           ],
@@ -255,7 +218,10 @@ class _SwipeTab extends StatelessWidget {
             ),
           // Overlay "C'est un Match !"
           if (ctrl.newMatch.value != null)
-            _MatchOverlay(profile: ctrl.newMatch.value!, ctrl: ctrl),
+            _MatchOverlay(
+              profile: ctrl.newMatch.value!,
+              ctrl: ctrl,
+            ),
         ],
       );
     });
@@ -275,36 +241,26 @@ class _EmptySuggestions extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 100,
-              height: 100,
+              width: 100, height: 100,
               decoration: BoxDecoration(
                 color: GPTheme.primaryColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                Icons.explore_rounded,
-                size: 48,
-                color: GPTheme.primaryColor,
-              ),
+              child: Icon(Icons.explore_rounded,
+                  size: 48, color: GPTheme.primaryColor),
             ),
             const SizedBox(height: 24),
-            Text(
-              'Plus de suggestions',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: context.primary,
-              ),
-            ),
+            Text('Plus de suggestions',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: context.primary)),
             const SizedBox(height: 10),
             Text(
               'Vous avez vu tous les profils disponibles.\nRevenez plus tard !',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: context.subtle,
-                fontSize: 14,
-                height: 1.5,
-              ),
+                  color: context.subtle, fontSize: 14, height: 1.5),
             ),
             const SizedBox(height: 28),
             ElevatedButton.icon(
@@ -312,25 +268,15 @@ class _EmptySuggestions extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: GPTheme.primaryColor,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 28,
-                  vertical: 14,
-                ),
+                    horizontal: 28, vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
+                    borderRadius: BorderRadius.circular(30)),
               ),
-              icon: const Icon(
-                Icons.refresh_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-              label: const Text(
-                'Rafraîchir',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              icon: const Icon(Icons.refresh_rounded,
+                  color: Colors.white, size: 18),
+              label: const Text('Rafraîchir',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -368,10 +314,8 @@ class _DraggableCardState extends State<_DraggableCard>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _snapAnim = Tween<Offset>(
-      begin: Offset.zero,
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _snapBack, curve: Curves.elasticOut));
+    _snapAnim = Tween<Offset>(begin: Offset.zero, end: Offset.zero)
+        .animate(CurvedAnimation(parent: _snapBack, curve: Curves.elasticOut));
     _snapBack.addListener(() {
       setState(() => _dragOffset = _snapAnim.value);
     });
@@ -403,14 +347,10 @@ class _DraggableCardState extends State<_DraggableCard>
       _doSkip();
     } else {
       // Snap back
-      _snapAnim = Tween<Offset>(
-        begin: _dragOffset,
-        end: Offset.zero,
-      ).animate(CurvedAnimation(parent: _snapBack, curve: Curves.elasticOut));
+      _snapAnim = Tween<Offset>(begin: _dragOffset, end: Offset.zero)
+          .animate(CurvedAnimation(parent: _snapBack, curve: Curves.elasticOut));
       _snapBack.forward(from: 0);
-      setState(() {
-        _rotation = 0;
-      });
+      setState(() { _rotation = 0; });
     }
   }
 
@@ -441,30 +381,24 @@ class _DraggableCardState extends State<_DraggableCard>
               // LIKE badge
               if (likeOpacity > 0.05)
                 Positioned(
-                  top: 60,
-                  left: 24,
+                  top: 60, left: 24,
                   child: Transform.rotate(
                     angle: -0.3,
                     child: Opacity(
                       opacity: likeOpacity.clamp(0.0, 1.0),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
+                            horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.green, width: 3),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text(
-                          'LIKE',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 2,
-                          ),
-                        ),
+                        child: const Text('LIKE',
+                            style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 28,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 2)),
                       ),
                     ),
                   ),
@@ -472,30 +406,24 @@ class _DraggableCardState extends State<_DraggableCard>
               // SKIP badge
               if (skipOpacity > 0.05)
                 Positioned(
-                  top: 60,
-                  right: 24,
+                  top: 60, right: 24,
                   child: Transform.rotate(
                     angle: 0.3,
                     child: Opacity(
                       opacity: skipOpacity.clamp(0.0, 1.0),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
+                            horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.red, width: 3),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text(
-                          'NOPE',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 2,
-                          ),
-                        ),
+                        child: const Text('NOPE',
+                            style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 28,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 2)),
                       ),
                     ),
                   ),
@@ -568,9 +496,7 @@ class _ProfileCard extends StatelessWidget {
                   ),
                   // Infos
                   Positioned(
-                    left: 20,
-                    right: 20,
-                    bottom: 20,
+                    left: 20, right: 20, bottom: 20,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -581,100 +507,72 @@ class _ProfileCard extends StatelessWidget {
                               child: Text(
                                 '${profile.name}, ${profile.age}',
                                 style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w900,
-                                  height: 1,
-                                ),
+                                    color: Colors.white,
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w900,
+                                    height: 1),
                               ),
                             ),
                             if (interactive)
                               Container(
-                                width: 36,
-                                height: 36,
+                                width: 36, height: 36,
                                 decoration: BoxDecoration(
                                   color: Colors.white24,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(
-                                  Icons.info_outline_rounded,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
+                                child: const Icon(Icons.info_outline_rounded,
+                                    color: Colors.white, size: 18),
                               ),
                           ],
                         ),
                         const SizedBox(height: 6),
                         if (profile.city != null)
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.location_on_rounded,
-                                color: Colors.white60,
-                                size: 14,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                profile.city!,
+                          Row(children: [
+                            const Icon(Icons.location_on_rounded,
+                                color: Colors.white60, size: 14),
+                            const SizedBox(width: 4),
+                            Text(profile.city!,
                                 style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
+                                    color: Colors.white70, fontSize: 14)),
+                            if (profile.distance != null) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                '${profile.distance!.toStringAsFixed(0)} km',
+                                style: const TextStyle(
+                                    color: Colors.white38, fontSize: 13),
                               ),
-                              if (profile.distance != null) ...[
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${profile.distance!.toStringAsFixed(0)} km',
-                                  style: const TextStyle(
-                                    color: Colors.white38,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
                             ],
-                          ),
+                          ]),
                         if (profile.bio?.isNotEmpty == true) ...[
                           const SizedBox(height: 8),
-                          Text(
-                            profile.bio!,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                              height: 1.4,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          Text(profile.bio!,
+                              style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                  height: 1.4),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis),
                         ],
                         if (profile.interests.isNotEmpty) ...[
                           const SizedBox(height: 10),
                           Wrap(
                             spacing: 6,
                             runSpacing: 4,
-                            children: profile.interests
-                                .take(4)
-                                .map(
-                                  (i) => Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white24,
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: Colors.white30),
-                                    ),
-                                    child: Text(
-                                      i,
-                                      style: const TextStyle(
+                            children: profile.interests.take(4).map((i) =>
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white24,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: Colors.white30),
+                                ),
+                                child: Text(i,
+                                    style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
+                                        fontWeight: FontWeight.w600)),
+                              )).toList(),
                           ),
                         ],
                         // Boutons action (seulement carte active)
@@ -688,10 +586,8 @@ class _ProfileCard extends StatelessWidget {
                                 color: Colors.red,
                                 size: 56,
                                 onTap: () {
-                                  final p = Get.find<DatingController>()
-                                      .currentProfile;
-                                  if (p != null)
-                                    Get.find<DatingController>().skipProfile(p);
+                                  final p = Get.find<DatingController>().currentProfile;
+                                  if (p != null) Get.find<DatingController>().skipProfile(p);
                                 },
                               ),
                               const SizedBox(width: 32),
@@ -700,10 +596,8 @@ class _ProfileCard extends StatelessWidget {
                                 color: GPTheme.primaryColor,
                                 size: 64,
                                 onTap: () {
-                                  final p = Get.find<DatingController>()
-                                      .currentProfile;
-                                  if (p != null)
-                                    Get.find<DatingController>().likeProfile(p);
+                                  final p = Get.find<DatingController>().currentProfile;
+                                  if (p != null) Get.find<DatingController>().likeProfile(p);
                                 },
                               ),
                               const SizedBox(width: 32),
@@ -713,10 +607,8 @@ class _ProfileCard extends StatelessWidget {
                                 size: 56,
                                 onTap: () {
                                   // Super like
-                                  final p = Get.find<DatingController>()
-                                      .currentProfile;
-                                  if (p != null)
-                                    Get.find<DatingController>().likeProfile(p);
+                                  final p = Get.find<DatingController>().currentProfile;
+                                  if (p != null) Get.find<DatingController>().likeProfile(p);
                                 },
                               ),
                             ],
@@ -753,8 +645,7 @@ class _ActionBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: size,
-        height: size,
+        width: size, height: size,
         decoration: BoxDecoration(
           color: Colors.white,
           shape: BoxShape.circle,
@@ -781,11 +672,7 @@ class _ProfilePhoto extends StatelessWidget {
     if (url.isEmpty) {
       return Container(
         color: Colors.grey.shade800,
-        child: const Icon(
-          Icons.person_rounded,
-          size: 80,
-          color: Colors.white24,
-        ),
+        child: const Icon(Icons.person_rounded, size: 80, color: Colors.white24),
       );
     }
     return Image.network(
@@ -793,11 +680,7 @@ class _ProfilePhoto extends StatelessWidget {
       fit: BoxFit.cover,
       errorBuilder: (_, __, ___) => Container(
         color: Colors.grey.shade800,
-        child: const Icon(
-          Icons.person_rounded,
-          size: 80,
-          color: Colors.white24,
-        ),
+        child: const Icon(Icons.person_rounded, size: 80, color: Colors.white24),
       ),
     );
   }
@@ -822,30 +705,19 @@ class _MatchOverlay extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // ❤️
-              Icon(
-                Icons.favorite_rounded,
-                size: 60,
-                color: GPTheme.primaryColor,
-              ),
+              Icon(Icons.favorite_rounded,
+                  size: 60, color: GPTheme.primaryColor),
               const SizedBox(height: 12),
-              Text(
-                'C\'est un Match !',
-                style: TextStyle(
-                  color: GPTheme.primaryColor,
-                  fontSize: 32,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
+              Text('C\'est un Match !',
+                  style: TextStyle(
+                      color: GPTheme.primaryColor,
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900)),
               const SizedBox(height: 8),
-              Text(
-                'Vous et ${profile.name} vous vous êtes likés mutuellement !',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 15,
-                  height: 1.4,
-                ),
-              ),
+              Text('Vous et ${profile.name} vous vous êtes likés mutuellement !',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      color: Colors.white70, fontSize: 15, height: 1.4)),
               const SizedBox(height: 32),
               // Photos en miroir
               Row(
@@ -867,20 +739,15 @@ class _MatchOverlay extends StatelessWidget {
                     ctrl.dismissMatch();
                     // Ouvrir la conv existante ou en créer une
                     final chatCtrl = Get.find<ChatController>();
-                    final convId = await chatCtrl.startConversationWithUser(
-                      profile.id,
-                    );
+                    final convId = await chatCtrl
+                        .startConversationWithUser(profile.id);
                     if (convId != null) {
                       final convs = chatCtrl.privateConversations;
-                      final conv = convs.firstWhereOrNull(
-                        (c) => c.id == convId,
-                      );
+                      final conv = convs.firstWhereOrNull((c) => c.id == convId);
                       if (conv != null) {
                         await chatCtrl.openPrivateConversation(conv);
-                        Get.to(
-                          () => ChatRoomView(privateConv: conv),
-                          transition: Transition.fade,
-                        );
+                        Get.to(() => ChatRoomView(privateConv: conv),
+                            transition: Transition.fade);
                       }
                     }
                   },
@@ -888,30 +755,20 @@ class _MatchOverlay extends StatelessWidget {
                     backgroundColor: GPTheme.primaryColor,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
+                        borderRadius: BorderRadius.circular(30)),
                   ),
-                  icon: const Icon(
-                    Icons.chat_bubble_rounded,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                  label: Text(
-                    'Envoyer un message à ${profile.name}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  icon: const Icon(Icons.chat_bubble_rounded,
+                      color: Colors.white, size: 18),
+                  label: Text('Envoyer un message à ${profile.name}',
+                      style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w700)),
                 ),
               ),
               const SizedBox(height: 12),
               TextButton(
                 onPressed: ctrl.dismissMatch,
-                child: const Text(
-                  'Continuer à swiper',
-                  style: TextStyle(color: Colors.white54, fontSize: 14),
-                ),
+                child: const Text('Continuer à swiper',
+                    style: TextStyle(color: Colors.white54, fontSize: 14)),
               ),
             ],
           ),
@@ -929,8 +786,7 @@ class _MatchAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 90,
-      height: 90,
+      width: 90, height: 90,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: GPTheme.primaryColor, width: 3),
@@ -942,11 +798,8 @@ class _MatchAvatar extends StatelessWidget {
             : null,
       ),
       child: (url == null || url!.isEmpty)
-          ? Icon(
-              Icons.person_rounded,
-              size: 40,
-              color: isMe ? GPTheme.primaryColor : Colors.white38,
-            )
+          ? Icon(Icons.person_rounded,
+              size: 40, color: isMe ? GPTheme.primaryColor : Colors.white38)
           : null,
     );
   }
@@ -966,35 +819,21 @@ class _MatchesTab extends StatelessWidget {
         return Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.favorite_border_rounded,
-                  size: 56,
-                  color: context.subtle,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Aucun match pour l\'instant',
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.favorite_border_rounded,
+                  size: 56, color: context.subtle),
+              const SizedBox(height: 16),
+              Text('Aucun match pour l\'instant',
                   style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: context.primary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Continuez à swiper pour trouver votre match !',
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: context.primary)),
+              const SizedBox(height: 8),
+              Text('Continuez à swiper pour trouver votre match !',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: context.subtle,
-                    fontSize: 13,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
+                      color: context.subtle, fontSize: 13, height: 1.5)),
+            ]),
           ),
         );
       }
@@ -1009,31 +848,24 @@ class _MatchesTab extends StatelessWidget {
             onMessage: () async {
               final chatCtrl = Get.find<ChatController>();
               if (match.conversationId != null) {
-                final conv = chatCtrl.privateConversations.firstWhereOrNull(
-                  (c) => c.id == match.conversationId,
-                );
+                final conv = chatCtrl.privateConversations
+                    .firstWhereOrNull((c) => c.id == match.conversationId);
                 if (conv != null) {
                   await chatCtrl.openPrivateConversation(conv);
-                  Get.to(
-                    () => ChatRoomView(privateConv: conv),
-                    transition: Transition.rightToLeft,
-                  );
+                  Get.to(() => ChatRoomView(privateConv: conv),
+                      transition: Transition.rightToLeft);
                   return;
                 }
               }
-              final convId = await chatCtrl.startConversationWithUser(
-                match.profile.id,
-              );
+              final convId = await chatCtrl
+                  .startConversationWithUser(match.profile.id);
               if (convId != null) {
-                final conv = chatCtrl.privateConversations.firstWhereOrNull(
-                  (c) => c.id == convId,
-                );
+                final conv = chatCtrl.privateConversations
+                    .firstWhereOrNull((c) => c.id == convId);
                 if (conv != null) {
                   await chatCtrl.openPrivateConversation(conv);
-                  Get.to(
-                    () => ChatRoomView(privateConv: conv),
-                    transition: Transition.rightToLeft,
-                  );
+                  Get.to(() => ChatRoomView(privateConv: conv),
+                      transition: Transition.rightToLeft);
                 }
               }
             },
@@ -1072,10 +904,8 @@ class _MatchTile extends StatelessWidget {
           ],
         ),
         child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 6,
-          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           leading: Stack(
             children: [
               CircleAvatar(
@@ -1085,43 +915,31 @@ class _MatchTile extends StatelessWidget {
                     : null,
                 backgroundColor: GPTheme.primaryColor.withOpacity(0.15),
                 child: match.profile.displayPhoto.isEmpty
-                    ? Text(
-                        match.profile.name[0].toUpperCase(),
+                    ? Text(match.profile.name[0].toUpperCase(),
                         style: TextStyle(
-                          color: GPTheme.primaryColor,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 18,
-                        ),
-                      )
+                            color: GPTheme.primaryColor,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18))
                     : null,
               ),
               Positioned(
-                bottom: 0,
-                right: 0,
+                bottom: 0, right: 0,
                 child: Container(
-                  width: 16,
-                  height: 16,
+                  width: 16, height: 16,
                   decoration: BoxDecoration(
                     color: GPTheme.primaryColor,
                     shape: BoxShape.circle,
                     border: Border.all(color: context.surface, width: 2),
                   ),
-                  child: const Icon(
-                    Icons.favorite_rounded,
-                    color: Colors.white,
-                    size: 8,
-                  ),
+                  child: const Icon(Icons.favorite_rounded,
+                      color: Colors.white, size: 8),
                 ),
               ),
             ],
           ),
-          title: Text(
-            '${match.profile.name}, ${match.profile.age}',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color: context.primary,
-            ),
-          ),
+          title: Text('${match.profile.name}, ${match.profile.age}',
+              style: TextStyle(
+                  fontWeight: FontWeight.w700, color: context.primary)),
           subtitle: Text(
             match.profile.city ?? '',
             style: TextStyle(fontSize: 12, color: context.subtle),
@@ -1134,14 +952,11 @@ class _MatchTile extends StatelessWidget {
                 color: GPTheme.primaryColor,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text(
-                'Message',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              child: const Text('Message',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700)),
             ),
           ),
         ),
@@ -1162,17 +977,12 @@ class _LikesTab extends StatelessWidget {
     return Obx(() {
       if (ctrl.likedProfiles.isEmpty) {
         return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.thumb_up_outlined, size: 48, color: context.subtle),
-              const SizedBox(height: 14),
-              Text(
-                'Vous n\'avez encore liké personne',
-                style: TextStyle(color: context.subtle, fontSize: 14),
-              ),
-            ],
-          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.thumb_up_outlined, size: 48, color: context.subtle),
+            const SizedBox(height: 14),
+            Text('Vous n\'avez encore liké personne',
+                style: TextStyle(color: context.subtle, fontSize: 14)),
+          ]),
         );
       }
 
@@ -1209,28 +1019,19 @@ class _LikesTab extends StatelessWidget {
                   ),
                 ),
                 Positioned(
-                  left: 10,
-                  right: 10,
-                  bottom: 10,
+                  left: 10, right: 10, bottom: 10,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${p.name}, ${p.age}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
-                        ),
-                      ),
-                      if (p.city != null)
-                        Text(
-                          p.city!,
+                      Text('${p.name}, ${p.age}',
                           style: const TextStyle(
-                            color: Colors.white60,
-                            fontSize: 11,
-                          ),
-                        ),
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13)),
+                      if (p.city != null)
+                        Text(p.city!,
+                            style: const TextStyle(
+                                color: Colors.white60, fontSize: 11)),
                     ],
                   ),
                 ),
@@ -1261,159 +1062,117 @@ class _PreferencesSetup extends StatelessWidget {
             children: [
               const SizedBox(height: 24),
               Container(
-                width: 80,
-                height: 80,
+                width: 80, height: 80,
                 decoration: BoxDecoration(
                   color: GPTheme.primaryColor.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.favorite_rounded,
-                  color: GPTheme.primaryColor,
-                  size: 40,
-                ),
+                child: Icon(Icons.favorite_rounded,
+                    color: GPTheme.primaryColor, size: 40),
               ),
               const SizedBox(height: 20),
-              Text(
-                'Bienvenue dans le Dating !',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  color: context.primary,
-                ),
-              ),
+              Text('Bienvenue dans le Dating !',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: context.primary)),
               const SizedBox(height: 10),
               Text(
                 'Dites-nous vos préférences pour trouver votre match idéal.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: context.subtle,
-                  fontSize: 14,
-                  height: 1.5,
-                ),
+                    color: context.subtle, fontSize: 14, height: 1.5),
               ),
               const SizedBox(height: 32),
               // Genre recherché
               Align(
                 alignment: Alignment.centerLeft,
-                child: Text(
-                  'Je recherche',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: context.primary,
-                  ),
-                ),
+                child: Text('Je recherche',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: context.primary)),
               ),
               const SizedBox(height: 14),
-              Obx(
-                () => SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    // mainAxisAlignment: MainAxisAlignment.center,
+              Obx(() => Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _GenderChip(
-                        label: 'Des femmes',
-                        icon: Icons.female_rounded,
+                        label: 'Des femmes', icon: Icons.female_rounded,
                         selected: ctrl.selectedLookingFor.value == 'female',
                         onTap: () => ctrl.selectedLookingFor.value = 'female',
                       ),
                       const SizedBox(width: 10),
                       _GenderChip(
-                        label: 'Des hommes',
-                        icon: Icons.male_rounded,
+                        label: 'Des hommes', icon: Icons.male_rounded,
                         selected: ctrl.selectedLookingFor.value == 'male',
                         onTap: () => ctrl.selectedLookingFor.value = 'male',
                       ),
                       const SizedBox(width: 10),
                       _GenderChip(
-                        label: 'Les deux',
-                        icon: Icons.people_rounded,
+                        label: 'Les deux', icon: Icons.people_rounded,
                         selected: ctrl.selectedLookingFor.value == 'both',
                         onTap: () => ctrl.selectedLookingFor.value = 'both',
                       ),
                     ],
-                  ),
-                ),
-              ),
+                  )),
               const SizedBox(height: 28),
               Align(
                 alignment: Alignment.centerLeft,
-                child: Text(
-                  'Tranche d\'âge',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: context.primary,
-                  ),
-                ),
+                child: Text('Tranche d\'âge',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: context.primary)),
               ),
               Obx(() {
-                return Column(
-                  children: [
-                    RangeSlider(
-                      values: RangeValues(
+                return Column(children: [
+                  RangeSlider(
+                    values: RangeValues(
                         ctrl.minAge.value.toDouble(),
-                        ctrl.maxAge.value.toDouble(),
-                      ),
-                      min: 18,
-                      max: 60,
-                      divisions: 42,
-                      activeColor: GPTheme.primaryColor,
-                      inactiveColor: GPTheme.primaryColor.withOpacity(0.15),
-                      labels: RangeLabels(
+                        ctrl.maxAge.value.toDouble()),
+                    min: 18, max: 60, divisions: 42,
+                    activeColor: GPTheme.primaryColor,
+                    inactiveColor: GPTheme.primaryColor.withOpacity(0.15),
+                    labels: RangeLabels(
                         '${ctrl.minAge.value} ans',
-                        '${ctrl.maxAge.value} ans',
-                      ),
-                      onChanged: (v) {
-                        ctrl.minAge.value = v.start.round();
-                        ctrl.maxAge.value = v.end.round();
-                      },
-                    ),
-                    Text(
-                      '${ctrl.minAge.value} – ${ctrl.maxAge.value} ans',
-                      style: TextStyle(color: context.subtle),
-                    ),
-                  ],
-                );
+                        '${ctrl.maxAge.value} ans'),
+                    onChanged: (v) {
+                      ctrl.minAge.value = v.start.round();
+                      ctrl.maxAge.value = v.end.round();
+                    },
+                  ),
+                  Text('${ctrl.minAge.value} – ${ctrl.maxAge.value} ans',
+                      style: TextStyle(color: context.subtle)),
+                ]);
               }),
               const SizedBox(height: 36),
-              Obx(
-                () => SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: ctrl.isSubmitting.value
-                        ? null
-                        : ctrl.savePreferences,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: GPTheme.primaryColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+              Obx(() => SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: ctrl.isSubmitting.value
+                          ? null
+                          : ctrl.savePreferences,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: GPTheme.primaryColor,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      elevation: 0,
+                      child: ctrl.isSubmitting.value
+                          ? const SizedBox(
+                              width: 20, height: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
+                          : const Text('Commencer à découvrir',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15)),
                     ),
-                    child: ctrl.isSubmitting.value
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text(
-                            'Commencer à découvrir',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 15,
-                            ),
-                          ),
-                  ),
-                ),
-              ),
+                  )),
             ],
           ),
         ),
@@ -1437,133 +1196,95 @@ class _PreferencesSheet extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
-        24,
-        16,
-        24,
-        MediaQuery.of(context).viewInsets.bottom + 28,
-      ),
+          24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 28),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Center(
             child: Container(
-              width: 40,
-              height: 4,
+              width: 40, height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(2),
-              ),
+                  color: Colors.grey.shade400,
+                  borderRadius: BorderRadius.circular(2)),
             ),
           ),
           const SizedBox(height: 16),
-          Text(
-            'Mes préférences',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: context.primary,
-            ),
-          ),
+          Text('Mes préférences',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: context.primary)),
           const SizedBox(height: 20),
-          Text(
-            'Je recherche',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-              color: context.primary,
-            ),
-          ),
+          Text('Je recherche',
+              style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: context.primary)),
           const SizedBox(height: 12),
-          Obx(
-            () => SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                // mainAxisAlignment: MainAxisAlignme
+          Obx(() => Row(
                 children: [
                   _GenderChip(
-                    label: 'Femmes',
-                    icon: Icons.female_rounded,
+                    label: 'Femmes', icon: Icons.female_rounded,
                     selected: ctrl.selectedLookingFor.value == 'female',
                     onTap: () => ctrl.selectedLookingFor.value = 'female',
                   ),
                   const SizedBox(width: 8),
                   _GenderChip(
-                    label: 'Hommes',
-                    icon: Icons.male_rounded,
+                    label: 'Hommes', icon: Icons.male_rounded,
                     selected: ctrl.selectedLookingFor.value == 'male',
                     onTap: () => ctrl.selectedLookingFor.value = 'male',
                   ),
                   const SizedBox(width: 8),
                   _GenderChip(
-                    label: 'Les deux',
-                    icon: Icons.people_rounded,
+                    label: 'Les deux', icon: Icons.people_rounded,
                     selected: ctrl.selectedLookingFor.value == 'both',
                     onTap: () => ctrl.selectedLookingFor.value = 'both',
                   ),
                 ],
-              ),
-            ),
-          ),
+              )),
           const SizedBox(height: 20),
-          Text(
-            'Tranche d\'âge',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-              color: context.primary,
-            ),
-          ),
-          Obx(
-            () => RangeSlider(
-              values: RangeValues(
-                ctrl.minAge.value.toDouble(),
-                ctrl.maxAge.value.toDouble(),
-              ),
-              min: 18,
-              max: 60,
-              divisions: 42,
-              activeColor: GPTheme.primaryColor,
-              inactiveColor: GPTheme.primaryColor.withOpacity(0.15),
-              labels: RangeLabels(
-                '${ctrl.minAge.value} ans',
-                '${ctrl.maxAge.value} ans',
-              ),
-              onChanged: (v) {
-                ctrl.minAge.value = v.start.round();
-                ctrl.maxAge.value = v.end.round();
-              },
-            ),
-          ),
+          Text('Tranche d\'âge',
+              style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: context.primary)),
+          Obx(() => RangeSlider(
+                values: RangeValues(
+                    ctrl.minAge.value.toDouble(),
+                    ctrl.maxAge.value.toDouble()),
+                min: 18, max: 60, divisions: 42,
+                activeColor: GPTheme.primaryColor,
+                inactiveColor: GPTheme.primaryColor.withOpacity(0.15),
+                labels: RangeLabels(
+                    '${ctrl.minAge.value} ans', '${ctrl.maxAge.value} ans'),
+                onChanged: (v) {
+                  ctrl.minAge.value = v.start.round();
+                  ctrl.maxAge.value = v.end.round();
+                },
+              )),
           const SizedBox(height: 20),
-          Obx(
-            () => SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: ctrl.isSubmitting.value
-                    ? null
-                    : () async {
-                        await ctrl.savePreferences();
-                        Get.back();
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: GPTheme.primaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+          Obx(() => SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: ctrl.isSubmitting.value
+                      ? null
+                      : () async {
+                          await ctrl.savePreferences();
+                          Get.back();
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: GPTheme.primaryColor,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    elevation: 0,
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  elevation: 0,
+                  child: const Text('Enregistrer',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w700)),
                 ),
-                child: const Text(
-                  'Enregistrer',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-          ),
+              )),
         ],
       ),
     );
@@ -1596,7 +1317,8 @@ class _GenderChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? GPTheme.primaryColor
-              : GPTheme.primaryColor.withOpacity(context.isDark ? 0.12 : 0.08),
+              : GPTheme.primaryColor.withOpacity(
+                  context.isDark ? 0.12 : 0.08),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: selected
@@ -1608,20 +1330,15 @@ class _GenderChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: selected ? Colors.white : GPTheme.primaryColor,
-              size: 16,
-            ),
-            const SizedBox(width: 5),
-            Text(
-              label,
-              style: TextStyle(
+            Icon(icon,
                 color: selected ? Colors.white : GPTheme.primaryColor,
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-              ),
-            ),
+                size: 16),
+            const SizedBox(width: 5),
+            Text(label,
+                style: TextStyle(
+                    color: selected ? Colors.white : GPTheme.primaryColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13)),
           ],
         ),
       ),

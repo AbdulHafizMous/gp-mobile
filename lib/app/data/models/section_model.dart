@@ -1,6 +1,7 @@
 // lib/app/data/models/section_model.dart
 
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/club/views/club_view.dart';
 import 'package:grand_public_v2/app/modules/space/views/spaces_list_view.dart';
 import 'package:grand_public_v2/app/modules/social/views/social_view.dart';
@@ -184,7 +185,8 @@ final sections = [
   ),
 ];
 
-const fixedDrawerItems = [
+var fixedDrawerItems = [
+  if(!activeUser.value.role.contains("Super Admin"))
   DrawerItem(
     title: "Premium",
     icon: Icons.workspace_premium_outlined,
