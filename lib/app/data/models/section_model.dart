@@ -106,7 +106,7 @@ final sections = [
         "Profitez d'offres exclusives, promotions et avantages uniques.",
     icon: Icons.local_offer_outlined,
     hasSub: true,
-    // isLive: true,
+    isLive: true,
     page: ClubView(),
     // route: "/home/club",
     drawerItems: [
