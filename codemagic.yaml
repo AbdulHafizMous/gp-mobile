@@ -11,31 +11,8 @@ workflows:
     environment:
       flutter: stable
       java: "17"
-      # Variables à configurer dans Codemagic UI → Environment variables
-      # CM_KEYSTORE         → votre keystore en base64
-      # CM_KEYSTORE_PASSWORD
-      # CM_KEY_ALIAS
-      # CM_KEY_PASSWORD
-      # GOOGLE_SERVICES_JSON → contenu du google-services.json en base64
-      groups:
-        - android_signing   # groupe de variables à créer dans Codemagic UI
-        - firebase          # groupe contenant GOOGLE_SERVICES_JSON
 
     scripts:
-      - name: Injecter google-services.json
-        script: |
-          echo $GOOGLE_SERVICES_JSON | base64 --decode > android/app/google-services.json
-
-      - name: Configurer le keystore Android
-        script: |
-          echo $CM_KEYSTORE | base64 --decode > android/app/keystore.jks
-          cat >> android/key.properties <<EOF
-          storePassword=$CM_KEYSTORE_PASSWORD
-          keyPassword=$CM_KEY_PASSWORD
-          keyAlias=$CM_KEY_ALIAS
-          storeFile=keystore.jks
-          EOF
-
       - name: Installer les dépendances
         script: flutter pub get
 
@@ -45,28 +22,24 @@ workflows:
       - name: Build AAB release
         script: |
           flutter build appbundle --release \
-            --build-name=1.0.$((BUILD_NUMBER)) \
-            --build-number=$((BUILD_NUMBER))
+            --build-name=1.0.$BUILD_NUMBER \
+            --build-number=$BUILD_NUMBER
 
     artifacts:
       - build/app/outputs/bundle/release/app-release.aab
       - build/app/outputs/mapping/release/mapping.txt
 
-    publishing:
-      email:
-        recipients:
-          - votre@email.com   # ← remplacez
-        notify:
-          success: true
-          failure: true
-      # Décommentez pour publier sur Google Play automatiquement :
-      # google_play:
-      #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
-      #   track: internal   # internal | alpha | beta | production
+    # publishing:
+    #   email:
+    #     recipients:
+    #       - votre@email.com
+    #     notify:
+    #       success: true
+    #       failure: true
 
 
   # ══════════════════════════════════════════════════════════════════
-  # iOS — IPA pour App Store / TestFlight
+  # iOS — IPA non signé à uploader manuellement
   # ══════════════════════════════════════════════════════════════════
   ios-workflow:
     name: iOS Release (IPA)
@@ -77,29 +50,8 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      # Variables à configurer dans Codemagic UI → Environment variables
-      # APP_STORE_CONNECT_ISSUER_ID
-      # APP_STORE_CONNECT_KEY_IDENTIFIER
-      # APP_STORE_CONNECT_PRIVATE_KEY
-      # CERTIFICATE_PRIVATE_KEY
-      # BUNDLE_ID               → com.grandpublic.app (à adapter)
-      # APP_STORE_APPLE_ID      → ID numérique de l'app sur App Store Connect
-    #   groups:
-    #     - ios_signing     # groupe de variables à créer dans Codemagic UI
-    #     - firebase
-
-    #   ios_signing:
-    #     distribution_type: app_store
-    #     bundle_identifier: com.grandpublic.app   # ← adaptez
-
-    # integrations:
-    #   app_store_connect: Grand Public ASC Key   # ← nom de la clé dans Codemagic UI
 
     scripts:
-      - name: Injecter GoogleService-Info.plist
-        script: |
-          echo $GOOGLE_SERVICE_INFO_PLIST | base64 --decode > ios/Runner/GoogleService-Info.plist
-
       - name: Installer les dépendances Flutter
         script: flutter pub get
 
@@ -108,17 +60,14 @@ workflows:
 
       - name: Installer les pods iOS
         script: |
-          cd ios
-          pod install
+          cd ios && pod install
 
-      - name: Build IPA release
+      - name: Build IPA sans signature
         script: |
-          BUILD_NUMBER=$(($(app-store-connect get-latest-testflight-build-number \
-            --platform=IOS "$APP_STORE_APPLE_ID") + 1))
           flutter build ipa --release \
             --build-name=1.0.$BUILD_NUMBER \
             --build-number=$BUILD_NUMBER \
-            --export-options-plist=/Users/builder/export_options.plist
+            --no-codesign
 
     artifacts:
       - build/ios/ipa/*.ipa
@@ -127,12 +76,7 @@ workflows:
     # publishing:
     #   email:
     #     recipients:
-    #       - votre@email.com   # ← remplacez
+    #       - votre@email.com
     #     notify:
     #       success: true
     #       failure: true
-      # Décommentez pour publier sur TestFlight automatiquement :
-      # app_store_connect:
-      #   auth: integration
-      #   submit_to_testflight: true
-      #   expire_build_submitted_for_review: true
