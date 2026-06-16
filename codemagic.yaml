@@ -84,16 +84,16 @@ workflows:
       # CERTIFICATE_PRIVATE_KEY
       # BUNDLE_ID               → com.grandpublic.app (à adapter)
       # APP_STORE_APPLE_ID      → ID numérique de l'app sur App Store Connect
-      groups:
-        - ios_signing     # groupe de variables à créer dans Codemagic UI
-        - firebase
+    #   groups:
+    #     - ios_signing     # groupe de variables à créer dans Codemagic UI
+    #     - firebase
 
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.grandpublic.app   # ← adaptez
+    #   ios_signing:
+    #     distribution_type: app_store
+    #     bundle_identifier: com.grandpublic.app   # ← adaptez
 
-    integrations:
-      app_store_connect: Grand Public ASC Key   # ← nom de la clé dans Codemagic UI
+    # integrations:
+    #   app_store_connect: Grand Public ASC Key   # ← nom de la clé dans Codemagic UI
 
     scripts:
       - name: Injecter GoogleService-Info.plist
@@ -124,13 +124,13 @@ workflows:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
 
-    publishing:
-      email:
-        recipients:
-          - votre@email.com   # ← remplacez
-        notify:
-          success: true
-          failure: true
+    # publishing:
+    #   email:
+    #     recipients:
+    #       - votre@email.com   # ← remplacez
+    #     notify:
+    #       success: true
+    #       failure: true
       # Décommentez pour publier sur TestFlight automatiquement :
       # app_store_connect:
       #   auth: integration
