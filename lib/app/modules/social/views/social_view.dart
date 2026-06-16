@@ -56,22 +56,26 @@ class _SocialTopTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: GPTheme.primaryColor,
+      // color: GPTheme.primaryColor,
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _TopTab(
-            label: 'Chat',
-            icon: Icons.chat_bubble_rounded,
-            active: activeTab == 0,
-            onTap: () => onTap(0),
+          Expanded(
+            child: _TopTab(
+              label: 'Chat',
+              icon: Icons.chat_bubble_rounded,
+              active: activeTab == 0,
+              onTap: () => onTap(0),
+            ),
           ),
-          const SizedBox(width: 8),
-          _TopTab(
-            label: 'Dating',
-            icon: Icons.favorite_rounded,
-            active: activeTab == 1,
-            onTap: () => onTap(1),
+          Expanded(
+            child: _TopTab(
+              label: 'Dating',
+              icon: Icons.favorite_rounded,
+              active: activeTab == 1,
+              onTap: () => onTap(1),
+            ),
           ),
         ],
       ),

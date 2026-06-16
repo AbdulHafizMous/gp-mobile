@@ -276,6 +276,7 @@ class HomeController extends GetxController {
   // LOGOUT
   // ─────────────────────────────────────────────────────────────────────────
   void logout() {
+    activeUser.value = User.empty();
     GetStorage().erase();
     Get.offAllNamed('/login');
   }

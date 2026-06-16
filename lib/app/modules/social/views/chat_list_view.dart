@@ -53,7 +53,9 @@ class _ChatListViewState extends State<ChatListView>
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
-    final headerBg = isDark ? const Color(0xFF111111) : Colors.black;
+    final headerBg = isDark
+        ? const Color(0xFF111111)
+        : GPTheme.primaryColor.withOpacity(0.9);
 
     return Scaffold(
       backgroundColor: context.bg,
