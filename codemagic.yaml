@@ -68,10 +68,10 @@ workflows:
         script: |
           flutter build ipa --release \
             --build-name=1.0.$BUILD_NUMBER \
-            --build-number=$BUILD_NUMBER \
-            --no-codesign
+            --build-number=$BUILD_NUMBER
 
     artifacts:
+      - build/ios/archive/Runner.xcarchive
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
 
