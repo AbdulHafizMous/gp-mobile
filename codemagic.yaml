@@ -57,9 +57,9 @@ workflows:
       # ⚠️ MODE MANUEL (OBLIGATOIRE DANS TON CAS)
       ios_signing:
         certificates:
-          - "development"   # ← remplace par le nom exact Codemagic
+          - "distribution"   # ← remplace par le nom exact Codemagic
         provisioning_profiles:
-          - "Grand Public Bénin Dev Provisioning Profile"
+          - "Grand Public Bénin Prod Provisioning Profile"
 
     scripts:
       - name: Installer les dépendances Flutter
