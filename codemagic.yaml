@@ -1,7 +1,7 @@
 workflows:
 
   # ══════════════════════════════════════════════════════════════════
-  # ANDROID — App Bundle (.aab) pour Google Play
+  # ANDROID — App Bundle (.aab)
   # ══════════════════════════════════════════════════════════════════
   android-workflow:
     name: Android Release (AAB)
@@ -39,7 +39,7 @@ workflows:
 
 
   # ══════════════════════════════════════════════════════════════════
-  # iOS — IPA signé pour App Store / TestFlight
+  # iOS — IPA signé (DEV OK)
   # ══════════════════════════════════════════════════════════════════
   ios-workflow:
     name: iOS Release (IPA)
@@ -47,15 +47,19 @@ workflows:
     instance_type: mac_mini_m2
 
     integrations:
-      app_store_connect: Grand Public API Key  # ← nom de la clé dans Codemagic UI
+      app_store_connect: Grand Public API Key
 
     environment:
       flutter: stable
       xcode: latest
       cocoapods: default
+
+      # ⚠️ MODE MANUEL (OBLIGATOIRE DANS TON CAS)
       ios_signing:
-        distribution_type: development # app_store
-        bundle_identifier: com.maxafrica.gpbenin
+        certificates:
+          - "development"   # ← remplace par le nom exact Codemagic
+        provisioning_profiles:
+          - "Grand Public Bénin Dev Provisioning Profile"
 
     scripts:
       - name: Installer les dépendances Flutter
@@ -67,6 +71,10 @@ workflows:
       - name: Installer les pods iOS
         script: |
           cd ios && pod install
+
+      - name: Setup iOS code signing
+        script: |
+          xcode-project use-profiles
 
       - name: Build IPA signé
         script: |
