@@ -55,11 +55,14 @@ workflows:
       cocoapods: default
 
       # ⚠️ MODE MANUEL (OBLIGATOIRE DANS TON CAS)
+      # ios_signing:
+      #   certificates:
+      #     - "distribution"   # ← remplace par le nom exact Codemagic
+      #   provisioning_profiles:
+      #     - "Grand Public Bénin Prod Provisioning Profile"
       ios_signing:
-        certificates:
-          - "distribution"   # ← remplace par le nom exact Codemagic
-        provisioning_profiles:
-          - "Grand Public Bénin Prod Provisioning Profile"
+        distribution_type: app_store
+        bundle_identifier: com.maxafrica.gpbenin
 
     scripts:
       - name: Installer les dépendances Flutter

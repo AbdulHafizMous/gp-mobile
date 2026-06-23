@@ -12,7 +12,7 @@ final activeUser = User.empty().obs;
 //
 
 const String kPlayStoreUrl =
-    'https://play.google.com/store/apps/details?id=com.example.grand_public_v2';
+    'https://play.google.com/store/apps/details?id=com.maxafrica.gpbenin';
 const String kAppStoreUrl = 'https://apps.apple.com/app/idTON_APP_ID';
 
 class GPTextStyle extends TextStyle {
