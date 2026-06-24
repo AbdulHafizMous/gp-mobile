@@ -2,7 +2,7 @@ import 'package:country_pickers/country.dart';
 import 'package:country_pickers/country_pickers.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+// import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -177,90 +177,90 @@ class LoginController extends GetxController {
   // ══════════════════════════════════════════════════════════════════════════
   // FACEBOOK LOGIN
   // ══════════════════════════════════════════════════════════════════════════
-  Future<void> loginWithFacebook() async {
-    isSocialLoading.value = true;
-    try {
-      if (useMock) {
-        await Future.delayed(const Duration(milliseconds: 800));
-        await _handleSocialLoginResponse(
-          _mockSocialResponse(provider: 'facebook'),
-          provider: 'Facebook',
-        );
-        return;
-      }
+  // Future<void> loginWithFacebook() async {
+  //   isSocialLoading.value = true;
+  //   try {
+  //     if (useMock) {
+  //       await Future.delayed(const Duration(milliseconds: 800));
+  //       await _handleSocialLoginResponse(
+  //         _mockSocialResponse(provider: 'facebook'),
+  //         provider: 'Facebook',
+  //       );
+  //       return;
+  //     }
 
-      // 1. Obtient le Facebook Access Token
-      final LoginResult result = await FacebookAuth.instance.login(
-        permissions: ['email', 'public_profile'],
-      );
+  //     // 1. Obtient le Facebook Access Token
+  //     final LoginResult result = await FacebookAuth.instance.login(
+  //       permissions: ['email', 'public_profile'],
+  //     );
 
-      if (result.status == LoginStatus.cancelled) return;
+  //     if (result.status == LoginStatus.cancelled) return;
 
-      if (result.status != LoginStatus.success) {
-        _showError(
-          result.message ?? 'La connexion Facebook a échoué. Réessayez.',
-        );
-        return;
-      }
+  //     if (result.status != LoginStatus.success) {
+  //       _showError(
+  //         result.message ?? 'La connexion Facebook a échoué. Réessayez.',
+  //       );
+  //       return;
+  //     }
 
-      final AccessToken? facebookAccessToken = result.accessToken;
-      if (facebookAccessToken == null) {
-        _showError('Impossible de récupérer le token Facebook. Réessayez.');
-        return;
-      }
+  //     final AccessToken? facebookAccessToken = result.accessToken;
+  //     if (facebookAccessToken == null) {
+  //       _showError('Impossible de récupérer le token Facebook. Réessayez.');
+  //       return;
+  //     }
 
-      debugPrint('Facebook Access Token: ${facebookAccessToken.tokenString}');
+  //     debugPrint('Facebook Access Token: ${facebookAccessToken.tokenString}');
 
-      // 2. Échange contre un Firebase ID Token
-      final OAuthCredential credential = FacebookAuthProvider.credential(
-        facebookAccessToken.tokenString,
-      );
+  //     // 2. Échange contre un Firebase ID Token
+  //     final OAuthCredential credential = FacebookAuthProvider.credential(
+  //       facebookAccessToken.tokenString,
+  //     );
 
-      final UserCredential userCredential = await FirebaseAuth.instance
-          .signInWithCredential(credential);
+  //     final UserCredential userCredential = await FirebaseAuth.instance
+  //         .signInWithCredential(credential);
 
-      final String? firebaseToken = await userCredential.user?.getIdToken();
+  //     final String? firebaseToken = await userCredential.user?.getIdToken();
 
-      if (firebaseToken == null) {
-        _showError('Impossible d\'obtenir le token Firebase. Réessayez.');
-        return;
-      }
+  //     if (firebaseToken == null) {
+  //       _showError('Impossible d\'obtenir le token Firebase. Réessayez.');
+  //       return;
+  //     }
 
-      debugPrint('Firebase ID Token length: ${firebaseToken.length}');
+  //     debugPrint('Firebase ID Token length: ${firebaseToken.length}');
 
-      // 3. Envoie le Firebase Token au backend
-      final response = await RequestService().post(
-        '/auth/social',
-        data: {
-          'provider': 'facebook',
-          'token': firebaseToken, // ← Firebase token
-          'device_name': 'mobile',
-        },
-      );
+  //     // 3. Envoie le Firebase Token au backend
+  //     final response = await RequestService().post(
+  //       '/auth/social',
+  //       data: {
+  //         'provider': 'facebook',
+  //         'token': firebaseToken, // ← Firebase token
+  //         'device_name': 'mobile',
+  //       },
+  //     );
 
-      await _handleSocialLoginResponse(
-        response.data['data'],
-        provider: 'Facebook',
-      );
-    } on FirebaseAuthException catch (e) {
-      debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
-      // Cas spécifique : compte déjà lié à un autre provider
-      if (e.code == 'account-exists-with-different-credential') {
-        _showError(
-          'Un compte existe déjà avec cet email via un autre fournisseur (Google, email...).',
-        );
-      } else {
-        _showError('Erreur Firebase : ${e.message ?? 'Réessayez.'}');
-      }
-    } on DioException catch (e) {
-      _handleDioError(e, isSocial: true);
-    } catch (e) {
-      debugPrint('Facebook login error: $e');
-      _showError('La connexion avec Facebook a échoué. Réessayez.');
-    } finally {
-      isSocialLoading.value = false;
-    }
-  }
+  //     await _handleSocialLoginResponse(
+  //       response.data['data'],
+  //       provider: 'Facebook',
+  //     );
+  //   } on FirebaseAuthException catch (e) {
+  //     debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
+  //     // Cas spécifique : compte déjà lié à un autre provider
+  //     if (e.code == 'account-exists-with-different-credential') {
+  //       _showError(
+  //         'Un compte existe déjà avec cet email via un autre fournisseur (Google, email...).',
+  //       );
+  //     } else {
+  //       _showError('Erreur Firebase : ${e.message ?? 'Réessayez.'}');
+  //     }
+  //   } on DioException catch (e) {
+  //     _handleDioError(e, isSocial: true);
+  //   } catch (e) {
+  //     debugPrint('Facebook login error: $e');
+  //     _showError('La connexion avec Facebook a échoué. Réessayez.');
+  //   } finally {
+  //     isSocialLoading.value = false;
+  //   }
+  // }
 
   // ══════════════════════════════════════════════════════════════════════════
   // MOCK SOCIAL RESPONSE
