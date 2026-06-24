@@ -2,7 +2,7 @@ import 'package:country_pickers/country.dart';
 import 'package:country_pickers/country_pickers.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+// import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -281,60 +281,60 @@ class RegisterController extends GetxController {
   // ══════════════════════════════════════════════════════════════════════════
   // FACEBOOK LOGIN — identique au LoginController
   // ══════════════════════════════════════════════════════════════════════════
-  Future<void> loginWithFacebook() async {
-    isSocialLoading.value = true;
-    try {
-      // ── Mock ───────────────────────────────────────────────────────────
-      if (useMock) {
-        await Future.delayed(const Duration(milliseconds: 800));
-        await _handleSocialLoginResponse(
-          _mockSocialResponse(provider: 'facebook'),
-          provider: 'Facebook',
-        );
-        return;
-      }
+  // Future<void> loginWithFacebook() async {
+  //   isSocialLoading.value = true;
+  //   try {
+  //     // ── Mock ───────────────────────────────────────────────────────────
+  //     if (useMock) {
+  //       await Future.delayed(const Duration(milliseconds: 800));
+  //       await _handleSocialLoginResponse(
+  //         _mockSocialResponse(provider: 'facebook'),
+  //         provider: 'Facebook',
+  //       );
+  //       return;
+  //     }
 
-      final LoginResult result = await FacebookAuth.instance.login(
-        permissions: ['email', 'public_profile'],
-      );
+  //     final LoginResult result = await FacebookAuth.instance.login(
+  //       permissions: ['email', 'public_profile'],
+  //     );
 
-      if (result.status == LoginStatus.cancelled) return;
+  //     if (result.status == LoginStatus.cancelled) return;
 
-      if (result.status != LoginStatus.success) {
-        _showError(
-          result.message ?? 'La connexion Facebook a échoué. Réessayez.',
-        );
-        return;
-      }
+  //     if (result.status != LoginStatus.success) {
+  //       _showError(
+  //         result.message ?? 'La connexion Facebook a échoué. Réessayez.',
+  //       );
+  //       return;
+  //     }
 
-      final AccessToken? accessToken = result.accessToken;
-      if (accessToken == null) {
-        _showError('Impossible de récupérer le token Facebook. Réessayez.');
-        return;
-      }
+  //     final AccessToken? accessToken = result.accessToken;
+  //     if (accessToken == null) {
+  //       _showError('Impossible de récupérer le token Facebook. Réessayez.');
+  //       return;
+  //     }
 
-      final response = await RequestService().post(
-        '/auth/social',
-        data: {
-          'provider': 'facebook',
-          'token': accessToken.tokenString,
-          'device_name': 'mobile',
-        },
-      );
+  //     final response = await RequestService().post(
+  //       '/auth/social',
+  //       data: {
+  //         'provider': 'facebook',
+  //         'token': accessToken.tokenString,
+  //         'device_name': 'mobile',
+  //       },
+  //     );
 
-      await _handleSocialLoginResponse(
-        response.data['data'],
-        provider: 'Facebook',
-      );
-    } on DioException catch (e) {
-      _handleDioError(e);
-    } catch (e) {
-      debugPrint('Facebook login error: $e');
-      _showError('La connexion avec Facebook a échoué. Réessayez.');
-    } finally {
-      isSocialLoading.value = false;
-    }
-  }
+  //     await _handleSocialLoginResponse(
+  //       response.data['data'],
+  //       provider: 'Facebook',
+  //     );
+  //   } on DioException catch (e) {
+  //     _handleDioError(e);
+  //   } catch (e) {
+  //     debugPrint('Facebook login error: $e');
+  //     _showError('La connexion avec Facebook a échoué. Réessayez.');
+  //   } finally {
+  //     isSocialLoading.value = false;
+  //   }
+  // }
 
   // ══════════════════════════════════════════════════════════════════════════
   // MOCK SOCIAL RESPONSE
