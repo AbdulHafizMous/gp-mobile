@@ -8,7 +8,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_auth
   firebase_core
   flutter_inappwebview_windows
-  flutter_secure_storage_windows
   record_windows
   rive_native
   url_launcher_windows
