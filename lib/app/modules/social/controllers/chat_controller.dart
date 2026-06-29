@@ -15,6 +15,9 @@ import 'package:grand_public_v2/app/utils/toast_helper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
+// import 'package:path/path.dart' as p;
+import 'package:open_filex/open_filex.dart';
+import 'package:http/http.dart' as http;
 
 class ChatController extends GetxController {
   // ── State ──────────────────────────────────────────────────────────────────
@@ -40,10 +43,11 @@ class ChatController extends GetxController {
   final socialTab = 0.obs;
   final chatTab   = 0.obs;
 
-  // ── Input ──────────────────────────────────────────────────────────────────
-  final messageCtrl = TextEditingController();
-  final searchCtrl  = TextEditingController();
-  final searchQuery = ''.obs;
+  // ── Input — observable pour réactivité du bouton Send ─────────────────────
+  final messageCtrl  = TextEditingController();
+  final messageText  = ''.obs;   // ← miroir reactive du TextField
+  final searchCtrl   = TextEditingController();
+  final searchQuery  = ''.obs;
 
   // ── Polling ────────────────────────────────────────────────────────────────
   Timer? _pollingTimer;
@@ -60,16 +64,19 @@ class ChatController extends GetxController {
   // ── Audio recorder ────────────────────────────────────────────────────────
   final _recorder          = AudioRecorder();
   final isRecording        = false.obs;
-  final recordingDuration  = 0.obs;  // secondes
+  final recordingDuration  = 0.obs;
   Timer? _recordTimer;
   String? _recordingPath;
 
-  // ── Audio player (messages reçus) ─────────────────────────────────────────
-  // playerId → state (playing | paused | stopped)
+  // ── Audio player ──────────────────────────────────────────────────────────
   final Map<int, AudioPlayer> _players = {};
-  final playingMessageId = Rxn<int>();
-  final audioPosition    = Duration.zero.obs;
-  final audioDuration    = Duration.zero.obs;
+  final playingMessageId  = Rxn<int>();
+  final audioPosition     = Duration.zero.obs;
+  final audioDuration     = Duration.zero.obs;
+  final isAudioPlaying    = false.obs;   // ← état play/pause pour le bouton
+
+  // ── File download ─────────────────────────────────────────────────────────
+  final downloadingMessageId = Rxn<int>();
 
   // ── Pickers ───────────────────────────────────────────────────────────────
   final _picker = ImagePicker();
@@ -87,7 +94,11 @@ class ChatController extends GetxController {
     loadChannels();
     loadPrivateConversations();
     searchCtrl.addListener(() => searchQuery.value = searchCtrl.text);
-    messageCtrl.addListener(_onTyping);
+    // Synchronise messageText avec le contenu du TextField pour la réactivité
+    messageCtrl.addListener(() {
+      messageText.value = messageCtrl.text;
+      _onTyping();
+    });
   }
 
   @override
@@ -155,7 +166,7 @@ class ChatController extends GetxController {
   void _mergeMessages(RxList<ChatMessage> target, List<ChatMessage> fresh) {
     final freshIds = fresh.map((m) => m.id).toSet();
     final pending  = target.where((m) => m.isPending).toList();
-    target.assignAll(fresh);  // déjà en ordre croissant (oldest first)
+    target.assignAll(fresh);
     for (final p in pending) {
       if (!freshIds.contains(p.id)) target.add(p);
     }
@@ -238,7 +249,6 @@ class ChatController extends GetxController {
       } else {
         final r = await RequestService()
             .get('/social/channels/${channel.id}/messages');
-        // Backend renvoie oldest first (ordre croissant)
         messages.value = (r.data['data'] as List<dynamic>)
             .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
             .toList();
@@ -443,6 +453,41 @@ class ChatController extends GetxController {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  // FILE DOWNLOAD
+  // ─────────────────────────────────────────────────────────────────────────
+  Future<void> downloadFile(ChatMessage msg) async {
+    final url = msg.mediaUrl;
+    if (url == null || url.isEmpty) {
+      ToastHelper.showToast('URL de fichier invalide',
+          backgroundColor: Colors.red, textColor: Colors.white);
+      return;
+    }
+
+    downloadingMessageId.value = msg.id;
+    try {
+      final dir = await getTemporaryDirectory();
+      final fileName = msg.fileName ?? url.split('/').last;
+      final filePath = '${dir.path}/$fileName';
+
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final file = File(filePath);
+        await file.writeAsBytes(response.bodyBytes);
+        await OpenFilex.open(filePath);
+      } else {
+        ToastHelper.showToast('Téléchargement échoué (${response.statusCode})',
+            backgroundColor: Colors.red, textColor: Colors.white);
+      }
+    } catch (e) {
+      debugPrint('downloadFile error: $e');
+      ToastHelper.showToast('Erreur de téléchargement',
+          backgroundColor: Colors.red, textColor: Colors.white);
+    } finally {
+      downloadingMessageId.value = null;
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   // AUDIO RECORDER
   // ─────────────────────────────────────────────────────────────────────────
   Future<void> startRecording() async {
@@ -482,7 +527,6 @@ class ChatController extends GetxController {
       final file = File(path);
       pendingFile.value = file;
       pendingFileType.value = MessageType.audio;
-      // Envoie directement
       if (activeChannel.value != null) {
         await sendMessage(activeChannel.value!.id);
       } else if (activeConversation.value != null) {
@@ -502,56 +546,98 @@ class ChatController extends GetxController {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // AUDIO PLAYER
+  // AUDIO PLAYER — CORRIGÉ
   // ─────────────────────────────────────────────────────────────────────────
   Future<void> toggleAudio(ChatMessage msg) async {
     final url = msg.mediaUrl ?? msg.content;
     if (url.isEmpty || url == 'mock_audio') return;
 
+    // Si ce message est déjà en train de jouer → pause/resume
     if (playingMessageId.value == msg.id) {
-      // Pause / reprendre
-      final p = _players[msg.id];
-      if (p == null) return;
-      final state = await p.getCurrentPosition();
-      if (state != null) { await p.pause(); }
-      else { await p.resume(); }
+      final player = _players[msg.id];
+      if (player == null) return;
+      if (isAudioPlaying.value) {
+        await player.pause();
+        isAudioPlaying.value = false;
+      } else {
+        await player.resume();
+        isAudioPlaying.value = true;
+      }
       return;
     }
 
-    // Arrêter le précédent
+    // Arrêter tout lecteur précédent
     await stopAudio();
 
+    // Créer un nouveau lecteur
     final player = AudioPlayer();
     _players[msg.id] = player;
     playingMessageId.value = msg.id;
+    audioPosition.value = Duration.zero;
+    audioDuration.value = Duration.zero;
 
-    player.onDurationChanged.listen((d) => audioDuration.value = d);
-    player.onPositionChanged.listen((p) => audioPosition.value = p);
+    // Écoute de la durée totale
+    player.onDurationChanged.listen((d) {
+      audioDuration.value = d;
+    });
+
+    // Écoute de la position — met à jour la progression
+    player.onPositionChanged.listen((pos) {
+      audioPosition.value = pos;
+    });
+
+    // Fin de lecture
     player.onPlayerComplete.listen((_) {
       playingMessageId.value = null;
+      isAudioPlaying.value = false;
       audioPosition.value = Duration.zero;
+      audioDuration.value = Duration.zero;
+      _players.remove(msg.id);
+    });
+
+    // Changement d'état du player
+    player.onPlayerStateChanged.listen((state) {
+      if (playingMessageId.value == msg.id) {
+        isAudioPlaying.value = state == PlayerState.playing;
+      }
     });
 
     try {
       await player.play(UrlSource(url));
+      isAudioPlaying.value = true;
     } catch (e) {
       debugPrint('Audio play error: $e');
       playingMessageId.value = null;
+      isAudioPlaying.value = false;
+      _players.remove(msg.id);
     }
+  }
+
+  /// Seek audio à une position donnée (0.0 → 1.0)
+  Future<void> seekAudio(ChatMessage msg, double progress) async {
+    final player = _players[msg.id];
+    if (player == null) return;
+    final total = audioDuration.value;
+    if (total.inMilliseconds == 0) return;
+    final pos = Duration(
+        milliseconds: (total.inMilliseconds * progress).round());
+    await player.seek(pos);
   }
 
   Future<void> stopAudio() async {
-    for (final p in _players.values) {
-      await p.stop();
-      await p.dispose();
+    for (final player in _players.values) {
+      await player.stop();
+      await player.dispose();
     }
     _players.clear();
     playingMessageId.value = null;
+    isAudioPlaying.value = false;
     audioPosition.value = Duration.zero;
+    audioDuration.value = Duration.zero;
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // HELPERS PRIVÉS
+  // HELPERS
   // ─────────────────────────────────────────────────────────────────────────
   Future<FormData> _buildFormData(
       String text, File? file, MessageType? type) async {
@@ -634,7 +720,6 @@ class ChatController extends GetxController {
         (i) => 'https://randomuser.me/api/portraits/${i%2==0?"women":"men"}/${i+10}.jpg');
     const txt = "L'IA redéfinit le marché du travail et ouvre de nouvelles perspectives.";
     final now = DateTime.now();
-    // Retournés en ordre croissant (les plus anciens d'abord)
     return [
       ChatMessage(id:1, channelId:channelId, senderId:1, senderName:names[0], senderAvatar:avatars[0],
           content:txt, sentAt:now.subtract(const Duration(hours:2))),

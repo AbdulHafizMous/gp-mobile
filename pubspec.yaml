@@ -44,6 +44,7 @@ dependencies:
   record: ^5.2.0               # Enregistrement audio
   audioplayers: ^6.4.0         # Lecture audio messages vocaux
   just_the_tooltip: ^0.0.12    # (optionnel – tooltips)
+  open_filex: ^4.7.0
 
 dev_dependencies:
   flutter_test:

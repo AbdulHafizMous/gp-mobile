@@ -62,7 +62,18 @@ class User {
 
   String get lastName => name.trim().split(' ').first;
 
-  bool get isAdmin => role == 'admin';
+  /// Vrai si l'utilisateur est Admin ou Super Admin
+  /// Compare en lowercase pour éviter les bugs de casse (backend envoie 'Admin')
+  bool get isAdmin {
+    final r = role.toLowerCase().trim();
+    return r == 'admin' || r == 'super admin' || r == 'administrator';
+  }
+
+  bool get isSuperAdmin {
+    final r = role.toLowerCase().trim();
+    return r == 'super admin';
+  }
+
   bool get hasAvatar => avatarUrl != null && avatarUrl!.isNotEmpty;
 
   /// Vérifie si l'utilisateur a un abonnement actif et valide.
@@ -75,7 +86,7 @@ class User {
       id: 0,
       name: '',
       email: '',
-      role: 'user',
+      role: 'User',
       isOtpVerified: false,
       isActive: false,
       needsCompletion: false,
@@ -111,7 +122,7 @@ class User {
       lookingForGender: json['looking_for_gender']?.toString(),
       fcmToken: json['fcm_token']?.toString(),
       firebaseId: json['firebase_id']?.toString(),
-      role: json['role']?.toString() ?? 'user',
+      role: json['role']?.toString() ?? 'User',
       countryCode: json['country_code']?.toString(),
       isOtpVerified: _parseBool(json['is_otp_verified']),
       isActive: _parseBool(json['is_active']),
