@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/data/models/dating_models.dart';
-import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/social/controllers/chat_controller.dart';
 import 'package:grand_public_v2/app/modules/social/controllers/dating_controller.dart';
 import 'package:grand_public_v2/app/modules/social/views/chat_room_view.dart';
@@ -1276,7 +1275,7 @@ class _PreferencesSetup extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                'Bienvenue dans le Dating ! ${activeUser.value.toJson()}',
+                'Bienvenue dans le Dating !',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 22,

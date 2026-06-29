@@ -42,9 +42,10 @@ class ChatMessage {
   final int senderId;
   final String senderName;
   final String? senderAvatar;
+  final String? senderRole;      // ← rôle du sender (User, Admin, Super Admin)
   final String content;
-  final String? mediaUrl;       // URL réseau du média
-  final String? localFilePath;  // Chemin local (avant upload / optimiste)
+  final String? mediaUrl;
+  final String? localFilePath;
   final String? fileName;
   final int? fileSizeBytes;
   final int? audioDurationSec;
@@ -61,6 +62,7 @@ class ChatMessage {
     required this.senderId,
     required this.senderName,
     this.senderAvatar,
+    this.senderRole,
     required this.content,
     this.mediaUrl,
     this.localFilePath,
@@ -73,6 +75,13 @@ class ChatMessage {
     this.status = MessageStatus.sent,
     this.isPending = false,
   });
+
+  /// Vrai si le sender a un rôle admin ou super admin
+  bool get isAdminSender {
+    if (senderRole == null) return false;
+    final r = senderRole!.toLowerCase();
+    return r == 'admin' || r == 'super admin' || r == 'administrator';
+  }
 
   String get timeLabel {
     final now  = DateTime.now();
@@ -94,6 +103,8 @@ class ChatMessage {
                        json['user']?['name']?.toString() ?? 'Utilisateur',
       senderAvatar:    json['sender_avatar']?.toString() ??
                        json['user']?['avatar_url']?.toString(),
+      senderRole:      json['sender_role']?.toString() ??
+                       json['user']?['role']?.toString(),
       content:         json['content']?.toString() ?? '',
       mediaUrl:        json['media_url']?.toString(),
       fileName:        json['file_name']?.toString(),
@@ -113,6 +124,7 @@ class ChatMessage {
   }) => ChatMessage(
     id: id, channelId: channelId, conversationId: conversationId,
     senderId: senderId, senderName: senderName, senderAvatar: senderAvatar,
+    senderRole: senderRole,
     content: content, mediaUrl: mediaUrl ?? this.mediaUrl,
     localFilePath: localFilePath,
     fileName: fileName, fileSizeBytes: fileSizeBytes,

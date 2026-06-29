@@ -74,8 +74,7 @@ class DatingMatch {
   factory DatingMatch.fromJson(Map<String, dynamic> json) {
     return DatingMatch(
       id: _i(json['id']),
-      profile: DatingProfile.fromJson(
-          json['profile'] as Map<String, dynamic>),
+      profile: DatingProfile.fromJson(json['profile'] as Map<String, dynamic>),
       matchedAt: _d(json['matched_at'] ?? json['created_at']),
       conversationId: json['conversation_id'] != null
           ? _i(json['conversation_id'])
@@ -85,7 +84,11 @@ class DatingMatch {
 
   static int _i(dynamic v) => v is int ? v : int.tryParse('$v') ?? 0;
   static DateTime _d(dynamic v) {
-    try { return DateTime.parse(v.toString()); } catch (_) { return DateTime.now(); }
+    try {
+      return DateTime.parse(v.toString());
+    } catch (_) {
+      return DateTime.now();
+    }
   }
 }
 
@@ -97,12 +100,14 @@ class DatingPreferences {
   final int? minAge;
   final int? maxAge;
   final double? maxDistance;
+  final bool? isActive;
 
   const DatingPreferences({
     this.lookingFor,
     this.minAge,
     this.maxAge,
     this.maxDistance,
+    this.isActive,
   });
 
   bool get isConfigured => lookingFor != null;
@@ -112,6 +117,7 @@ class DatingPreferences {
     'min_age': minAge,
     'max_age': maxAge,
     'max_distance': maxDistance,
+    'is_active': isActive,
   };
 
   factory DatingPreferences.fromJson(Map<String, dynamic> json) =>
@@ -120,5 +126,6 @@ class DatingPreferences {
         minAge: json['min_age'] is int ? json['min_age'] : null,
         maxAge: json['max_age'] is int ? json['max_age'] : null,
         maxDistance: (json['max_distance'] as num?)?.toDouble(),
+        isActive: json['is_active'] is bool ? json['is_active'] : null,
       );
 }
