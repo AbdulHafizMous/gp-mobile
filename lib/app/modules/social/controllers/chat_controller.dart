@@ -13,9 +13,8 @@ import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
-// import 'package:path/path.dart' as p;
+import 'package:record/record.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:http/http.dart' as http;
 
@@ -34,46 +33,45 @@ class ChatController extends GetxController {
   final privateMessages    = <ChatMessage>[].obs;
 
   // ── Typing ─────────────────────────────────────────────────────────────────
-  final typingUsers    = <String>{}.obs;
-  final otherIsTyping  = false.obs;
+  final typingUsers   = <String>{}.obs;
+  final otherIsTyping = false.obs;
   Timer? _typingDebounce;
-  bool   _iAmTyping = false;
 
   // ── Tabs ───────────────────────────────────────────────────────────────────
   final socialTab = 0.obs;
   final chatTab   = 0.obs;
 
-  // ── Input — observable pour réactivité du bouton Send ─────────────────────
-  final messageCtrl  = TextEditingController();
-  final messageText  = ''.obs;   // ← miroir reactive du TextField
-  final searchCtrl   = TextEditingController();
-  final searchQuery  = ''.obs;
+  // ── Input ─────────────────────────────────────────────────────────────────
+  final messageCtrl = TextEditingController();
+  final messageText = ''.obs;
+  final searchCtrl  = TextEditingController();
+  final searchQuery = ''.obs;
+
+  // ── Reply ─────────────────────────────────────────────────────────────────
+  final replyingTo = Rxn<ChatMessage>();
 
   // ── Polling ────────────────────────────────────────────────────────────────
   Timer? _pollingTimer;
   static const _pollInterval = Duration(seconds: 4);
 
-  // ── Scroll callback ────────────────────────────────────────────────────────
   VoidCallback? onScrollToBottom;
 
   // ── Pièce jointe ──────────────────────────────────────────────────────────
   final pendingFile     = Rxn<File>();
   final pendingFileType = Rxn<MessageType>();
-  final uploadProgress  = 0.0.obs;
 
   // ── Audio recorder ────────────────────────────────────────────────────────
-  final _recorder          = AudioRecorder();
-  final isRecording        = false.obs;
-  final recordingDuration  = 0.obs;
+  final _recorder         = AudioRecorder();
+  final isRecording       = false.obs;
+  final recordingDuration = 0.obs;
   Timer? _recordTimer;
-  String? _recordingPath;
 
   // ── Audio player ──────────────────────────────────────────────────────────
   final Map<int, AudioPlayer> _players = {};
-  final playingMessageId  = Rxn<int>();
-  final audioPosition     = Duration.zero.obs;
-  final audioDuration     = Duration.zero.obs;
-  final isAudioPlaying    = false.obs;   // ← état play/pause pour le bouton
+  final playingMessageId = Rxn<int>();
+  final audioPosition    = Duration.zero.obs;
+  final audioDuration    = Duration.zero.obs;
+  final isAudioPlaying   = false.obs;
 
   // ── File download ─────────────────────────────────────────────────────────
   final downloadingMessageId = Rxn<int>();
@@ -82,8 +80,8 @@ class ChatController extends GetxController {
   final _picker = ImagePicker();
 
   // ── Auth ───────────────────────────────────────────────────────────────────
-  int get myUserId => GetStorage().read<int>('userId') ?? 0;
-  String get myName => GetStorage().read<String>('username') ?? 'Moi';
+  int    get myUserId => GetStorage().read<int>('userId') ?? 0;
+  String get myName   => GetStorage().read<String>('username') ?? 'Moi';
 
   // ─────────────────────────────────────────────────────────────────────────
   // INIT / CLOSE
@@ -93,12 +91,11 @@ class ChatController extends GetxController {
     super.onInit();
     loadChannels();
     loadPrivateConversations();
-    searchCtrl.addListener(() => searchQuery.value = searchCtrl.text);
-    // Synchronise messageText avec le contenu du TextField pour la réactivité
     messageCtrl.addListener(() {
       messageText.value = messageCtrl.text;
       _onTyping();
     });
+    searchCtrl.addListener(() => searchQuery.value = searchCtrl.text);
   }
 
   @override
@@ -114,17 +111,23 @@ class ChatController extends GetxController {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  // REPLY
+  // ─────────────────────────────────────────────────────────────────────────
+  void startReply(ChatMessage msg) {
+    replyingTo.value = msg;
+    // Focus le champ de saisie
+    messageCtrl.text = messageCtrl.text; // trigger rebuild
+  }
+
+  void cancelReply() => replyingTo.value = null;
+
+  // ─────────────────────────────────────────────────────────────────────────
   // TYPING
   // ─────────────────────────────────────────────────────────────────────────
   void _onTyping() {
-    if (messageCtrl.text.isEmpty) { _stopTyping(); return; }
-    if (!_iAmTyping) { _iAmTyping = true; }
+    if (messageCtrl.text.isEmpty) { _typingDebounce?.cancel(); return; }
     _typingDebounce?.cancel();
-    _typingDebounce = Timer(const Duration(seconds: 2), _stopTyping);
-  }
-
-  void _stopTyping() {
-    _iAmTyping = false;
+    _typingDebounce = Timer(const Duration(seconds: 2), () {});
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -135,29 +138,18 @@ class ChatController extends GetxController {
     _pollingTimer = Timer.periodic(_pollInterval, (_) => _pollMessages());
   }
 
-  void _stopPolling() {
-    _pollingTimer?.cancel();
-    _pollingTimer = null;
-  }
+  void _stopPolling() { _pollingTimer?.cancel(); _pollingTimer = null; }
 
   Future<void> _pollMessages() async {
     if (useMock) return;
     try {
       if (activeChannel.value != null) {
-        final r = await RequestService()
-            .get('/social/channels/${activeChannel.value!.id}/messages');
-        final list = (r.data['data'] as List<dynamic>)
-            .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
-            .toList();
-        _mergeMessages(messages, list);
+        final r = await RequestService().get('/social/channels/${activeChannel.value!.id}/messages');
+        _mergeMessages(messages, (r.data['data'] as List).map((e) => ChatMessage.fromJson(e)).toList());
         onScrollToBottom?.call();
       } else if (activeConversation.value != null) {
-        final r = await RequestService()
-            .get('/social/conversations/${activeConversation.value!.id}/messages');
-        final list = (r.data['data'] as List<dynamic>)
-            .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
-            .toList();
-        _mergeMessages(privateMessages, list);
+        final r = await RequestService().get('/social/conversations/${activeConversation.value!.id}/messages');
+        _mergeMessages(privateMessages, (r.data['data'] as List).map((e) => ChatMessage.fromJson(e)).toList());
         onScrollToBottom?.call();
       }
     } catch (_) {}
@@ -167,9 +159,7 @@ class ChatController extends GetxController {
     final freshIds = fresh.map((m) => m.id).toSet();
     final pending  = target.where((m) => m.isPending).toList();
     target.assignAll(fresh);
-    for (final p in pending) {
-      if (!freshIds.contains(p.id)) target.add(p);
-    }
+    for (final p in pending) { if (!freshIds.contains(p.id)) target.add(p); }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -184,14 +174,9 @@ class ChatController extends GetxController {
         return;
       }
       final r = await RequestService().get('/social/channels');
-      channels.value = (r.data['data'] as List<dynamic>)
-          .map((e) => ChatChannel.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } on DioException catch (e) {
-      _dioErr(e);
-    } finally {
-      isChannelsLoading.value = false;
-    }
+      channels.value = (r.data['data'] as List).map((e) => ChatChannel.fromJson(e)).toList();
+    } on DioException catch (e) { _dioErr(e); }
+    finally { isChannelsLoading.value = false; }
   }
 
   List<ChatChannel> get filteredChannels {
@@ -208,38 +193,27 @@ class ChatController extends GetxController {
 
   Future<void> joinChannel(ChatChannel channel) async {
     try {
-      if (useMock) {
-        final i = channels.indexWhere((c) => c.id == channel.id);
-        if (i != -1) channels[i] = channels[i].copyWith(isJoined: true);
-        ToastHelper.showToast('Vous avez rejoint ${channel.name}',
-            backgroundColor: Colors.green, textColor: Colors.white);
-        return;
-      }
-      await RequestService().post('/social/channels/${channel.id}/join');
-      await loadChannels();
-      ToastHelper.showToast('Vous avez rejoint ${channel.name}',
-          backgroundColor: Colors.green, textColor: Colors.white);
+      if (!useMock) await RequestService().post('/social/channels/${channel.id}/join');
+      final i = channels.indexWhere((c) => c.id == channel.id);
+      if (i != -1) channels[i] = channels[i].copyWith(isJoined: true);
+      ToastHelper.showToast('Vous avez rejoint ${channel.name}', backgroundColor: Colors.green, textColor: Colors.white);
     } on DioException catch (e) { _dioErr(e); }
   }
 
   Future<void> leaveChannel(ChatChannel channel) async {
     try {
-      if (!useMock) {
-        await RequestService().post('/social/channels/${channel.id}/leave');
-      }
+      if (!useMock) await RequestService().post('/social/channels/${channel.id}/leave');
       final i = channels.indexWhere((c) => c.id == channel.id);
       if (i != -1) channels[i] = channels[i].copyWith(isJoined: false);
       await loadChannels();
     } on DioException catch (e) { _dioErr(e); }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // MESSAGES CANAL
-  // ─────────────────────────────────────────────────────────────────────────
   Future<void> openChannel(ChatChannel channel) async {
     activeChannel.value = channel;
     activeConversation.value = null;
     messages.clear();
+    replyingTo.value = null;
     _stopPolling();
     isMessagesLoading.value = true;
     try {
@@ -247,11 +221,8 @@ class ChatController extends GetxController {
         await Future.delayed(const Duration(milliseconds: 400));
         messages.value = _mockMessages(channel.id);
       } else {
-        final r = await RequestService()
-            .get('/social/channels/${channel.id}/messages');
-        messages.value = (r.data['data'] as List<dynamic>)
-            .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
-            .toList();
+        final r = await RequestService().get('/social/channels/${channel.id}/messages');
+        messages.value = (r.data['data'] as List).map((e) => ChatMessage.fromJson(e)).toList();
       }
     } finally {
       isMessagesLoading.value = false;
@@ -262,21 +233,24 @@ class ChatController extends GetxController {
 
   void closeRoom() {
     _stopPolling();
-    _stopTyping();
     stopAudio();
+    replyingTo.value = null;
     activeChannel.value = null;
     activeConversation.value = null;
     messages.clear();
     privateMessages.clear();
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // SEND — CANAL
+  // ─────────────────────────────────────────────────────────────────────────
   Future<void> sendMessage(int channelId) async {
     final text = messageCtrl.text.trim();
     final file = pendingFile.value;
     if (text.isEmpty && file == null) return;
-    _stopTyping();
 
-    final tempId    = -DateTime.now().millisecondsSinceEpoch;
+    final reply = replyingTo.value;
+    final tempId = -DateTime.now().millisecondsSinceEpoch;
     final optimistic = ChatMessage(
       id: tempId, channelId: channelId,
       senderId: myUserId, senderName: myName,
@@ -285,6 +259,10 @@ class ChatController extends GetxController {
       type: pendingFileType.value ?? MessageType.text,
       status: MessageStatus.sending, isPending: true,
       localFilePath: file?.path,
+      replyToId: reply?.id,
+      replyToSenderName: reply?.senderName,
+      replyToContent: reply?.content,
+      replyToType: reply?.type,
     );
     messages.add(optimistic);
     messageCtrl.clear();
@@ -292,6 +270,7 @@ class ChatController extends GetxController {
     final capturedType = pendingFileType.value;
     pendingFile.value = null;
     pendingFileType.value = null;
+    replyingTo.value = null;
     onScrollToBottom?.call();
 
     if (useMock) {
@@ -300,11 +279,27 @@ class ChatController extends GetxController {
       return;
     }
     try {
-      final data = await _buildFormData(text, capturedFile, capturedType);
+      final data = await _buildFormData(text, capturedFile, capturedType, replyId: reply?.id);
       await RequestService().post('/social/channels/$channelId/messages', data: data);
       _confirmPending(messages, tempId);
     } on DioException catch (e) {
       _failPending(messages, tempId);
+      _dioErr(e);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // DELETE MESSAGE
+  // ─────────────────────────────────────────────────────────────────────────
+  Future<void> deleteMessage(ChatMessage msg) async {
+    // Supprime localement immédiatement
+    messages.removeWhere((m) => m.id == msg.id);
+    privateMessages.removeWhere((m) => m.id == msg.id);
+
+    if (useMock || msg.id < 0) return;
+    try {
+      await RequestService().delete('/social/messages/${msg.id}');
+    } on DioException catch (e) {
       _dioErr(e);
     }
   }
@@ -321,20 +316,17 @@ class ChatController extends GetxController {
         return;
       }
       final r = await RequestService().get('/social/conversations');
-      privateConversations.value = (r.data['data'] as List<dynamic>)
-          .map((e) => PrivateConversation.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      debugPrint('loadConvs error: $e');
-    } finally {
-      isConvsLoading.value = false;
-    }
+      privateConversations.value = (r.data['data'] as List)
+          .map((e) => PrivateConversation.fromJson(e)).toList();
+    } catch (e) { debugPrint('loadConvs error: $e'); }
+    finally { isConvsLoading.value = false; }
   }
 
   Future<void> openPrivateConversation(PrivateConversation conv) async {
     activeConversation.value = conv;
     activeChannel.value = null;
     privateMessages.clear();
+    replyingTo.value = null;
     _stopPolling();
     isMessagesLoading.value = true;
     try {
@@ -342,11 +334,9 @@ class ChatController extends GetxController {
         await Future.delayed(const Duration(milliseconds: 400));
         privateMessages.value = _mockPrivateMessages(conv.id);
       } else {
-        final r = await RequestService()
-            .get('/social/conversations/${conv.id}/messages');
-        privateMessages.value = (r.data['data'] as List<dynamic>)
-            .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
-            .toList();
+        final r = await RequestService().get('/social/conversations/${conv.id}/messages');
+        privateMessages.value = (r.data['data'] as List)
+            .map((e) => ChatMessage.fromJson(e)).toList();
       }
     } finally {
       isMessagesLoading.value = false;
@@ -359,8 +349,8 @@ class ChatController extends GetxController {
     final text = messageCtrl.text.trim();
     final file = pendingFile.value;
     if (text.isEmpty && file == null) return;
-    _stopTyping();
 
+    final reply = replyingTo.value;
     final tempId = -DateTime.now().millisecondsSinceEpoch;
     final optimistic = ChatMessage(
       id: tempId, channelId: convId,
@@ -370,6 +360,10 @@ class ChatController extends GetxController {
       type: pendingFileType.value ?? MessageType.text,
       status: MessageStatus.sending, isPending: true,
       localFilePath: file?.path,
+      replyToId: reply?.id,
+      replyToSenderName: reply?.senderName,
+      replyToContent: reply?.content,
+      replyToType: reply?.type,
     );
     privateMessages.add(optimistic);
     messageCtrl.clear();
@@ -377,6 +371,7 @@ class ChatController extends GetxController {
     final capturedType = pendingFileType.value;
     pendingFile.value = null;
     pendingFileType.value = null;
+    replyingTo.value = null;
     onScrollToBottom?.call();
 
     if (useMock) {
@@ -385,9 +380,8 @@ class ChatController extends GetxController {
       return;
     }
     try {
-      final data = await _buildFormData(text, capturedFile, capturedType);
-      await RequestService()
-          .post('/social/conversations/$convId/messages', data: data);
+      final data = await _buildFormData(text, capturedFile, capturedType, replyId: reply?.id);
+      await RequestService().post('/social/conversations/$convId/messages', data: data);
       _confirmPending(privateMessages, tempId);
     } on DioException catch (e) {
       _failPending(privateMessages, tempId);
@@ -398,14 +392,10 @@ class ChatController extends GetxController {
   Future<int?> startConversationWithUser(int userId) async {
     try {
       if (useMock) return 999;
-      final r = await RequestService()
-          .post('/social/conversations', data: {'user_id': userId});
+      final r = await RequestService().post('/social/conversations', data: {'user_id': userId});
       await loadPrivateConversations();
       return _i(r.data['data']['id']);
-    } catch (e) {
-      debugPrint('startConversation error: $e');
-      return null;
-    }
+    } catch (e) { debugPrint('startConversation error: $e'); return null; }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -414,9 +404,7 @@ class ChatController extends GetxController {
   Future<void> pickImage({bool fromCamera = false}) async {
     try {
       final XFile? xfile = await _picker.pickImage(
-        source: fromCamera ? ImageSource.camera : ImageSource.gallery,
-        imageQuality: 80,
-      );
+          source: fromCamera ? ImageSource.camera : ImageSource.gallery, imageQuality: 80);
       if (xfile == null) return;
       pendingFile.value = File(xfile.path);
       pendingFileType.value = MessageType.image;
@@ -425,8 +413,7 @@ class ChatController extends GetxController {
 
   Future<void> pickVideo() async {
     try {
-      final XFile? xfile =
-          await _picker.pickVideo(source: ImageSource.gallery);
+      final XFile? xfile = await _picker.pickVideo(source: ImageSource.gallery);
       if (xfile == null) return;
       pendingFile.value = File(xfile.path);
       pendingFileType.value = MessageType.video;
@@ -435,22 +422,14 @@ class ChatController extends GetxController {
 
   Future<void> pickFile() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.any,
-        allowMultiple: false,
-      );
-      if (result == null || result.files.isEmpty) return;
-      final pf = result.files.first;
-      if (pf.path == null) return;
-      pendingFile.value = File(pf.path!);
+      final result = await FilePicker.platform.pickFiles(type: FileType.any, allowMultiple: false);
+      if (result == null || result.files.isEmpty || result.files.first.path == null) return;
+      pendingFile.value = File(result.files.first.path!);
       pendingFileType.value = MessageType.file;
     } catch (e) { debugPrint('pickFile error: $e'); }
   }
 
-  void clearPendingFile() {
-    pendingFile.value = null;
-    pendingFileType.value = null;
-  }
+  void clearPendingFile() { pendingFile.value = null; pendingFileType.value = null; }
 
   // ─────────────────────────────────────────────────────────────────────────
   // FILE DOWNLOAD
@@ -458,64 +437,54 @@ class ChatController extends GetxController {
   Future<void> downloadFile(ChatMessage msg) async {
     final url = msg.mediaUrl;
     if (url == null || url.isEmpty) {
-      ToastHelper.showToast('URL de fichier invalide',
-          backgroundColor: Colors.red, textColor: Colors.white);
+      ToastHelper.showToast('URL invalide', backgroundColor: Colors.red, textColor: Colors.white);
       return;
     }
-
     downloadingMessageId.value = msg.id;
     try {
       final dir = await getTemporaryDirectory();
       final fileName = msg.fileName ?? url.split('/').last;
       final filePath = '${dir.path}/$fileName';
-
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
-        final file = File(filePath);
-        await file.writeAsBytes(response.bodyBytes);
+        await File(filePath).writeAsBytes(response.bodyBytes);
         await OpenFilex.open(filePath);
       } else {
-        ToastHelper.showToast('Téléchargement échoué (${response.statusCode})',
-            backgroundColor: Colors.red, textColor: Colors.white);
+        ToastHelper.showToast('Téléchargement échoué', backgroundColor: Colors.red, textColor: Colors.white);
       }
     } catch (e) {
-      debugPrint('downloadFile error: $e');
-      ToastHelper.showToast('Erreur de téléchargement',
-          backgroundColor: Colors.red, textColor: Colors.white);
-    } finally {
-      downloadingMessageId.value = null;
-    }
+      ToastHelper.showToast('Erreur de téléchargement', backgroundColor: Colors.red, textColor: Colors.white);
+    } finally { downloadingMessageId.value = null; }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // AUDIO RECORDER
+  // AUDIO RECORDER — Flow WhatsApp
+  // startRecording  : appel manuel (onLongPress ou bouton dans AttachMenu)
+  // stopAndSend     : relâcher le long press → demande confirmation
+  // cancelRecording : glisser vers annuler ou bouton annuler
   // ─────────────────────────────────────────────────────────────────────────
   Future<void> startRecording() async {
     try {
-      final hasPermission = await _recorder.hasPermission();
-      if (!hasPermission) {
-        ToastHelper.showToast('Permission micro refusée',
-            backgroundColor: Colors.red, textColor: Colors.white);
+      final ok = await _recorder.hasPermission();
+      if (!ok) {
+        ToastHelper.showToast('Permission micro refusée', backgroundColor: Colors.red, textColor: Colors.white);
         return;
       }
       final dir = await getTemporaryDirectory();
-      _recordingPath =
-          '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final path = '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
       await _recorder.start(
-        const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000),
-        path: _recordingPath!,
-      );
+          const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000),
+          path: path);
       isRecording.value = true;
       recordingDuration.value = 0;
       _recordTimer = Timer.periodic(const Duration(seconds: 1), (_) {
         recordingDuration.value++;
         if (recordingDuration.value >= 120) stopAndSendRecording();
       });
-    } catch (e) {
-      debugPrint('startRecording error: $e');
-    }
+    } catch (e) { debugPrint('startRecording error: $e'); }
   }
 
+  /// Arrête et envoie directement (appelé depuis le flow long-press release)
   Future<void> stopAndSendRecording() async {
     try {
       _recordTimer?.cancel();
@@ -523,18 +492,14 @@ class ChatController extends GetxController {
       isRecording.value = false;
       recordingDuration.value = 0;
       if (path == null) return;
-
-      final file = File(path);
-      pendingFile.value = file;
+      pendingFile.value = File(path);
       pendingFileType.value = MessageType.audio;
       if (activeChannel.value != null) {
         await sendMessage(activeChannel.value!.id);
       } else if (activeConversation.value != null) {
         await sendPrivateMessage(activeConversation.value!.id);
       }
-    } catch (e) {
-      debugPrint('stopRecording error: $e');
-    }
+    } catch (e) { debugPrint('stopRecording error: $e'); }
   }
 
   void cancelRecording() async {
@@ -542,17 +507,15 @@ class ChatController extends GetxController {
     await _recorder.stop();
     isRecording.value = false;
     recordingDuration.value = 0;
-    _recordingPath = null;
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // AUDIO PLAYER — CORRIGÉ
+  // AUDIO PLAYER
   // ─────────────────────────────────────────────────────────────────────────
   Future<void> toggleAudio(ChatMessage msg) async {
     final url = msg.mediaUrl ?? msg.content;
     if (url.isEmpty || url == 'mock_audio') return;
 
-    // Si ce message est déjà en train de jouer → pause/resume
     if (playingMessageId.value == msg.id) {
       final player = _players[msg.id];
       if (player == null) return;
@@ -566,27 +529,15 @@ class ChatController extends GetxController {
       return;
     }
 
-    // Arrêter tout lecteur précédent
     await stopAudio();
-
-    // Créer un nouveau lecteur
     final player = AudioPlayer();
     _players[msg.id] = player;
     playingMessageId.value = msg.id;
     audioPosition.value = Duration.zero;
     audioDuration.value = Duration.zero;
 
-    // Écoute de la durée totale
-    player.onDurationChanged.listen((d) {
-      audioDuration.value = d;
-    });
-
-    // Écoute de la position — met à jour la progression
-    player.onPositionChanged.listen((pos) {
-      audioPosition.value = pos;
-    });
-
-    // Fin de lecture
+    player.onDurationChanged.listen((d) => audioDuration.value = d);
+    player.onPositionChanged.listen((pos) { if (playingMessageId.value == msg.id) audioPosition.value = pos; });
     player.onPlayerComplete.listen((_) {
       playingMessageId.value = null;
       isAudioPlaying.value = false;
@@ -594,12 +545,8 @@ class ChatController extends GetxController {
       audioDuration.value = Duration.zero;
       _players.remove(msg.id);
     });
-
-    // Changement d'état du player
     player.onPlayerStateChanged.listen((state) {
-      if (playingMessageId.value == msg.id) {
-        isAudioPlaying.value = state == PlayerState.playing;
-      }
+      if (playingMessageId.value == msg.id) isAudioPlaying.value = state == PlayerState.playing;
     });
 
     try {
@@ -613,22 +560,16 @@ class ChatController extends GetxController {
     }
   }
 
-  /// Seek audio à une position donnée (0.0 → 1.0)
   Future<void> seekAudio(ChatMessage msg, double progress) async {
     final player = _players[msg.id];
     if (player == null) return;
     final total = audioDuration.value;
     if (total.inMilliseconds == 0) return;
-    final pos = Duration(
-        milliseconds: (total.inMilliseconds * progress).round());
-    await player.seek(pos);
+    await player.seek(Duration(milliseconds: (total.inMilliseconds * progress).round()));
   }
 
   Future<void> stopAudio() async {
-    for (final player in _players.values) {
-      await player.stop();
-      await player.dispose();
-    }
+    for (final p in _players.values) { await p.stop(); await p.dispose(); }
     _players.clear();
     playingMessageId.value = null;
     isAudioPlaying.value = false;
@@ -639,47 +580,34 @@ class ChatController extends GetxController {
   // ─────────────────────────────────────────────────────────────────────────
   // HELPERS
   // ─────────────────────────────────────────────────────────────────────────
-  Future<FormData> _buildFormData(
-      String text, File? file, MessageType? type) async {
+  Future<FormData> _buildFormData(String text, File? file, MessageType? type, {int? replyId}) async {
+    final Map<String, dynamic> map = {
+      'content': text,
+      'type': type?.name ?? 'text',
+      if (replyId != null) 'reply_to_id': replyId,
+    };
     if (file != null) {
-      return FormData.fromMap({
-        'content': text,
-        'type': type?.name ?? 'file',
-        'file': await MultipartFile.fromFile(
-          file.path,
-          filename: file.path.split('/').last,
-        ),
-      });
+      map['file'] = await MultipartFile.fromFile(file.path, filename: file.path.split('/').last);
     }
-    return FormData.fromMap({'content': text, 'type': 'text'});
+    return FormData.fromMap(map);
   }
 
   void _confirmPending(RxList<ChatMessage> target, int tempId) {
     final i = target.indexWhere((m) => m.id == tempId);
-    if (i != -1) {
-      target[i] = target[i].copyWith(
-          status: MessageStatus.sent, isPending: false);
-    }
+    if (i != -1) target[i] = target[i].copyWith(status: MessageStatus.sent, isPending: false);
   }
 
   void _failPending(RxList<ChatMessage> target, int tempId) {
     final i = target.indexWhere((m) => m.id == tempId);
-    if (i != -1) {
-      target[i] = target[i].copyWith(
-          status: MessageStatus.failed, isPending: false);
-    }
+    if (i != -1) target[i] = target[i].copyWith(status: MessageStatus.failed, isPending: false);
   }
 
   void _dioErr(DioException e) {
-    final msg = e.response != null
-        ? 'Erreur ${e.response?.statusCode}'
-        : e.message ?? 'Erreur réseau';
-    ToastHelper.showToast(msg,
-        backgroundColor: Colors.red, textColor: Colors.white);
+    final msg = e.response != null ? 'Erreur ${e.response?.statusCode}' : e.message ?? 'Erreur réseau';
+    ToastHelper.showToast(msg, backgroundColor: Colors.red, textColor: Colors.white);
   }
 
-  static int _i(dynamic v) =>
-      v is int ? v : int.tryParse('$v') ?? 0;
+  static int _i(dynamic v) => v is int ? v : int.tryParse('$v') ?? 0;
 
   // ─────────────────────────────────────────────────────────────────────────
   // MOCKS
@@ -692,8 +620,6 @@ class ChatController extends GetxController {
       {'name': 'Entrepreneuriat au Bénin', 'tag': 'Business', 'count': 212},
       {'name': 'Culture & Art africain', 'tag': 'Culture', 'count': 98},
       {'name': 'Sport & Football local', 'tag': 'Sport', 'count': 77},
-      {'name': 'Mode & Style africain', 'tag': 'Mode', 'count': 54},
-      {'name': 'Tech & Innovation', 'tag': 'Tech', 'count': 130},
     ];
     return List.generate(topics.length, (i) {
       final t = topics[i];
@@ -702,35 +628,30 @@ class ChatController extends GetxController {
         description: 'Rejoignez ce canal et échangez avec la communauté GP',
         membersCount: t['count'] as int,
         isJoined: i < 2, isOnline: i % 2 == 0, tags: [t['tag'] as String],
-        lastMessage: i < 2
-            ? ChatMessage(
-                id: i * 10, channelId: i + 1, senderId: i + 10,
-                senderName: 'Sam Jean',
-                content: "L'expérience de la dame qui vend au marché...",
-                sentAt: DateTime.now().subtract(const Duration(minutes: 5)))
-            : null,
+        lastMessage: i < 2 ? ChatMessage(
+          id: i * 10, channelId: i + 1, senderId: i + 10,
+          senderName: 'Sam Jean', content: "L'expérience de la dame qui vend au marché...",
+          sentAt: DateTime.now().subtract(const Duration(minutes: 5))) : null,
         unreadCount: i == 1 ? 3 : 0,
       );
     });
   }
 
   List<ChatMessage> _mockMessages(int channelId) {
-    final names = ['Kadi D.', 'Rickys R.', 'Evelyne K.', 'Rachel B.', 'Sam J.'];
-    final avatars = List.generate(5,
-        (i) => 'https://randomuser.me/api/portraits/${i%2==0?"women":"men"}/${i+10}.jpg');
-    const txt = "L'IA redéfinit le marché du travail et ouvre de nouvelles perspectives.";
+    final names   = ['Kadi D.', 'Rickys R.', 'Evelyne K.', 'Rachel B.'];
+    final avatars = List.generate(4, (i) => 'https://randomuser.me/api/portraits/${i%2==0?"women":"men"}/${i+10}.jpg');
     final now = DateTime.now();
     return [
       ChatMessage(id:1, channelId:channelId, senderId:1, senderName:names[0], senderAvatar:avatars[0],
-          content:txt, sentAt:now.subtract(const Duration(hours:2))),
+          content:"L'IA redéfinit le marché du travail.", sentAt:now.subtract(const Duration(hours:2))),
       ChatMessage(id:2, channelId:channelId, senderId:2, senderName:names[1], senderAvatar:avatars[1],
-          content:'Totalement d\'accord 💯', sentAt:now.subtract(const Duration(hours:1, minutes:50))),
+          content:'Totalement d\'accord 💯', sentAt:now.subtract(const Duration(hours:1, minutes:50)),
+          replyToId:1, replyToSenderName:'Kadi D.', replyToContent:"L'IA redéfinit le marché du travail."),
       ChatMessage(id:3, channelId:channelId, senderId:myUserId, senderName:myName,
           content:'Je pense que la formation continue est la clé 🔑',
           sentAt:now.subtract(const Duration(hours:1, minutes:30)), isMe:true, status:MessageStatus.read),
       ChatMessage(id:4, channelId:channelId, senderId:3, senderName:names[2], senderAvatar:avatars[2],
-          content:'', type:MessageType.audio, audioDurationSec:8,
-          sentAt:now.subtract(const Duration(minutes:20))),
+          content:'', type:MessageType.audio, audioDurationSec:8, sentAt:now.subtract(const Duration(minutes:20))),
       ChatMessage(id:5, channelId:channelId, senderId:myUserId, senderName:myName,
           content:'Exactement 🔥', sentAt:now.subtract(const Duration(minutes:5)),
           isMe:true, status:MessageStatus.delivered),
@@ -738,50 +659,36 @@ class ChatController extends GetxController {
   }
 
   List<PrivateConversation> _mockPrivateConversations() {
-    final names = ['Sam Jean', 'Aicha Bello', 'Kofi Mensah', 'Fatou Diallo',
-                   'Serge B.', 'Rachelle D.', 'Hans Dossou', 'Marie T.'];
+    final names = ['Sam Jean', 'Aicha Bello', 'Kofi Mensah', 'Fatou Diallo', 'Serge B.', 'Rachelle D.'];
     return List.generate(names.length, (i) => PrivateConversation(
       id: i+1, otherUserId: i+100, otherUserName: names[i],
-      otherUserAvatar:
-          'https://randomuser.me/api/portraits/${i%2==0?"women":"men"}/${i+20}.jpg',
+      otherUserAvatar: 'https://randomuser.me/api/portraits/${i%2==0?"women":"men"}/${i+20}.jpg',
       otherIsOnline: i%3==0,
-      lastMessage: ChatMessage(
-        id: i*10, channelId: i+1, senderId: i+100, senderName: names[i],
-        content: i%2==0 ? '🎤 Message vocal' : 'Salut, comment tu vas ? 😊',
-        sentAt: DateTime.now().subtract(Duration(minutes: i*5+5)),
-        type: i%2==0 ? MessageType.audio : MessageType.text,
-      ),
+      lastMessage: ChatMessage(id: i*10, channelId: i+1, senderId: i+100, senderName: names[i],
+          content: i%2==0 ? '🎤 Message vocal' : 'Salut, comment tu vas ? 😊',
+          sentAt: DateTime.now().subtract(Duration(minutes: i*5+5)),
+          type: i%2==0 ? MessageType.audio : MessageType.text),
       unreadCount: i%4==0 ? 2 : 0,
     ));
   }
 
   List<ChatMessage> _mockPrivateMessages(int convId) {
     final conv = privateConversations.firstWhereOrNull((c) => c.id == convId);
-    final otherName   = conv?.otherUserName ?? 'Utilisateur';
+    final otherName = conv?.otherUserName ?? 'Utilisateur';
     final otherAvatar = conv?.otherUserAvatar;
     final now = DateTime.now();
     return [
-      ChatMessage(id:1, channelId:convId, senderId:100, senderName:otherName,
-          senderAvatar:otherAvatar,
-          content:'Salut ! Comment tu vas ?',
-          sentAt:now.subtract(const Duration(minutes:40))),
+      ChatMessage(id:1, channelId:convId, senderId:100, senderName:otherName, senderAvatar:otherAvatar,
+          content:'Salut ! Comment tu vas ?', sentAt:now.subtract(const Duration(minutes:40))),
       ChatMessage(id:2, channelId:convId, senderId:myUserId, senderName:myName,
-          content:'Bien merci ! Et toi ?',
-          sentAt:now.subtract(const Duration(minutes:38)),
+          content:'Bien merci ! Et toi ?', sentAt:now.subtract(const Duration(minutes:38)),
           isMe:true, status:MessageStatus.read),
-      ChatMessage(id:3, channelId:convId, senderId:100, senderName:otherName,
-          senderAvatar:otherAvatar,
-          content:'Super bien ! On se voit ce week-end ?',
-          sentAt:now.subtract(const Duration(minutes:35))),
+      ChatMessage(id:3, channelId:convId, senderId:100, senderName:otherName, senderAvatar:otherAvatar,
+          content:'Super bien ! On se voit ce week-end ?', sentAt:now.subtract(const Duration(minutes:35)),
+          replyToId:2, replyToSenderName:myName, replyToContent:'Bien merci ! Et toi ?'),
       ChatMessage(id:4, channelId:convId, senderId:myUserId, senderName:myName,
-          content:'Oui avec plaisir 😊',
-          sentAt:now.subtract(const Duration(minutes:20)),
+          content:'Oui avec plaisir 😊', sentAt:now.subtract(const Duration(minutes:20)),
           isMe:true, status:MessageStatus.delivered),
-      ChatMessage(id:5, channelId:convId, senderId:100, senderName:otherName,
-          senderAvatar:otherAvatar,
-          content:'', mediaUrl:'mock_audio', type:MessageType.audio,
-          audioDurationSec:12,
-          sentAt:now.subtract(const Duration(minutes:5))),
     ];
   }
 }

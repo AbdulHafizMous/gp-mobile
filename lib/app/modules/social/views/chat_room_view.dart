@@ -3,6 +3,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:video_player/video_player.dart';
 import 'package:grand_public_v2/app/data/models/chat_models.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/social/controllers/chat_controller.dart';
@@ -23,12 +24,117 @@ extension _Tx on BuildContext {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// FULLSCREEN IMAGE VIEWER
+// ─────────────────────────────────────────────────────────────────────────────
+class _FullscreenImageViewer extends StatelessWidget {
+  final String url;
+  const _FullscreenImageViewer({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          minScale: 0.5,
+          maxScale: 5.0,
+          child: url.startsWith('/')
+              ? Image.file(File(url), fit: BoxFit.contain)
+              : Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (_, child, prog) => prog == null
+                      ? child
+                      : const CircularProgressIndicator(color: Colors.white),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FULLSCREEN VIDEO PLAYER
+// ─────────────────────────────────────────────────────────────────────────────
+class _FullscreenVideoPlayer extends StatefulWidget {
+  final String url;
+  const _FullscreenVideoPlayer({required this.url});
+
+  @override
+  State<_FullscreenVideoPlayer> createState() => _FullscreenVideoPlayerState();
+}
+
+class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
+  late VideoPlayerController _vpc;
+  bool _init = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _vpc = widget.url.startsWith('/')
+        ? VideoPlayerController.file(File(widget.url))
+        : VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    _vpc.initialize().then((_) {
+      if (mounted) {
+        setState(() => _init = true);
+        _vpc.play();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _vpc.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: Center(
+        child: _init
+            ? GestureDetector(
+                onTap: () => _vpc.value.isPlaying ? _vpc.pause() : _vpc.play(),
+                child: AspectRatio(
+                  aspectRatio: _vpc.value.aspectRatio,
+                  child: VideoPlayer(_vpc),
+                ),
+              )
+            : const CircularProgressIndicator(color: Colors.white),
+      ),
+      bottomNavigationBar: _init
+          ? VideoProgressIndicator(
+              _vpc,
+              allowScrubbing: true,
+              colors: VideoProgressColors(
+                playedColor: GPTheme.primaryColor,
+                bufferedColor: Colors.white30,
+                backgroundColor: Colors.white10,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            )
+          : null,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // CHAT ROOM VIEW
 // ─────────────────────────────────────────────────────────────────────────────
 class ChatRoomView extends StatefulWidget {
   final ChatChannel? channel;
   final PrivateConversation? privateConv;
-
   const ChatRoomView({super.key, this.channel, this.privateConv})
     : assert(channel != null || privateConv != null);
 
@@ -96,6 +202,7 @@ class _ChatRoomViewState extends State<ChatRoomView> {
             ),
           ),
           if (_isPrivate) _TypingIndicator(ctrl: _ctrl),
+          _ReplyPreview(ctrl: _ctrl),
           _PendingFilePreview(ctrl: _ctrl),
           _RecordingBar(ctrl: _ctrl),
           _InputBar(
@@ -205,7 +312,6 @@ class _ChatRoomViewState extends State<ChatRoomView> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    // Badge ADMIN si l'utilisateur actif est admin
                     if (activeUser.value.isAdmin) ...[
                       const SizedBox(width: 6),
                       Container(
@@ -223,40 +329,126 @@ class _ChatRoomViewState extends State<ChatRoomView> {
                             fontSize: 9,
                             fontWeight: FontWeight.w900,
                             color: Colors.black,
-                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
                     ],
                   ],
                 ),
-                if (_isPrivate)
-                  Text(
-                    isOnline
-                        ? 'En ligne'
-                        : '${widget.channel?.membersCount ?? 0} membres',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isOnline
-                          ? Colors.greenAccent.shade400
-                          : Colors.white54,
-                    ),
-                  )
-                else
-                  Text(
-                    '${widget.channel?.membersCount ?? 0} membres',
-                    style: const TextStyle(fontSize: 11, color: Colors.white54),
+                Text(
+                  _isPrivate
+                      ? (isOnline ? 'En ligne' : 'Hors ligne')
+                      : '${widget.channel?.membersCount ?? 0} membres',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isOnline
+                        ? Colors.greenAccent.shade400
+                        : Colors.white54,
                   ),
+                ),
               ],
             ),
           ),
         ],
       ),
       actions: [
-        IconButton(
-          onPressed: () {},
+        // Menu 3 points
+        PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert_rounded, color: Colors.white60),
+          color: context.isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          onSelected: (value) => _handleMenuAction(context, value),
+          itemBuilder: (_) => [
+            if (!_isPrivate && widget.channel != null) ...[
+              PopupMenuItem(
+                value: 'media',
+                child: _MenuItem(
+                  icon: Icons.photo_library_rounded,
+                  label: 'Médias partagés',
+                ),
+              ),
+              PopupMenuItem(
+                value: 'members',
+                child: _MenuItem(icon: Icons.group_rounded, label: 'Membres'),
+              ),
+              PopupMenuItem(
+                value: 'leave',
+                child: _MenuItem(
+                  icon: Icons.exit_to_app_rounded,
+                  label: 'Quitter le canal',
+                  color: Colors.red,
+                ),
+              ),
+            ],
+            if (_isPrivate) ...[
+              PopupMenuItem(
+                value: 'media',
+                child: _MenuItem(
+                  icon: Icons.photo_library_rounded,
+                  label: 'Médias partagés',
+                ),
+              ),
+              PopupMenuItem(
+                value: 'block',
+                child: _MenuItem(
+                  icon: Icons.block_rounded,
+                  label: 'Bloquer',
+                  color: Colors.red,
+                ),
+              ),
+            ],
+          ],
         ),
+      ],
+    );
+  }
+
+  void _handleMenuAction(BuildContext context, String action) {
+    switch (action) {
+      case 'leave':
+        if (widget.channel != null) {
+          _ctrl.leaveChannel(widget.channel!);
+          Get.back();
+        }
+        break;
+      case 'block':
+        ToastHelper.showToast(
+          'Fonctionnalité bientôt disponible',
+          backgroundColor: Colors.orange,
+          textColor: Colors.white,
+        );
+        break;
+      case 'media':
+        ToastHelper.showToast(
+          'Médias partagés — bientôt disponible',
+          backgroundColor: Colors.orange,
+          textColor: Colors.white,
+        );
+        break;
+      case 'members':
+        ToastHelper.showToast(
+          'Liste des membres — bientôt disponible',
+          backgroundColor: Colors.orange,
+          textColor: Colors.white,
+        );
+        break;
+    }
+  }
+}
+
+class _MenuItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color? color;
+  const _MenuItem({required this.icon, required this.label, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? context.primary;
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: c),
+        const SizedBox(width: 10),
+        Text(label, style: TextStyle(fontSize: 14, color: c)),
       ],
     );
   }
@@ -269,7 +461,6 @@ class _MessagesList extends StatelessWidget {
   final ChatController ctrl;
   final ScrollController scrollCtrl;
   final bool isPrivate;
-
   const _MessagesList({
     required this.ctrl,
     required this.scrollCtrl,
@@ -280,7 +471,6 @@ class _MessagesList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final msgs = isPrivate ? ctrl.privateMessages : ctrl.messages;
-
       if (ctrl.isMessagesLoading.value && msgs.isEmpty) {
         return Center(
           child: CircularProgressIndicator(color: GPTheme.primaryColor),
@@ -316,7 +506,6 @@ class _MessagesList extends StatelessWidget {
       }
 
       final groups = _groupByDate(msgs);
-
       return ListView.builder(
         controller: scrollCtrl,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -368,9 +557,8 @@ class _MessagesList extends StatelessWidget {
       }
       current.add(msg);
     }
-    if (current.isNotEmpty && lastDate != null) {
+    if (current.isNotEmpty && lastDate != null)
       groups.add(_MsgGroup(date: lastDate, messages: current));
-    }
     return groups;
   }
 
@@ -442,7 +630,7 @@ class _DateSeparator extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MESSAGE BUBBLE
+// MESSAGE BUBBLE — avec swipe reply, long-press menu
 // ─────────────────────────────────────────────────────────────────────────────
 class _MessageBubble extends StatelessWidget {
   final ChatMessage message;
@@ -450,7 +638,6 @@ class _MessageBubble extends StatelessWidget {
   final bool showAvatar;
   final bool showName;
   final ChatController ctrl;
-
   const _MessageBubble({
     required this.message,
     required this.isChannel,
@@ -469,131 +656,321 @@ class _MessageBubble extends StatelessWidget {
         left: isMe ? 40 : 0,
         right: isMe ? 0 : 40,
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: isMe
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        children: [
-          if (!isMe && isChannel) ...[
-            SizedBox(
-              width: 34,
-              child: showAvatar
-                  ? CircleAvatar(
-                      radius: 14,
-                      backgroundColor: GPTheme.primaryColor.withOpacity(0.2),
-                      backgroundImage: message.senderAvatar != null
-                          ? NetworkImage(message.senderAvatar!)
-                          : null,
-                      child: message.senderAvatar == null
-                          ? Text(
-                              message.senderName[0].toUpperCase(),
+      child: Dismissible(
+        key: ValueKey('swipe_${message.id}'),
+        direction: DismissDirection.startToEnd,
+        confirmDismiss: (_) async {
+          ctrl.startReply(message);
+          return false;
+        },
+        background: Container(
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.only(left: 16),
+          child: Icon(
+            Icons.reply_rounded,
+            color: GPTheme.primaryColor.withOpacity(0.6),
+            size: 22,
+          ),
+        ),
+        child: GestureDetector(
+          onLongPress: () => _showContextMenu(context),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: isMe
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
+            children: [
+              if (!isMe && isChannel) ...[
+                SizedBox(
+                  width: 34,
+                  child: showAvatar
+                      ? CircleAvatar(
+                          radius: 14,
+                          backgroundColor: GPTheme.primaryColor.withOpacity(
+                            0.2,
+                          ),
+                          backgroundImage: message.senderAvatar != null
+                              ? NetworkImage(message.senderAvatar!)
+                              : null,
+                          child: message.senderAvatar == null
+                              ? Text(
+                                  message.senderName[0].toUpperCase(),
+                                  style: TextStyle(
+                                    color: GPTheme.primaryColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                )
+                              : null,
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 6),
+              ],
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: isMe
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
+                  children: [
+                    if (showName && !isMe)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4, bottom: 3),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              message.senderName,
                               style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
                                 color: GPTheme.primaryColor,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
                               ),
-                            )
-                          : null,
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 6),
-          ],
-          Flexible(
-            child: Column(
-              crossAxisAlignment: isMe
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
-              children: [
-                if (showName && !isMe)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4, bottom: 3),
-                    child: Row(
+                            ),
+                            if (message.isAdminSender) ...[
+                              const SizedBox(width: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 1,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.shade600,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'ADMIN',
+                                  style: TextStyle(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.65,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isMe ? context.bubbleMe : context.bubbleOther,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(isMe ? 18 : 4),
+                          topRight: Radius.circular(isMe ? 4 : 18),
+                          bottomLeft: const Radius.circular(18),
+                          bottomRight: const Radius.circular(18),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.07),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Reply preview
+                          if (message.hasReply)
+                            _ReplyQuote(message: message, isMe: isMe),
+                          _BubbleContent(
+                            message: message,
+                            isMe: isMe,
+                            ctrl: ctrl,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          message.senderName,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: GPTheme.primaryColor,
-                          ),
+                          message.timeLabel,
+                          style: TextStyle(fontSize: 10, color: context.subtle),
                         ),
-                        // Badge ADMIN sur le nom si le sender est admin
-                        if (message.isAdminSender) ...[
-                          const SizedBox(width: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 1,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.shade600,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              'ADMIN',
-                              style: TextStyle(
-                                fontSize: 8,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
+                        if (isMe) ...[
+                          const SizedBox(width: 3),
+                          _StatusIcon(status: message.status),
                         ],
                       ],
                     ),
-                  ),
-                Container(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.65,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isMe ? context.bubbleMe : context.bubbleOther,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(isMe ? 18 : 4),
-                      topRight: Radius.circular(isMe ? 4 : 18),
-                      bottomLeft: const Radius.circular(18),
-                      bottomRight: const Radius.circular(18),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.07),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: _BubbleContent(
-                    message: message,
-                    isMe: isMe,
-                    ctrl: ctrl,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      message.timeLabel,
-                      style: TextStyle(fontSize: 10, color: context.subtle),
-                    ),
-                    if (isMe) ...[
-                      const SizedBox(width: 3),
-                      _StatusIcon(status: message.status),
-                    ],
                   ],
                 ),
-              ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showContextMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _MessageContextMenu(message: message, ctrl: ctrl),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REPLY QUOTE — aperçu du message cité dans la bulle
+// ─────────────────────────────────────────────────────────────────────────────
+class _ReplyQuote extends StatelessWidget {
+  final ChatMessage message;
+  final bool isMe;
+  const _ReplyQuote({required this.message, required this.isMe});
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isMe ? Colors.white : context.primary;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+      padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+      decoration: BoxDecoration(
+        color: isMe
+            ? Colors.white.withOpacity(0.15)
+            : GPTheme.primaryColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border(left: BorderSide(color: GPTheme.primaryColor, width: 3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            message.replyToSenderName ?? '',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: GPTheme.primaryColor,
             ),
           ),
+          const SizedBox(height: 2),
+          Text(
+            _replyPreview(),
+            style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _replyPreview() {
+    switch (message.replyToType) {
+      case MessageType.image:
+        return '📷 Photo';
+      case MessageType.audio:
+        return '🎤 Message vocal';
+      case MessageType.video:
+        return '🎬 Vidéo';
+      case MessageType.file:
+        return '📎 Fichier';
+      default:
+        return message.replyToContent ?? '';
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTEXT MENU — long press
+// ─────────────────────────────────────────────────────────────────────────────
+class _MessageContextMenu extends StatelessWidget {
+  final ChatMessage message;
+  final ChatController ctrl;
+  const _MessageContextMenu({required this.message, required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: context.isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 36,
+            height: 4,
+            margin: const EdgeInsets.only(top: 10, bottom: 8),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          _CtxItem(
+            icon: Icons.reply_rounded,
+            label: 'Répondre',
+            onTap: () {
+              Get.back();
+              ctrl.startReply(message);
+            },
+          ),
+          if (message.isMe)
+            _CtxItem(
+              icon: Icons.delete_rounded,
+              label: 'Supprimer',
+              color: Colors.red,
+              onTap: () {
+                Get.back();
+                ctrl.deleteMessage(message);
+              },
+            ),
+          if (message.type == MessageType.text)
+            _CtxItem(
+              icon: Icons.copy_rounded,
+              label: 'Copier',
+              onTap: () {
+                Get.back();
+                // Copy to clipboard
+              },
+            ),
+          const SizedBox(height: 8),
         ],
       ),
     );
   }
 }
 
+class _CtxItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color? color;
+  final VoidCallback onTap;
+  const _CtxItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? context.primary;
+    return ListTile(
+      leading: Icon(icon, color: c, size: 20),
+      title: Text(
+        label,
+        style: TextStyle(color: c, fontSize: 14, fontWeight: FontWeight.w500),
+      ),
+      onTap: onTap,
+      dense: true,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STATUS ICON
+// ─────────────────────────────────────────────────────────────────────────────
 class _StatusIcon extends StatelessWidget {
   final MessageStatus status;
   const _StatusIcon({required this.status});
@@ -637,7 +1014,6 @@ class _BubbleContent extends StatelessWidget {
   final ChatMessage message;
   final bool isMe;
   final ChatController ctrl;
-
   const _BubbleContent({
     required this.message,
     required this.isMe,
@@ -652,7 +1028,7 @@ class _BubbleContent extends StatelessWidget {
       case MessageType.audio:
         return _AudioBubble(message: message, isMe: isMe, ctrl: ctrl);
       case MessageType.video:
-        return _VideoBubble(isMe: isMe);
+        return _VideoBubble(message: message, isMe: isMe);
       case MessageType.file:
         return _FileBubble(message: message, isMe: isMe, ctrl: ctrl);
       default:
@@ -671,7 +1047,7 @@ class _BubbleContent extends StatelessWidget {
   }
 }
 
-// ── Image
+// ── Image — cliquable pour fullscreen
 class _ImageBubble extends StatelessWidget {
   final ChatMessage message;
   final bool isMe;
@@ -693,34 +1069,38 @@ class _ImageBubble extends StatelessWidget {
       img = Image.file(
         File(local),
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _brokenImage(),
+        errorBuilder: (_, __, ___) => _broken(),
       );
     } else if (url.isNotEmpty) {
       img = Image.network(
         url,
         fit: BoxFit.cover,
-        loadingBuilder: (_, child, prog) =>
-            prog == null ? child : _loadingImage(),
-        errorBuilder: (_, __, ___) => _brokenImage(),
+        loadingBuilder: (_, child, prog) => prog == null ? child : _loading(),
+        errorBuilder: (_, __, ___) => _broken(),
       );
     } else {
-      img = _brokenImage();
+      img = _broken();
     }
 
-    return ClipRRect(
-      borderRadius: radius,
-      child: SizedBox(width: 200, height: 200, child: img),
+    return GestureDetector(
+      onTap: () => Get.to(
+        () => _FullscreenImageViewer(url: local ?? url),
+        transition: Transition.fadeIn,
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: SizedBox(width: 200, height: 200, child: img),
+      ),
     );
   }
 
-  Widget _brokenImage() => Container(
+  Widget _broken() => Container(
     width: 200,
     height: 200,
     color: Colors.grey.shade300,
     child: const Icon(Icons.broken_image_rounded, size: 40, color: Colors.grey),
   );
-
-  Widget _loadingImage() => Container(
+  Widget _loading() => Container(
     width: 200,
     height: 200,
     color: Colors.grey.shade200,
@@ -728,7 +1108,7 @@ class _ImageBubble extends StatelessWidget {
   );
 }
 
-// ── Audio — CORRIGÉ avec barre de progression interactive et seek
+// ── Audio — progression complète
 class _AudioBubble extends StatelessWidget {
   final ChatMessage message;
   final bool isMe;
@@ -745,16 +1125,10 @@ class _AudioBubble extends StatelessWidget {
     return Obx(() {
       final isPlaying = ctrl.playingMessageId.value == message.id;
       final isThisPlay = isPlaying && ctrl.isAudioPlaying.value;
-
-      // Durée totale : depuis le backend ou depuis le player en cours
       final totalSecs = isPlaying && ctrl.audioDuration.value.inSeconds > 0
           ? ctrl.audioDuration.value.inSeconds
           : (message.audioDurationSec ?? 0);
-
-      // Position actuelle en secondes
       final posSecs = isPlaying ? ctrl.audioPosition.value.inSeconds : 0;
-
-      // Progression 0.0 → 1.0
       final progress = totalSecs > 0
           ? (posSecs / totalSecs).clamp(0.0, 1.0)
           : 0.0;
@@ -766,7 +1140,6 @@ class _AudioBubble extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Bouton Play/Pause
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 width: 38,
@@ -787,19 +1160,17 @@ class _AudioBubble extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Waveform avec progression — cliquable pour seek
                   GestureDetector(
                     onHorizontalDragUpdate: (details) {
-                      // Calcule la largeur totale de la waveform (18 barres × 5px)
                       const waveWidth = 18 * 5.0;
-                      final newProgress = (details.localPosition.dx / waveWidth)
-                          .clamp(0.0, 1.0);
-                      ctrl.seekAudio(message, newProgress);
+                      ctrl.seekAudio(
+                        message,
+                        (details.localPosition.dx / waveWidth).clamp(0.0, 1.0),
+                      );
                     },
                     child: Row(
                       children: List.generate(18, (i) {
-                        final barProgress = i / 18;
-                        final active = progress > 0 && barProgress <= progress;
+                        final active = progress > 0 && (i / 18) <= progress;
                         final height = 4.0 + (i % 5) * 4.0;
                         return AnimatedContainer(
                           duration: const Duration(milliseconds: 80),
@@ -824,7 +1195,6 @@ class _AudioBubble extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  // Durée : position/total si en cours, durée totale sinon
                   Text(
                     isPlaying
                         ? '${_fmt(posSecs)} / ${_fmt(totalSecs)}'
@@ -843,49 +1213,75 @@ class _AudioBubble extends StatelessWidget {
     });
   }
 
-  String _fmt(int secs) {
-    final m = (secs ~/ 60).toString().padLeft(2, '0');
-    final s = (secs % 60).toString().padLeft(2, '0');
-    return '$m:$s';
-  }
+  String _fmt(int secs) =>
+      '${(secs ~/ 60).toString().padLeft(2, '0')}:${(secs % 60).toString().padLeft(2, '0')}';
 }
 
-// ── Video
+// ── Video — cliquable pour fullscreen
 class _VideoBubble extends StatelessWidget {
+  final ChatMessage message;
   final bool isMe;
-  const _VideoBubble({required this.isMe});
+  const _VideoBubble({required this.message, required this.isMe});
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.only(
-        topLeft: Radius.circular(isMe ? 18 : 4),
-        topRight: Radius.circular(isMe ? 4 : 18),
-        bottomLeft: const Radius.circular(18),
-        bottomRight: const Radius.circular(18),
-      ),
-      child: SizedBox(
-        width: 200,
-        height: 150,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Container(color: Colors.grey.shade800),
-            const Center(
-              child: Icon(
-                Icons.play_circle_fill_rounded,
-                size: 48,
-                color: Colors.white70,
+    final url = message.localFilePath ?? message.mediaUrl ?? '';
+    final radius = BorderRadius.only(
+      topLeft: Radius.circular(isMe ? 18 : 4),
+      topRight: Radius.circular(isMe ? 4 : 18),
+      bottomLeft: const Radius.circular(18),
+      bottomRight: const Radius.circular(18),
+    );
+    return GestureDetector(
+      onTap: url.isNotEmpty
+          ? () => Get.to(
+              () => _FullscreenVideoPlayer(url: url),
+              transition: Transition.fadeIn,
+            )
+          : null,
+      child: ClipRRect(
+        borderRadius: radius,
+        child: SizedBox(
+          width: 200,
+          height: 150,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Container(color: Colors.grey.shade800),
+              const Center(
+                child: Icon(
+                  Icons.play_circle_fill_rounded,
+                  size: 56,
+                  color: Colors.white70,
+                ),
               ),
-            ),
-          ],
+              Positioned(
+                bottom: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'Tap pour lire',
+                    style: TextStyle(color: Colors.white, fontSize: 10),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// ── File — CORRIGÉ avec bouton de téléchargement
+// ── File — download button
 class _FileBubble extends StatelessWidget {
   final ChatMessage message;
   final bool isMe;
@@ -938,7 +1334,6 @@ class _FileBubble extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            // Bouton téléchargement
             if (message.mediaUrl != null && !message.isPending)
               GestureDetector(
                 onTap: isDownloading ? null : () => ctrl.downloadFile(message),
@@ -989,9 +1384,8 @@ class _TypingIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      if (!ctrl.otherIsTyping.value && ctrl.typingUsers.isEmpty) {
+      if (!ctrl.otherIsTyping.value && ctrl.typingUsers.isEmpty)
         return const SizedBox.shrink();
-      }
       return Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
         child: Row(
@@ -1021,7 +1415,6 @@ class _DotsAnim extends StatefulWidget {
 class _DotsAnimState extends State<_DotsAnim>
     with SingleTickerProviderStateMixin {
   late AnimationController _anim;
-
   @override
   void initState() {
     super.initState();
@@ -1061,6 +1454,78 @@ class _DotsAnimState extends State<_DotsAnim>
         }),
       ),
     );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REPLY PREVIEW — barre au dessus de l'input
+// ─────────────────────────────────────────────────────────────────────────────
+class _ReplyPreview extends StatelessWidget {
+  final ChatController ctrl;
+  const _ReplyPreview({required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final reply = ctrl.replyingTo.value;
+      if (reply == null) return const SizedBox.shrink();
+      return Container(
+        color: context.isDark ? const Color(0xFF1C1C1C) : Colors.grey.shade50,
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        child: Row(
+          children: [
+            Container(
+              width: 3,
+              height: 36,
+              color: GPTheme.primaryColor,
+              margin: const EdgeInsets.only(right: 10),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    reply.senderName,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: GPTheme.primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _preview(reply),
+                    style: TextStyle(fontSize: 12, color: context.subtle),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close_rounded, size: 18),
+              onPressed: ctrl.cancelReply,
+              color: context.subtle,
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  String _preview(ChatMessage msg) {
+    switch (msg.type) {
+      case MessageType.image:
+        return '📷 Photo';
+      case MessageType.audio:
+        return '🎤 Message vocal';
+      case MessageType.video:
+        return '🎬 Vidéo';
+      case MessageType.file:
+        return '📎 ${msg.fileName ?? "Fichier"}';
+      default:
+        return msg.content;
+    }
   }
 }
 
@@ -1221,7 +1686,6 @@ class _PulseDot extends StatefulWidget {
 class _PulseDotState extends State<_PulseDot>
     with SingleTickerProviderStateMixin {
   late AnimationController _anim;
-
   @override
   void initState() {
     super.initState();
@@ -1238,33 +1702,32 @@ class _PulseDotState extends State<_PulseDot>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _anim,
-      builder: (_, __) => Opacity(
-        opacity: 0.4 + _anim.value * 0.6,
-        child: Container(
-          width: 10,
-          height: 10,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-          ),
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _anim,
+    builder: (_, __) => Opacity(
+      opacity: 0.4 + _anim.value * 0.6,
+      child: Container(
+        width: 10,
+        height: 10,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// INPUT BAR — CORRIGÉ: bouton send réactif via messageText observable
+// INPUT BAR — WhatsApp-style
+// Texte vide + pas de fichier → bouton mic (long press = record, release = send/cancel)
+// Texte saisi OU fichier → bouton send
 // ─────────────────────────────────────────────────────────────────────────────
-class _InputBar extends StatelessWidget {
+class _InputBar extends StatefulWidget {
   final ChatController ctrl;
   final VoidCallback onSend;
   final bool showAttach;
   final VoidCallback onToggleAttach;
-
   const _InputBar({
     required this.ctrl,
     required this.onSend,
@@ -1273,7 +1736,15 @@ class _InputBar extends StatelessWidget {
   });
 
   @override
+  State<_InputBar> createState() => _InputBarState();
+}
+
+class _InputBarState extends State<_InputBar> {
+  bool _isLongPressing = false;
+
+  @override
   Widget build(BuildContext context) {
+    final ctrl = widget.ctrl;
     return Container(
       color: context.isDark ? const Color(0xFF141414) : Colors.white,
       padding: EdgeInsets.only(
@@ -1282,11 +1753,9 @@ class _InputBar extends StatelessWidget {
         top: 8,
         bottom: MediaQuery.of(context).padding.bottom + 8,
       ),
-      // Obx observe messageText (RxString) ET pendingFile
       child: Obx(() {
         final isRec = ctrl.isRecording.value;
         final hasFile = ctrl.pendingFile.value != null;
-        // messageText est un RxString mis à jour par le listener du controller
         final hasText = ctrl.messageText.value.trim().isNotEmpty;
         final hasContent = hasText || hasFile;
 
@@ -1295,15 +1764,15 @@ class _InputBar extends StatelessWidget {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            // Attach button
+            // Attach
             GestureDetector(
-              onTap: onToggleAttach,
+              onTap: widget.onToggleAttach,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: showAttach
+                  color: widget.showAttach
                       ? GPTheme.primaryColor
                       : (context.isDark
                             ? Colors.white10
@@ -1311,14 +1780,14 @@ class _InputBar extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  showAttach ? Icons.close_rounded : Icons.add_rounded,
-                  color: showAttach ? Colors.white : context.subtle,
+                  widget.showAttach ? Icons.close_rounded : Icons.add_rounded,
+                  color: widget.showAttach ? Colors.white : context.subtle,
                   size: 20,
                 ),
               ),
             ),
             const SizedBox(width: 6),
-            // Text input
+            // TextField
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
@@ -1349,34 +1818,68 @@ class _InputBar extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 6),
-            // Send / Mic — animé selon hasContent
+            // Send / Mic
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 180),
               transitionBuilder: (child, anim) =>
                   ScaleTransition(scale: anim, child: child),
-              child: GestureDetector(
-                key: ValueKey(hasContent),
-                onTap: hasContent ? onSend : null,
-                onLongPress: hasContent ? null : ctrl.startRecording,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: hasContent
-                        ? GPTheme.primaryColor
-                        : (context.isDark
-                              ? Colors.white10
-                              : Colors.grey.shade100),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    hasContent ? Icons.send_rounded : Icons.mic_rounded,
-                    color: hasContent ? Colors.white : context.subtle,
-                    size: 20,
-                  ),
-                ),
-              ),
+              child: hasContent
+                  // Bouton Send
+                  ? GestureDetector(
+                      key: const ValueKey('send'),
+                      onTap: widget.onSend,
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: GPTheme.primaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.send_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    )
+                  // Bouton Mic — long press = record, release = arrêt + demande envoi
+                  : GestureDetector(
+                      key: const ValueKey('mic'),
+                      onLongPressStart: (_) async {
+                        setState(() => _isLongPressing = true);
+                        await ctrl.startRecording();
+                      },
+                      onLongPressEnd: (_) async {
+                        if (!_isLongPressing) return;
+                        setState(() => _isLongPressing = false);
+                        // Arrêt + envoi immédiat (flow WhatsApp)
+                        await ctrl.stopAndSendRecording();
+                      },
+                      onLongPressCancel: () {
+                        setState(() => _isLongPressing = false);
+                        ctrl.cancelRecording();
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: _isLongPressing
+                              ? Colors.red.shade600
+                              : (context.isDark
+                                    ? Colors.white10
+                                    : Colors.grey.shade100),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.mic_rounded,
+                          color: _isLongPressing
+                              ? Colors.white
+                              : context.subtle,
+                          size: 22,
+                        ),
+                      ),
+                    ),
             ),
           ],
         );
@@ -1426,15 +1929,6 @@ class _AttachMenu extends StatelessWidget {
             onTap: () async {
               await ctrl.pickVideo();
               onDone();
-            },
-          ),
-          _AttachItem(
-            icon: Icons.mic_rounded,
-            label: 'Audio',
-            color: Colors.orange,
-            onTap: () {
-              onDone();
-              ctrl.startRecording();
             },
           ),
           _AttachItem(
@@ -1491,6 +1985,27 @@ class _AttachItem extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TOAST HELPER (import guard)
+// ─────────────────────────────────────────────────────────────────────────────
+class ToastHelper {
+  static Future<void> showToast(
+    String msg, {
+    Color? backgroundColor,
+    Color? textColor,
+  }) async {
+    Get.snackbar(
+      '',
+      msg,
+      backgroundColor: backgroundColor ?? Colors.black87,
+      colorText: textColor ?? Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(12),
+      duration: const Duration(seconds: 3),
     );
   }
 }
