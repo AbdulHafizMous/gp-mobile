@@ -746,7 +746,12 @@ class _ProfileCard extends StatelessWidget {
 class _ProfileDetailSheet extends StatelessWidget {
   final DatingProfile profile;
   final DatingController ctrl;
-  const _ProfileDetailSheet({required this.profile, required this.ctrl});
+  final bool showMessageButton;
+  const _ProfileDetailSheet({
+    required this.profile,
+    required this.ctrl,
+    this.showMessageButton = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -935,6 +940,52 @@ class _ProfileDetailSheet extends StatelessWidget {
                       ),
                     ],
                   ),
+                  // Bouton message direct — disponible depuis "Likés" sans attendre un match
+                  if (showMessageButton) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          Get.back();
+                          final chatCtrl = Get.find<ChatController>();
+                          final convId = await chatCtrl
+                              .startConversationWithUser(profile.id);
+                          if (convId != null) {
+                            await chatCtrl.loadPrivateConversations();
+                            final conv = chatCtrl.privateConversations
+                                .firstWhereOrNull((c) => c.id == convId);
+                            if (conv != null) {
+                              await chatCtrl.openPrivateConversation(conv);
+                              Get.to(
+                                () => ChatRoomView(privateConv: conv),
+                                transition: Transition.rightToLeft,
+                              );
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: GPTheme.primaryColor.withOpacity(
+                            0.12,
+                          ),
+                          foregroundColor: GPTheme.primaryColor,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: BorderSide(
+                              color: GPTheme.primaryColor.withOpacity(0.3),
+                            ),
+                          ),
+                        ),
+                        icon: const Icon(Icons.chat_bubble_rounded),
+                        label: Text(
+                          'Envoyer un message',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                 ],
               ),
@@ -1412,6 +1463,27 @@ class _LikesTab extends StatelessWidget {
                       ),
                     ),
                   ),
+                  // Bouton message rapide — accès direct sans passer par le sheet
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: () => _quickMessage(context, p),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.chat_bubble_rounded,
+                          size: 16,
+                          color: GPTheme.primaryColor,
+                        ),
+                      ),
+                    ),
+                  ),
                   Positioned(
                     left: 10,
                     right: 10,
@@ -1447,12 +1519,37 @@ class _LikesTab extends StatelessWidget {
     });
   }
 
+  Future<void> _quickMessage(
+    BuildContext context,
+    DatingProfile profile,
+  ) async {
+    final chatCtrl = Get.find<ChatController>();
+    final convId = await chatCtrl.startConversationWithUser(profile.id);
+    if (convId != null) {
+      await chatCtrl.loadPrivateConversations();
+      final conv = chatCtrl.privateConversations.firstWhereOrNull(
+        (c) => c.id == convId,
+      );
+      if (conv != null) {
+        await chatCtrl.openPrivateConversation(conv);
+        Get.to(
+          () => ChatRoomView(privateConv: conv),
+          transition: Transition.rightToLeft,
+        );
+      }
+    }
+  }
+
   void _showProfileDetail(BuildContext context, DatingProfile profile) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _ProfileDetailSheet(profile: profile, ctrl: ctrl),
+      builder: (_) => _ProfileDetailSheet(
+        profile: profile,
+        ctrl: ctrl,
+        showMessageButton: true,
+      ),
     );
   }
 }

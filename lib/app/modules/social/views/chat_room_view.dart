@@ -16,7 +16,7 @@ extension _Tx on BuildContext {
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
   Color get bg => isDark ? const Color(0xFF0D0D0D) : const Color(0xFFF2F2F7);
   Color get appBarBg => isDark ? const Color(0xFF141414) : Colors.black;
-  Color get inputBg => isDark ? const Color(0xFF1E1E1E) : Colors.white;
+  // Color get inputBg => isDark ? const Color(0xFF1E1E1E) : Colors.white;
   Color get bubbleMe => GPTheme.primaryColor;
   Color get bubbleOther => isDark ? const Color(0xFF2A2A2A) : Colors.white;
   Color get primary => Theme.of(this).textTheme.bodyLarge!.color!;
@@ -352,7 +352,7 @@ class _ChatRoomViewState extends State<ChatRoomView> {
         ],
       ),
       actions: [
-        // Menu 3 points
+        // Menu 3 points — actions réellement opérationnelles
         PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert_rounded, color: Colors.white60),
           color: context.isDark ? const Color(0xFF1E1E1E) : Colors.white,
@@ -389,10 +389,14 @@ class _ChatRoomViewState extends State<ChatRoomView> {
               ),
               PopupMenuItem(
                 value: 'block',
-                child: _MenuItem(
-                  icon: Icons.block_rounded,
-                  label: 'Bloquer',
-                  color: Colors.red,
+                child: Obx(
+                  () => _MenuItem(
+                    icon: _ctrl.isBlocked.value
+                        ? Icons.lock_open_rounded
+                        : Icons.block_rounded,
+                    label: _ctrl.isBlocked.value ? 'Débloquer' : 'Bloquer',
+                    color: Colors.red,
+                  ),
                 ),
               ),
             ],
@@ -406,32 +410,97 @@ class _ChatRoomViewState extends State<ChatRoomView> {
     switch (action) {
       case 'leave':
         if (widget.channel != null) {
-          _ctrl.leaveChannel(widget.channel!);
-          Get.back();
+          _confirmLeaveChannel(context);
         }
         break;
       case 'block':
-        ToastHelper.showToast(
-          'Fonctionnalité bientôt disponible',
-          backgroundColor: Colors.orange,
-          textColor: Colors.white,
-        );
+        if (widget.privateConv != null) {
+          final otherId = widget.privateConv!.otherUserId;
+          if (_ctrl.isBlocked.value) {
+            _ctrl.unblockUser(otherId);
+          } else {
+            _confirmBlockUser(context, otherId);
+          }
+        }
         break;
       case 'media':
-        ToastHelper.showToast(
-          'Médias partagés — bientôt disponible',
-          backgroundColor: Colors.orange,
-          textColor: Colors.white,
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => _SharedMediaSheet(
+            ctrl: _ctrl,
+            channelId: widget.channel?.id,
+            conversationId: widget.privateConv?.id,
+          ),
         );
         break;
       case 'members':
-        ToastHelper.showToast(
-          'Liste des membres — bientôt disponible',
-          backgroundColor: Colors.orange,
-          textColor: Colors.white,
-        );
+        if (widget.channel != null) {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => _ChannelMembersSheet(
+              ctrl: _ctrl,
+              channelId: widget.channel!.id,
+            ),
+          );
+        }
         break;
     }
+  }
+
+  Future<void> _confirmLeaveChannel(BuildContext context) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Quitter ce canal ?'),
+        content: Text(
+          'Vous ne recevrez plus les messages de "${widget.channel!.name}".',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: Text(
+              'Quitter',
+              style: TextStyle(color: GPTheme.primaryColor),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await _ctrl.leaveChannel(widget.channel!);
+      Get.back();
+    }
+  }
+
+  Future<void> _confirmBlockUser(BuildContext context, int userId) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Bloquer cet utilisateur ?'),
+        content: const Text(
+          'Vous ne recevrez plus de messages de cette personne.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('Bloquer', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await _ctrl.blockUser(userId);
   }
 }
 
@@ -450,6 +519,283 @@ class _MenuItem extends StatelessWidget {
         const SizedBox(width: 10),
         Text(label, style: TextStyle(fontSize: 14, color: c)),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHARED MEDIA SHEET — câblé sur ctrl.loadSharedMedia + ctrl.sharedMedia
+// ─────────────────────────────────────────────────────────────────────────────
+class _SharedMediaSheet extends StatefulWidget {
+  final ChatController ctrl;
+  final int? channelId;
+  final int? conversationId;
+  const _SharedMediaSheet({
+    required this.ctrl,
+    this.channelId,
+    this.conversationId,
+  });
+
+  @override
+  State<_SharedMediaSheet> createState() => _SharedMediaSheetState();
+}
+
+class _SharedMediaSheetState extends State<_SharedMediaSheet> {
+  @override
+  void initState() {
+    super.initState();
+    widget.ctrl.loadSharedMedia(
+      channelId: widget.channelId,
+      conversationId: widget.conversationId,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      maxChildSize: 0.92,
+      minChildSize: 0.4,
+      builder: (_, scrollCtrl) => Container(
+        decoration: BoxDecoration(
+          color: context.isDark ? const Color(0xFF1A1A1A) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 10),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade400,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                'Médias partagés',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: context.primary,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Obx(() {
+                if (widget.ctrl.isMediaLoading.value) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: GPTheme.primaryColor,
+                    ),
+                  );
+                }
+                final media = widget.ctrl.sharedMedia;
+                if (media.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.perm_media_outlined,
+                          size: 48,
+                          color: context.subtle,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Aucun média partagé',
+                          style: TextStyle(color: context.subtle),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return GridView.builder(
+                  controller: scrollCtrl,
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: media.length,
+                  itemBuilder: (_, i) {
+                    final m = media[i];
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: m.type == MessageType.image
+                          ? Image.network(
+                              m.mediaUrl ?? '',
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  Container(color: Colors.grey.shade300),
+                            )
+                          : Container(
+                              color: Colors.grey.shade800,
+                              child: Icon(
+                                m.type == MessageType.video
+                                    ? Icons.videocam_rounded
+                                    : m.type == MessageType.audio
+                                    ? Icons.mic_rounded
+                                    : Icons.insert_drive_file_rounded,
+                                color: Colors.white54,
+                                size: 28,
+                              ),
+                            ),
+                    );
+                  },
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHANNEL MEMBERS SHEET — câblé sur ctrl.loadChannelMembers + ctrl.channelMembers
+// ─────────────────────────────────────────────────────────────────────────────
+class _ChannelMembersSheet extends StatefulWidget {
+  final ChatController ctrl;
+  final int channelId;
+  const _ChannelMembersSheet({required this.ctrl, required this.channelId});
+
+  @override
+  State<_ChannelMembersSheet> createState() => _ChannelMembersSheetState();
+}
+
+class _ChannelMembersSheetState extends State<_ChannelMembersSheet> {
+  @override
+  void initState() {
+    super.initState();
+    widget.ctrl.loadChannelMembers(widget.channelId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      maxChildSize: 0.92,
+      minChildSize: 0.4,
+      builder: (_, scrollCtrl) => Container(
+        decoration: BoxDecoration(
+          color: context.isDark ? const Color(0xFF1A1A1A) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 10),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade400,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Obx(
+              () => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  'Membres (${widget.ctrl.channelMembers.length})',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: context.primary,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Obx(() {
+                if (widget.ctrl.isMembersLoading.value) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: GPTheme.primaryColor,
+                    ),
+                  );
+                }
+                final members = widget.ctrl.channelMembers;
+                if (members.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'Aucun membre',
+                      style: TextStyle(color: context.subtle),
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  controller: scrollCtrl,
+                  itemCount: members.length,
+                  itemBuilder: (_, i) {
+                    final m = members[i];
+                    final isAdminMember =
+                        (m['role']?.toString().toLowerCase() ?? '') ==
+                            'admin' ||
+                        (m['role']?.toString().toLowerCase() ?? '') ==
+                            'super admin';
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: GPTheme.primaryColor.withOpacity(0.15),
+                        backgroundImage: m['avatar_url'] != null
+                            ? NetworkImage(m['avatar_url'])
+                            : null,
+                        child: m['avatar_url'] == null
+                            ? Text(
+                                (m['name'] ?? '?')[0].toString().toUpperCase(),
+                                style: TextStyle(
+                                  color: GPTheme.primaryColor,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              )
+                            : null,
+                      ),
+                      title: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              m['name'] ?? '',
+                              style: TextStyle(
+                                color: context.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          if (isAdminMember) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.shade600,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'ADMIN',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -775,7 +1121,6 @@ class _MessageBubble extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Reply preview
                           if (message.hasReply)
                             _ReplyQuote(message: message, isMe: isMe),
                           _BubbleContent(
@@ -848,33 +1193,96 @@ class _ReplyQuote extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: GPTheme.primaryColor,
+              color: Colors.white70,
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            _replyPreview(),
-            style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+          _replyPreview(context, textColor),
         ],
       ),
     );
   }
 
-  String _replyPreview() {
+  Widget _replyPreview(BuildContext context, Color textColor) {
     switch (message.replyToType) {
       case MessageType.image:
-        return '📷 Photo';
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.image, size: 14, color: textColor.withOpacity(0.7)),
+            const SizedBox(width: 4),
+            Text(
+              "Photo",
+              style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        );
       case MessageType.audio:
-        return '🎤 Message vocal';
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.mic_rounded,
+              size: 14,
+              color: textColor.withOpacity(0.7),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              "Message vocal",
+              style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        );
       case MessageType.video:
-        return '🎬 Vidéo';
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.videocam, size: 14, color: textColor.withOpacity(0.7)),
+            const SizedBox(width: 4),
+            Text(
+              "Vidéo",
+              style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        );
       case MessageType.file:
-        return '📎 Fichier';
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.insert_drive_file_rounded,
+              size: 14,
+              color: textColor.withOpacity(0.7),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              "Fichier",
+              style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        );
       default:
-        return message.replyToContent ?? '';
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.message, size: 14, color: textColor.withOpacity(0.7)),
+            const SizedBox(width: 4),
+            Text(
+              message.replyToContent ?? '',
+              style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        );
     }
   }
 }
@@ -931,7 +1339,6 @@ class _MessageContextMenu extends StatelessWidget {
               label: 'Copier',
               onTap: () {
                 Get.back();
-                // Copy to clipboard
               },
             ),
           const SizedBox(height: 8),
@@ -1217,25 +1624,67 @@ class _AudioBubble extends StatelessWidget {
       '${(secs ~/ 60).toString().padLeft(2, '0')}:${(secs % 60).toString().padLeft(2, '0')}';
 }
 
-// ── Video — cliquable pour fullscreen
-class _VideoBubble extends StatelessWidget {
+// ── Video — CORRIGÉ : génère une vraie miniature de la première frame
+// au lieu d'un fond noir, cliquable pour fullscreen
+class _VideoBubble extends StatefulWidget {
   final ChatMessage message;
   final bool isMe;
   const _VideoBubble({required this.message, required this.isMe});
 
   @override
+  State<_VideoBubble> createState() => _VideoBubbleState();
+}
+
+class _VideoBubbleState extends State<_VideoBubble> {
+  VideoPlayerController? _thumbCtrl;
+  bool _ready = false;
+
+  String get _url =>
+      widget.message.localFilePath ?? widget.message.mediaUrl ?? '';
+
+  @override
+  void initState() {
+    super.initState();
+    _initThumbnail();
+  }
+
+  void _initThumbnail() {
+    if (_url.isEmpty) return;
+    try {
+      _thumbCtrl = _url.startsWith('/')
+          ? VideoPlayerController.file(File(_url))
+          : VideoPlayerController.networkUrl(Uri.parse(_url));
+      _thumbCtrl!
+          .initialize()
+          .then((_) {
+            if (mounted) {
+              // Se positionne sur la première frame pour l'aperçu
+              _thumbCtrl!.seekTo(Duration.zero);
+              setState(() => _ready = true);
+            }
+          })
+          .catchError((_) {});
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _thumbCtrl?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final url = message.localFilePath ?? message.mediaUrl ?? '';
     final radius = BorderRadius.only(
-      topLeft: Radius.circular(isMe ? 18 : 4),
-      topRight: Radius.circular(isMe ? 4 : 18),
+      topLeft: Radius.circular(widget.isMe ? 18 : 4),
+      topRight: Radius.circular(widget.isMe ? 4 : 18),
       bottomLeft: const Radius.circular(18),
       bottomRight: const Radius.circular(18),
     );
     return GestureDetector(
-      onTap: url.isNotEmpty
+      onTap: _url.isNotEmpty
           ? () => Get.to(
-              () => _FullscreenVideoPlayer(url: url),
+              () => _FullscreenVideoPlayer(url: _url),
               transition: Transition.fadeIn,
             )
           : null,
@@ -1247,32 +1696,40 @@ class _VideoBubble extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Container(color: Colors.grey.shade800),
+              // Vraie miniature de la vidéo (première frame) si dispo
+              if (_ready && _thumbCtrl != null)
+                FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: _thumbCtrl!.value.size.width,
+                    height: _thumbCtrl!.value.size.height,
+                    child: VideoPlayer(_thumbCtrl!),
+                  ),
+                )
+              else
+                Container(color: Colors.grey.shade800),
+              // Voile sombre pour lisibilité de l'icône play
+              Container(color: Colors.black.withOpacity(0.25)),
               const Center(
                 child: Icon(
                   Icons.play_circle_fill_rounded,
                   size: 56,
-                  color: Colors.white70,
+                  color: Colors.white,
                 ),
               ),
-              Positioned(
-                bottom: 8,
-                right: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'Tap pour lire',
-                    style: TextStyle(color: Colors.white, fontSize: 10),
+              if (!_ready)
+                const Positioned(
+                  top: 8,
+                  left: 8,
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white70,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -1493,12 +1950,7 @@ class _ReplyPreview extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    _preview(reply),
-                    style: TextStyle(fontSize: 12, color: context.subtle),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  _preview(context, reply),
                 ],
               ),
             ),
@@ -1513,18 +1965,82 @@ class _ReplyPreview extends StatelessWidget {
     });
   }
 
-  String _preview(ChatMessage msg) {
+  Widget _preview(BuildContext context, ChatMessage msg) {
     switch (msg.type) {
       case MessageType.image:
-        return '📷 Photo';
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.image, size: 14, color: context.subtle),
+            const SizedBox(width: 4),
+            Text(
+              "Photo",
+              style: TextStyle(fontSize: 12, color: context.subtle),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        );
       case MessageType.audio:
-        return '🎤 Message vocal';
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.mic_rounded, size: 14, color: context.subtle),
+            const SizedBox(width: 4),
+            Text(
+              "Message vocal",
+              style: TextStyle(fontSize: 12, color: context.subtle),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        );
       case MessageType.video:
-        return '🎬 Vidéo';
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.videocam, size: 14, color: context.subtle),
+            const SizedBox(width: 4),
+            Text(
+              "Vidéo",
+              style: TextStyle(fontSize: 12, color: context.subtle),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        );
       case MessageType.file:
-        return '📎 ${msg.fileName ?? "Fichier"}';
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.insert_drive_file_rounded,
+              size: 14,
+              color: context.subtle,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              "Fichier",
+              style: TextStyle(fontSize: 12, color: context.subtle),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        );
       default:
-        return msg.content;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.message, size: 14, color: context.subtle),
+            const SizedBox(width: 4),
+            Text(
+              msg.content,
+              style: TextStyle(fontSize: 12, color: context.subtle),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        );
     }
   }
 }
@@ -1720,8 +2236,6 @@ class _PulseDotState extends State<_PulseDot>
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INPUT BAR — WhatsApp-style
-// Texte vide + pas de fichier → bouton mic (long press = record, release = send/cancel)
-// Texte saisi OU fichier → bouton send
 // ─────────────────────────────────────────────────────────────────────────────
 class _InputBar extends StatefulWidget {
   final ChatController ctrl;
@@ -1764,7 +2278,6 @@ class _InputBarState extends State<_InputBar> {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            // Attach
             GestureDetector(
               onTap: widget.onToggleAttach,
               child: AnimatedContainer(
@@ -1787,11 +2300,10 @@ class _InputBarState extends State<_InputBar> {
               ),
             ),
             const SizedBox(width: 6),
-            // TextField
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: context.inputBg,
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: context.isDark
@@ -1801,14 +2313,15 @@ class _InputBarState extends State<_InputBar> {
                 ),
                 child: TextField(
                   controller: ctrl.messageCtrl,
-                  style: TextStyle(color: context.primary, fontSize: 14),
+                  style: TextStyle(fontSize: 14),
                   minLines: 1,
                   maxLines: 5,
                   textCapitalization: TextCapitalization.sentences,
                   decoration: InputDecoration(
                     hintText: hasFile ? 'Ajouter une légende…' : 'Message…',
-                    hintStyle: TextStyle(color: context.subtle, fontSize: 14),
+                    hintStyle: TextStyle(fontSize: 14),
                     border: InputBorder.none,
+                    fillColor: Colors.transparent,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 10,
@@ -1818,13 +2331,11 @@ class _InputBarState extends State<_InputBar> {
               ),
             ),
             const SizedBox(width: 6),
-            // Send / Mic
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 180),
               transitionBuilder: (child, anim) =>
                   ScaleTransition(scale: anim, child: child),
               child: hasContent
-                  // Bouton Send
                   ? GestureDetector(
                       key: const ValueKey('send'),
                       onTap: widget.onSend,
@@ -1842,7 +2353,6 @@ class _InputBarState extends State<_InputBar> {
                         ),
                       ),
                     )
-                  // Bouton Mic — long press = record, release = arrêt + demande envoi
                   : GestureDetector(
                       key: const ValueKey('mic'),
                       onLongPressStart: (_) async {
@@ -1852,7 +2362,6 @@ class _InputBarState extends State<_InputBar> {
                       onLongPressEnd: (_) async {
                         if (!_isLongPressing) return;
                         setState(() => _isLongPressing = false);
-                        // Arrêt + envoi immédiat (flow WhatsApp)
                         await ctrl.stopAndSendRecording();
                       },
                       onLongPressCancel: () {

@@ -795,27 +795,39 @@ class _LastMessagePreview extends StatelessWidget {
   Widget build(BuildContext context) {
     if (msg == null) return const SizedBox.shrink();
     String preview;
+    IconData? icon;
     switch (msg!.type) {
       case MessageType.image:
-        preview = '📷 Photo';
+        preview = 'Photo';
+        icon = Icons.photo;
         break;
       case MessageType.audio:
-        preview = '🎤 Message vocal';
+        preview = 'Message vocal';
+        icon = Icons.mic_rounded;
         break;
       case MessageType.video:
-        preview = '🎬 Vidéo';
+        preview = 'Vidéo';
+        icon = Icons.video_library;
         break;
       case MessageType.file:
-        preview = '📎 Fichier';
+        preview = 'Fichier';
+        icon = Icons.attach_file;
         break;
       default:
         preview = msg!.content;
     }
-    return Text(
-      preview,
-      style: TextStyle(fontSize: 13, color: context.subtle),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: context.subtle),
+        const SizedBox(width: 4),
+        Text(
+          preview,
+          style: TextStyle(fontSize: 13, color: context.subtle),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 }
