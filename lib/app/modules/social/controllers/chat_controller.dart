@@ -399,6 +399,74 @@ class ChatController extends GetxController {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  // MEMBRES / MÉDIAS PARTAGÉS / BLOCAGE — pour le menu 3 points
+  // ─────────────────────────────────────────────────────────────────────────
+  final channelMembers   = <Map<String, dynamic>>[].obs;
+  final sharedMedia       = <ChatMessage>[].obs;
+  final isMembersLoading  = false.obs;
+  final isMediaLoading    = false.obs;
+  final isBlocked         = false.obs;
+
+  Future<void> loadChannelMembers(int channelId) async {
+    isMembersLoading.value = true;
+    channelMembers.clear();
+    try {
+      if (useMock) {
+        await Future.delayed(const Duration(milliseconds: 400));
+        channelMembers.value = List.generate(8, (i) => {
+          'id': i + 1,
+          'name': 'Membre ${i + 1}',
+          'avatar_url': 'https://randomuser.me/api/portraits/${i%2==0?"women":"men"}/${i+30}.jpg',
+          'role': i == 0 ? 'Admin' : 'User',
+        });
+        return;
+      }
+      final r = await RequestService().get('/social/channels/$channelId/members');
+      channelMembers.value = (r.data['data'] as List)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    } catch (e) {
+      debugPrint('loadChannelMembers error: $e');
+    } finally { isMembersLoading.value = false; }
+  }
+
+  Future<void> loadSharedMedia({int? channelId, int? conversationId}) async {
+    isMediaLoading.value = true;
+    sharedMedia.clear();
+    try {
+      if (useMock) {
+        await Future.delayed(const Duration(milliseconds: 400));
+        return;
+      }
+      final path = channelId != null
+          ? '/social/channels/$channelId/media'
+          : '/social/conversations/$conversationId/media';
+      final r = await RequestService().get(path);
+      sharedMedia.value = (r.data['data'] as List)
+          .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      debugPrint('loadSharedMedia error: $e');
+    } finally { isMediaLoading.value = false; }
+  }
+
+  Future<void> blockUser(int userId) async {
+    try {
+      if (!useMock) await RequestService().post('/social/users/$userId/block');
+      isBlocked.value = true;
+      ToastHelper.showToast('Utilisateur bloqué', backgroundColor: Colors.green, textColor: Colors.white);
+    } on DioException catch (e) { _dioErr(e); }
+  }
+
+  Future<void> unblockUser(int userId) async {
+    try {
+      if (!useMock) await RequestService().delete('/social/users/$userId/block');
+      isBlocked.value = false;
+      ToastHelper.showToast('Utilisateur débloqué', backgroundColor: Colors.green, textColor: Colors.white);
+    } on DioException catch (e) { _dioErr(e); }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   // MEDIA PICKERS
   // ─────────────────────────────────────────────────────────────────────────
   Future<void> pickImage({bool fromCamera = false}) async {
