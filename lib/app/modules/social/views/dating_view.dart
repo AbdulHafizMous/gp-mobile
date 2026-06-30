@@ -20,7 +20,7 @@ extension _Tx on BuildContext {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DATING VIEW — hub
+// DATING VIEW
 // ─────────────────────────────────────────────────────────────────────────────
 class DatingView extends StatefulWidget {
   const DatingView({super.key});
@@ -49,6 +49,15 @@ class _DatingViewState extends State<DatingView>
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      if (_ctrl.isPrefsLoading.value) {
+        return Scaffold(
+          backgroundColor: context.bg,
+          body: Center(
+            child: CircularProgressIndicator(color: GPTheme.primaryColor),
+          ),
+        );
+      }
+      if (!_ctrl.hasPreferences) return _PreferencesSetup(ctrl: _ctrl);
       if (_ctrl.isLoading.value && _ctrl.suggestions.isEmpty) {
         return Scaffold(
           backgroundColor: context.bg,
@@ -57,12 +66,6 @@ class _DatingViewState extends State<DatingView>
           ),
         );
       }
-
-      // Setup préférences si pas encore configurées
-      if (!_ctrl.hasPreferences) {
-        return _PreferencesSetup(ctrl: _ctrl);
-      }
-
       return Scaffold(
         backgroundColor: context.bg,
         appBar: _DatingAppBar(ctrl: _ctrl, tabCtrl: _tab),
@@ -81,12 +84,11 @@ class _DatingViewState extends State<DatingView>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// APP BAR DATING
+// APP BAR
 // ─────────────────────────────────────────────────────────────────────────────
 class _DatingAppBar extends StatelessWidget implements PreferredSizeWidget {
   final DatingController ctrl;
   final TabController tabCtrl;
-
   const _DatingAppBar({required this.ctrl, required this.tabCtrl});
 
   @override
@@ -94,9 +96,8 @@ class _DatingAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
     return Container(
-      color: isDark
+      color: context.isDark
           ? const Color(0xFF111111)
           : GPTheme.primaryColor.withOpacity(0.9),
       child: SafeArea(
@@ -131,21 +132,23 @@ class _DatingAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
             TabBar(
               controller: tabCtrl,
-              indicatorColor: GPTheme.primaryColor,
+              tabAlignment: TabAlignment.center,
+              isScrollable: true,
+              indicatorColor: Colors.white,
               indicatorWeight: 3,
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white38,
               labelStyle: const TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
               tabs: [
-                Tab(
+                const Tab(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(Icons.explore_rounded, size: 15),
-                      SizedBox(width: 5),
+                    children: [
+                      Icon(Icons.explore_rounded, size: 12),
+                      SizedBox(width: 3),
                       Text('Découvrir'),
                     ],
                   ),
@@ -155,18 +158,18 @@ class _DatingAppBar extends StatelessWidget implements PreferredSizeWidget {
                     () => Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.favorite_rounded, size: 15),
-                        const SizedBox(width: 5),
+                        const Icon(Icons.favorite_rounded, size: 12),
+                        const SizedBox(width: 3),
                         const Text('Matches'),
                         if (ctrl.matches.isNotEmpty) ...[
-                          const SizedBox(width: 5),
+                          const SizedBox(width: 3),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: GPTheme.primaryColor,
+                              color: Colors.white24,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
@@ -187,8 +190,8 @@ class _DatingAppBar extends StatelessWidget implements PreferredSizeWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.thumb_up_rounded, size: 15),
-                      SizedBox(width: 5),
+                      Icon(Icons.thumb_up_rounded, size: 12),
+                      SizedBox(width: 3),
                       Text('Likés'),
                     ],
                   ),
@@ -221,15 +224,13 @@ class _SwipeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final profile = ctrl.currentProfile;
-
-      if (ctrl.suggestions.isEmpty) {
+      if (ctrl.suggestions.isEmpty && !ctrl.isLoading.value) {
         return _EmptySuggestions(ctrl: ctrl);
       }
-
+      final profile = ctrl.currentProfile;
       return Stack(
         children: [
-          // Stack de cartes (on affiche jusqu'à 2 cartes derrière)
+          // Cartes de fond
           if (ctrl.currentIndex.value + 2 < ctrl.suggestions.length)
             Positioned.fill(
               child: _ProfileCard(
@@ -237,6 +238,7 @@ class _SwipeTab extends StatelessWidget {
                 scale: 0.90,
                 offset: 20,
                 interactive: false,
+                ctrl: ctrl,
               ),
             ),
           if (ctrl.currentIndex.value + 1 < ctrl.suggestions.length)
@@ -246,14 +248,15 @@ class _SwipeTab extends StatelessWidget {
                 scale: 0.95,
                 offset: 10,
                 interactive: false,
+                ctrl: ctrl,
               ),
             ),
-          // Carte principale (draggable)
+          // Carte principale draggable
           if (profile != null)
             Positioned.fill(
               child: _DraggableCard(profile: profile, ctrl: ctrl),
             ),
-          // Overlay "C'est un Match !"
+          // Match overlay
           if (ctrl.newMatch.value != null)
             _MatchOverlay(profile: ctrl.newMatch.value!, ctrl: ctrl),
         ],
@@ -298,7 +301,7 @@ class _EmptySuggestions extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Vous avez vu tous les profils disponibles.\nRevenez plus tard !',
+              'Vous avez vu tous les profils.\nRevenez plus tard !',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: context.subtle,
@@ -340,7 +343,7 @@ class _EmptySuggestions extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DRAGGABLE SWIPE CARD
+// DRAGGABLE CARD
 // ─────────────────────────────────────────────────────────────────────────────
 class _DraggableCard extends StatefulWidget {
   final DatingProfile profile;
@@ -353,83 +356,75 @@ class _DraggableCard extends StatefulWidget {
 
 class _DraggableCardState extends State<_DraggableCard>
     with SingleTickerProviderStateMixin {
-  Offset _dragOffset = Offset.zero;
-  double _rotation = 0;
-  bool isDragging = false;
-  late AnimationController _snapBack;
+  Offset _offset = Offset.zero;
+  double _rot = 0;
+  // ignore: unused_field
+  bool _dragging = false;
+  late AnimationController _snapCtrl;
   late Animation<Offset> _snapAnim;
-
   static const double _threshold = 100.0;
 
   @override
   void initState() {
     super.initState();
-    _snapBack = AnimationController(
+    _snapCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
     _snapAnim = Tween<Offset>(
       begin: Offset.zero,
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _snapBack, curve: Curves.elasticOut));
-    _snapBack.addListener(() {
-      setState(() => _dragOffset = _snapAnim.value);
-    });
+    ).animate(CurvedAnimation(parent: _snapCtrl, curve: Curves.elasticOut));
+    _snapCtrl.addListener(() => setState(() => _offset = _snapAnim.value));
   }
 
   @override
   void dispose() {
-    _snapBack.dispose();
+    _snapCtrl.dispose();
     super.dispose();
   }
 
-  void _onPanStart(DragStartDetails _) {
-    _snapBack.stop();
-    setState(() => isDragging = true);
+  void _onStart(DragStartDetails _) {
+    _snapCtrl.stop();
+    setState(() => _dragging = true);
   }
 
-  void _onPanUpdate(DragUpdateDetails d) {
+  void _onUpdate(DragUpdateDetails d) {
     setState(() {
-      _dragOffset += d.delta;
-      _rotation = _dragOffset.dx / 300;
+      _offset += d.delta;
+      _rot = _offset.dx / 300;
     });
   }
 
-  void _onPanEnd(DragEndDetails _) {
-    setState(() => isDragging = false);
-    if (_dragOffset.dx > _threshold) {
-      _doLike();
-    } else if (_dragOffset.dx < -_threshold) {
-      _doSkip();
+  void _onEnd(DragEndDetails _) {
+    setState(() => _dragging = false);
+    if (_offset.dx > _threshold) {
+      widget.ctrl.likeProfile(widget.profile);
+    } else if (_offset.dx < -_threshold) {
+      widget.ctrl.skipProfile(widget.profile);
     } else {
-      // Snap back
       _snapAnim = Tween<Offset>(
-        begin: _dragOffset,
+        begin: _offset,
         end: Offset.zero,
-      ).animate(CurvedAnimation(parent: _snapBack, curve: Curves.elasticOut));
-      _snapBack.forward(from: 0);
-      setState(() {
-        _rotation = 0;
-      });
+      ).animate(CurvedAnimation(parent: _snapCtrl, curve: Curves.elasticOut));
+      _snapCtrl.forward(from: 0);
+      setState(() => _rot = 0);
     }
   }
 
-  void _doLike() => widget.ctrl.likeProfile(widget.profile);
-  void _doSkip() => widget.ctrl.skipProfile(widget.profile);
-
   @override
   Widget build(BuildContext context) {
-    final likeOpacity = (_dragOffset.dx / _threshold).clamp(0.0, 1.0);
-    final skipOpacity = (-_dragOffset.dx / _threshold).clamp(0.0, 1.0);
+    final likeOpacity = (_offset.dx / _threshold).clamp(0.0, 1.0);
+    final skipOpacity = (-_offset.dx / _threshold).clamp(0.0, 1.0);
 
     return GestureDetector(
-      onPanStart: _onPanStart,
-      onPanUpdate: _onPanUpdate,
-      onPanEnd: _onPanEnd,
+      onPanStart: _onStart,
+      onPanUpdate: _onUpdate,
+      onPanEnd: _onEnd,
       child: Transform.translate(
-        offset: _dragOffset,
+        offset: _offset,
         child: Transform.rotate(
-          angle: _rotation * 0.3,
+          angle: _rot * 0.3,
           child: Stack(
             children: [
               _ProfileCard(
@@ -437,8 +432,8 @@ class _DraggableCardState extends State<_DraggableCard>
                 scale: 1.0,
                 offset: 0,
                 interactive: true,
+                ctrl: widget.ctrl,
               ),
-              // LIKE badge
               if (likeOpacity > 0.05)
                 Positioned(
                   top: 60,
@@ -469,7 +464,6 @@ class _DraggableCardState extends State<_DraggableCard>
                     ),
                   ),
                 ),
-              // SKIP badge
               if (skipOpacity > 0.05)
                 Positioned(
                   top: 60,
@@ -516,12 +510,13 @@ class _ProfileCard extends StatelessWidget {
   final double scale;
   final double offset;
   final bool interactive;
-
+  final DatingController ctrl;
   const _ProfileCard({
     required this.profile,
     required this.scale,
     required this.offset,
     required this.interactive,
+    required this.ctrl,
   });
 
   @override
@@ -548,9 +543,8 @@ class _ProfileCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Photo
                   _ProfilePhoto(url: profile.displayPhoto),
-                  // Gradient bottom
+                  // Gradient
                   Positioned.fill(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
@@ -589,17 +583,21 @@ class _ProfileCard extends StatelessWidget {
                               ),
                             ),
                             if (interactive)
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: Colors.white24,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.info_outline_rounded,
-                                  color: Colors.white,
-                                  size: 18,
+                              GestureDetector(
+                                onTap: () =>
+                                    _showProfileDetail(context, profile),
+                                child: Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white24,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.info_outline_rounded,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
                                 ),
                               ),
                           ],
@@ -677,7 +675,6 @@ class _ProfileCard extends StatelessWidget {
                                 .toList(),
                           ),
                         ],
-                        // Boutons action (seulement carte active)
                         if (interactive) ...[
                           const SizedBox(height: 16),
                           Row(
@@ -712,7 +709,6 @@ class _ProfileCard extends StatelessWidget {
                                 color: Colors.amber,
                                 size: 56,
                                 onTap: () {
-                                  // Super like
                                   final p = Get.find<DatingController>()
                                       .currentProfile;
                                   if (p != null)
@@ -733,14 +729,231 @@ class _ProfileCard extends StatelessWidget {
       ),
     );
   }
+
+  void _showProfileDetail(BuildContext context, DatingProfile profile) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ProfileDetailSheet(profile: profile, ctrl: ctrl),
+    );
+  }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PROFILE DETAIL SHEET — ouvert depuis le bouton info
+// ─────────────────────────────────────────────────────────────────────────────
+class _ProfileDetailSheet extends StatelessWidget {
+  final DatingProfile profile;
+  final DatingController ctrl;
+  const _ProfileDetailSheet({required this.profile, required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      maxChildSize: 0.95,
+      minChildSize: 0.5,
+      builder: (_, scrollCtrl) => Container(
+        decoration: BoxDecoration(
+          color: context.isDark ? const Color(0xFF1A1A1A) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: ListView(
+          controller: scrollCtrl,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(top: 10, bottom: 4),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade400,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            // Photos
+            SizedBox(
+              height: 320,
+              child: PageView(
+                children: profile.photos.isEmpty
+                    ? [_ProfilePhoto(url: profile.displayPhoto)]
+                    : profile.photos.map((p) => _ProfilePhoto(url: p)).toList(),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Nom + âge
+                  Text(
+                    '${profile.name}, ${profile.age}',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                      color: context.primary,
+                    ),
+                  ),
+                  if (profile.city != null) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on_rounded,
+                          size: 14,
+                          color: GPTheme.primaryColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          profile.city!,
+                          style: TextStyle(fontSize: 14, color: context.subtle),
+                        ),
+                        if (profile.distance != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            '· ${profile.distance!.toStringAsFixed(0)} km',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: context.subtle,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                  if (profile.bio?.isNotEmpty == true) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      'À propos',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: context.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      profile.bio!,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: context.subtle,
+                        height: 1.6,
+                      ),
+                    ),
+                  ],
+                  if (profile.interests.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      'Centres d\'intérêt',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: context.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: profile.interests
+                          .map(
+                            (i) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: GPTheme.primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: GPTheme.primaryColor.withOpacity(0.3),
+                                ),
+                              ),
+                              child: Text(
+                                i,
+                                style: TextStyle(
+                                  color: GPTheme.primaryColor,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+                  const SizedBox(height: 28),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Get.back();
+                            ctrl.skipProfile(profile);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: const BorderSide(color: Colors.red),
+                            foregroundColor: Colors.red,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          icon: const Icon(Icons.close_rounded),
+                          label: const Text('Passer'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Get.back();
+                            ctrl.likeProfile(profile);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: GPTheme.primaryColor,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.favorite_rounded,
+                            color: Colors.white,
+                          ),
+                          label: const Text(
+                            'J\'aime',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ACTION BUTTONS
+// ─────────────────────────────────────────────────────────────────────────────
 class _ActionBtn extends StatelessWidget {
   final IconData icon;
   final Color color;
   final double size;
   final VoidCallback onTap;
-
   const _ActionBtn({
     required this.icon,
     required this.color,
@@ -749,27 +962,25 @@ class _ActionBtn extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Icon(icon, color: color, size: size * 0.48),
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-    );
-  }
+      child: Icon(icon, color: color, size: size * 0.48),
+    ),
+  );
 }
 
 class _ProfilePhoto extends StatelessWidget {
@@ -778,7 +989,7 @@ class _ProfilePhoto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (url.isEmpty) {
+    if (url.isEmpty)
       return Container(
         color: Colors.grey.shade800,
         child: const Icon(
@@ -787,7 +998,6 @@ class _ProfilePhoto extends StatelessWidget {
           color: Colors.white24,
         ),
       );
-    }
     return Image.network(
       url,
       fit: BoxFit.cover,
@@ -821,7 +1031,6 @@ class _MatchOverlay extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // ❤️
               Icon(
                 Icons.favorite_rounded,
                 size: 60,
@@ -838,7 +1047,7 @@ class _MatchOverlay extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Vous et ${profile.name} vous vous êtes likés mutuellement !',
+                'Vous et ${profile.name} vous vous êtes likés !',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white70,
@@ -847,7 +1056,6 @@ class _MatchOverlay extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
-              // Photos en miroir
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -859,22 +1067,19 @@ class _MatchOverlay extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 36),
-              // CTA Message
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () async {
                     ctrl.dismissMatch();
-                    // Ouvrir la conv existante ou en créer une
                     final chatCtrl = Get.find<ChatController>();
                     final convId = await chatCtrl.startConversationWithUser(
                       profile.id,
                     );
                     if (convId != null) {
-                      final convs = chatCtrl.privateConversations;
-                      final conv = convs.firstWhereOrNull(
-                        (c) => c.id == convId,
-                      );
+                      await chatCtrl.loadPrivateConversations();
+                      final conv = chatCtrl.privateConversations
+                          .firstWhereOrNull((c) => c.id == convId);
                       if (conv != null) {
                         await chatCtrl.openPrivateConversation(conv);
                         Get.to(
@@ -927,33 +1132,31 @@ class _MatchAvatar extends StatelessWidget {
   const _MatchAvatar({this.url, this.isMe = false});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 90,
-      height: 90,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: GPTheme.primaryColor, width: 3),
-        color: isMe
-            ? GPTheme.primaryColor.withOpacity(0.2)
-            : Colors.grey.shade800,
-        image: url != null && url!.isNotEmpty
-            ? DecorationImage(image: NetworkImage(url!), fit: BoxFit.cover)
-            : null,
-      ),
-      child: (url == null || url!.isEmpty)
-          ? Icon(
-              Icons.person_rounded,
-              size: 40,
-              color: isMe ? GPTheme.primaryColor : Colors.white38,
-            )
+  Widget build(BuildContext context) => Container(
+    width: 90,
+    height: 90,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      border: Border.all(color: GPTheme.primaryColor, width: 3),
+      color: isMe
+          ? GPTheme.primaryColor.withOpacity(0.2)
+          : Colors.grey.shade800,
+      image: url != null && url!.isNotEmpty
+          ? DecorationImage(image: NetworkImage(url!), fit: BoxFit.cover)
           : null,
-    );
-  }
+    ),
+    child: (url == null || url!.isEmpty)
+        ? Icon(
+            Icons.person_rounded,
+            size: 40,
+            color: isMe ? GPTheme.primaryColor : Colors.white38,
+          )
+        : null,
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ONGLET MATCHES
+// ONGLET MATCHES — avec navigation vers chat
 // ─────────────────────────────────────────────────────────────────────────────
 class _MatchesTab extends StatelessWidget {
   final DatingController ctrl;
@@ -998,47 +1201,48 @@ class _MatchesTab extends StatelessWidget {
           ),
         );
       }
-
       return ListView.builder(
         padding: const EdgeInsets.only(top: 12, bottom: 24),
         itemCount: ctrl.matches.length,
-        itemBuilder: (_, i) {
-          final match = ctrl.matches[i];
-          return _MatchTile(
-            match: match,
-            onMessage: () async {
-              final chatCtrl = Get.find<ChatController>();
-              if (match.conversationId != null) {
-                final conv = chatCtrl.privateConversations.firstWhereOrNull(
-                  (c) => c.id == match.conversationId,
-                );
-                if (conv != null) {
-                  await chatCtrl.openPrivateConversation(conv);
-                  Get.to(
-                    () => ChatRoomView(privateConv: conv),
-                    transition: Transition.rightToLeft,
-                  );
-                  return;
-                }
-              }
-              final convId = await chatCtrl.startConversationWithUser(
-                match.profile.id,
+        itemBuilder: (_, i) => _MatchTile(
+          match: ctrl.matches[i],
+          onMessage: () async {
+            final chatCtrl = Get.find<ChatController>();
+            final match = ctrl.matches[i];
+            // Chercher une conv existante d'abord
+            if (match.conversationId != null) {
+              await chatCtrl.loadPrivateConversations();
+              final conv = chatCtrl.privateConversations.firstWhereOrNull(
+                (c) => c.id == match.conversationId,
               );
-              if (convId != null) {
-                final conv = chatCtrl.privateConversations.firstWhereOrNull(
-                  (c) => c.id == convId,
+              if (conv != null) {
+                await chatCtrl.openPrivateConversation(conv);
+                Get.to(
+                  () => ChatRoomView(privateConv: conv),
+                  transition: Transition.rightToLeft,
                 );
-                if (conv != null) {
-                  await chatCtrl.openPrivateConversation(conv);
-                  Get.to(
-                    () => ChatRoomView(privateConv: conv),
-                    transition: Transition.rightToLeft,
-                  );
-                }
+                return;
               }
-            },
-          );
-        },
+            }
+            // Créer ou récupérer la conversation
+            final convId = await chatCtrl.startConversationWithUser(
+              match.profile.id,
+            );
+            if (convId != null) {
+              await chatCtrl.loadPrivateConversations();
+              final conv = chatCtrl.privateConversations.firstWhereOrNull(
+                (c) => c.id == convId,
+              );
+              if (conv != null) {
+                await chatCtrl.openPrivateConversation(conv);
+                Get.to(
+                  () => ChatRoomView(privateConv: conv),
+                  transition: Transition.rightToLeft,
+                );
+              }
+            }
+          },
+        ),
       );
     });
   }
@@ -1051,7 +1255,6 @@ class _MatchTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Container(
@@ -1059,7 +1262,7 @@ class _MatchTile extends StatelessWidget {
           color: context.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDark
+            color: context.isDark
                 ? GPTheme.primaryColor.withOpacity(0.15)
                 : Colors.grey.shade100,
           ),
@@ -1151,7 +1354,7 @@ class _MatchTile extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ONGLET LIKÉS
+// ONGLET LIKÉS — sans doublons, cliquable pour voir le profil
 // ─────────────────────────────────────────────────────────────────────────────
 class _LikesTab extends StatelessWidget {
   final DatingController ctrl;
@@ -1175,7 +1378,6 @@ class _LikesTab extends StatelessWidget {
           ),
         );
       }
-
       return GridView.builder(
         padding: const EdgeInsets.all(16),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -1187,64 +1389,76 @@ class _LikesTab extends StatelessWidget {
         itemCount: ctrl.likedProfiles.length,
         itemBuilder: (_, i) {
           final p = ctrl.likedProfiles[i];
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                _ProfilePhoto(url: p.displayPhoto),
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        stops: const [0.5, 1.0],
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.7),
-                        ],
+          return GestureDetector(
+            onTap: () => _showProfileDetail(context, p),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _ProfilePhoto(url: p.displayPhoto),
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: const [0.5, 1.0],
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.7),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Positioned(
-                  left: 10,
-                  right: 10,
-                  bottom: 10,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${p.name}, ${p.age}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
-                        ),
-                      ),
-                      if (p.city != null)
+                  Positioned(
+                    left: 10,
+                    right: 10,
+                    bottom: 10,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          p.city!,
+                          '${p.name}, ${p.age}',
                           style: const TextStyle(
-                            color: Colors.white60,
-                            fontSize: 11,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
                           ),
                         ),
-                    ],
+                        if (p.city != null)
+                          Text(
+                            p.city!,
+                            style: const TextStyle(
+                              color: Colors.white60,
+                              fontSize: 11,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
       );
     });
   }
+
+  void _showProfileDetail(BuildContext context, DatingProfile profile) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ProfileDetailSheet(profile: profile, ctrl: ctrl),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PREFERENCES SETUP (onboarding)
+// PREFERENCES SETUP
 // ─────────────────────────────────────────────────────────────────────────────
 class _PreferencesSetup extends StatelessWidget {
   final DatingController ctrl;
@@ -1294,7 +1508,6 @@ class _PreferencesSetup extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
-              // Genre recherché
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -1311,7 +1524,6 @@ class _PreferencesSetup extends StatelessWidget {
                 () => SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    // mainAxisAlignment: MainAxisAlignme
                     children: [
                       _GenderChip(
                         label: 'Femmes',
@@ -1349,8 +1561,8 @@ class _PreferencesSetup extends StatelessWidget {
                   ),
                 ),
               ),
-              Obx(() {
-                return Column(
+              Obx(
+                () => Column(
                   children: [
                     RangeSlider(
                       values: RangeValues(
@@ -1376,8 +1588,8 @@ class _PreferencesSetup extends StatelessWidget {
                       style: TextStyle(color: context.subtle),
                     ),
                   ],
-                );
-              }),
+                ),
+              ),
               const SizedBox(height: 36),
               Obx(
                 () => SizedBox(
@@ -1479,7 +1691,6 @@ class _PreferencesSheet extends StatelessWidget {
             () => SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                // mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _GenderChip(
                     label: 'Des femmes',
@@ -1578,7 +1789,6 @@ class _GenderChip extends StatelessWidget {
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
-
   const _GenderChip({
     required this.label,
     required this.icon,

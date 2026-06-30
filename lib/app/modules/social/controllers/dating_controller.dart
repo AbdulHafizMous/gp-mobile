@@ -11,18 +11,23 @@ import 'package:grand_public_v2/app/utils/toast_helper.dart';
 
 class DatingController extends GetxController {
   // ── State ──────────────────────────────────────────────────────────────────
-  final suggestions   = <DatingProfile>[].obs;
-  final likedProfiles = <DatingProfile>[].obs;
-  final matches       = <DatingMatch>[].obs;
-  final isLoading     = false.obs;
-  final isSubmitting  = false.obs;
+  final suggestions    = <DatingProfile>[].obs;
+  final likedProfiles  = <DatingProfile>[].obs;    // profils que j'ai likés (sans doublons)
+  final matches        = <DatingMatch>[].obs;
+  final isLoading      = false.obs;
+  final isSubmitting   = false.obs;
   final isPrefsLoading = false.obs;
-  final preferences   = Rxn<DatingPreferences>();
+  final preferences    = Rxn<DatingPreferences>();
 
   final currentIndex = 0.obs;
   final newMatch     = Rxn<DatingProfile>();
 
-  // Préférences form
+  // IDs déjà swipés localement pour éviter les doublons avant sync backend
+  final _swipedIds = <int>{};
+  // IDs déjà dans likedProfiles pour éviter les doublons
+  final _likedIds  = <int>{};
+
+  // Prefs form
   final selectedLookingFor = RxnString();
   final minAge = 18.obs;
   final maxAge = 40.obs;
@@ -37,15 +42,12 @@ class DatingController extends GetxController {
   }
 
   Future<void> _initPreferences() async {
-    // 1. Charger d'abord le cache local pour UX immédiate
     _loadPreferencesFromStorage();
-    // 2. Charger depuis le backend (source de vérité)
     await loadPreferencesFromBackend();
-    // 3. Si prefs configurées, charger les suggestions
     if (hasPreferences) {
-      loadSuggestions();
-      loadLikedProfiles();
-      loadMatches();
+      await loadSuggestions();
+      await loadLikedProfiles();
+      await loadMatches();
     }
   }
 
@@ -66,34 +68,23 @@ class DatingController extends GetxController {
   bool get hasPreferences => preferences.value?.isConfigured ?? false;
 
   // ─────────────────────────────────────────────────────────────────────────
-  // PREFERENCES — BACKEND
+  // PREFERENCES
   // ─────────────────────────────────────────────────────────────────────────
-
-  /// Charge les préférences depuis le backend et met à jour le cache local
   Future<void> loadPreferencesFromBackend() async {
     isPrefsLoading.value = true;
     try {
-      if (useMock) {
-        await Future.delayed(const Duration(milliseconds: 300));
-        return;
-      }
+      if (useMock) { await Future.delayed(const Duration(milliseconds: 300)); return; }
       final r = await RequestService().get('/dating/preferences');
       final data = r.data['data'];
       if (data != null) {
         final prefs = DatingPreferences.fromJson(data as Map<String, dynamic>);
         preferences.value = prefs;
         _syncFormFromPrefs(prefs);
-        // Mettre à jour le cache local
         GetStorage().write('dating_prefs', prefs.toJson());
       }
     } on DioException catch (e) {
-      // 404 = pas encore de prefs — pas une erreur
-      if (e.response?.statusCode != 404) {
-        debugPrint('loadPreferences error: $e');
-      }
-    } finally {
-      isPrefsLoading.value = false;
-    }
+      if (e.response?.statusCode != 404) debugPrint('loadPrefs error: $e');
+    } finally { isPrefsLoading.value = false; }
   }
 
   void _syncFormFromPrefs(DatingPreferences prefs) {
@@ -102,49 +93,28 @@ class DatingController extends GetxController {
     maxAge.value = prefs.maxAge ?? 40;
   }
 
-  /// Sauvegarde les préférences côté backend ET dans le cache local
   Future<void> savePreferences() async {
     if (selectedLookingFor.value == null) {
-      await ToastHelper.showToast(
-        'Veuillez sélectionner une préférence',
-        backgroundColor: Colors.orange,
-        textColor: Colors.white,
-      );
+      ToastHelper.showToast('Veuillez sélectionner une préférence',
+          backgroundColor: Colors.orange, textColor: Colors.white);
       return;
     }
     isSubmitting.value = true;
     try {
       final prefs = DatingPreferences(
         lookingFor: selectedLookingFor.value,
-        minAge:     minAge.value,
-        maxAge:     maxAge.value,
-        isActive:   true,
-      );
-
-      if (useMock) {
-        await Future.delayed(const Duration(milliseconds: 500));
+        minAge: minAge.value, maxAge: maxAge.value, isActive: true);
+      if (!useMock) {
+        await RequestService().post('/dating/preferences', data: prefs.toJson());
       } else {
-        // POST ou PUT selon l'existence
-        final endpoint = '/dating/preferences';
-        await RequestService().post(endpoint, data: prefs.toJson());
+        await Future.delayed(const Duration(milliseconds: 500));
       }
-
       preferences.value = prefs;
-      // Toujours sauvegarder en local aussi (cache)
       GetStorage().write('dating_prefs', prefs.toJson());
-
-      await ToastHelper.showToast(
-        'Préférences enregistrées !',
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
-      );
-      // Recharger les suggestions avec les nouvelles prefs
+      ToastHelper.showToast('Préférences enregistrées !', backgroundColor: Colors.green, textColor: Colors.white);
       await loadSuggestions();
-    } on DioException catch (e) {
-      _handleDioError(e);
-    } finally {
-      isSubmitting.value = false;
-    }
+    } on DioException catch (e) { _handleDioError(e); }
+    finally { isSubmitting.value = false; }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -152,6 +122,7 @@ class DatingController extends GetxController {
   // ─────────────────────────────────────────────────────────────────────────
   Future<void> loadSuggestions() async {
     isLoading.value = true;
+    _swipedIds.clear(); // reset local swipe tracking
     try {
       if (useMock) {
         await Future.delayed(const Duration(milliseconds: 700));
@@ -161,14 +132,10 @@ class DatingController extends GetxController {
       }
       final r = await RequestService().get('/dating/suggestions');
       final list = r.data['data'] as List<dynamic>;
-      suggestions.value =
-          list.map((e) => DatingProfile.fromJson(e as Map<String, dynamic>)).toList();
+      suggestions.value = list.map((e) => DatingProfile.fromJson(e as Map<String, dynamic>)).toList();
       currentIndex.value = 0;
-    } on DioException catch (e) {
-      _handleDioError(e);
-    } finally {
-      isLoading.value = false;
-    }
+    } on DioException catch (e) { _handleDioError(e); }
+    finally { isLoading.value = false; }
   }
 
   DatingProfile? get currentProfile {
@@ -177,44 +144,66 @@ class DatingController extends GetxController {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // SWIPE ACTIONS
+  // SWIPE — ANTI-DOUBLON
   // ─────────────────────────────────────────────────────────────────────────
+
+  /// Like un profil. Ignore si déjà swipé localement.
   Future<void> likeProfile(DatingProfile profile) async {
+    // Guard anti-doublon côté client
+    if (_swipedIds.contains(profile.id)) return;
+    _swipedIds.add(profile.id);
+
     _nextProfile();
-    try {
-      if (useMock) {
-        await Future.delayed(const Duration(milliseconds: 300));
-        if (profile.id % 3 == 0) {
-          newMatch.value = profile;
-          matches.add(DatingMatch(
-            id: DateTime.now().millisecondsSinceEpoch,
-            profile: profile,
-            matchedAt: DateTime.now(),
-          ));
-        } else {
-          likedProfiles.add(profile);
-        }
-        return;
-      }
-      final r = await RequestService().post('/dating/profiles/${profile.id}/like');
-      final isMatch = r.data['data']?['is_match'] == true;
-      if (isMatch) {
+
+    // Optimisme : ajouter aux likés sans doublon
+    if (!_likedIds.contains(profile.id)) {
+      _likedIds.add(profile.id);
+      likedProfiles.add(profile);
+    }
+
+    if (useMock) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      // Simulation match (1 sur 3)
+      if (profile.id % 3 == 0) {
         newMatch.value = profile;
+        final match = DatingMatch(
+          id: DateTime.now().millisecondsSinceEpoch,
+          profile: profile,
+          matchedAt: DateTime.now(),
+        );
+        if (!matches.any((m) => m.profile.id == profile.id)) {
+          matches.add(match);
+        }
+      }
+      return;
+    }
+
+    try {
+      final r = await RequestService().post('/dating/profiles/${profile.id}/like');
+      final isMatchResult = r.data['data']?['is_match'] == true;
+      if (isMatchResult) {
+        newMatch.value = profile;
+        // Reload matches depuis le backend
         await loadMatches();
-      } else {
-        likedProfiles.add(profile);
+        // Retirer des "likés" car c'est un match
+        likedProfiles.removeWhere((p) => p.id == profile.id);
+        _likedIds.remove(profile.id);
       }
     } on DioException catch (e) {
+      // En cas d'erreur, retirer l'optimisme
+      likedProfiles.removeWhere((p) => p.id == profile.id);
+      _likedIds.remove(profile.id);
+      _swipedIds.remove(profile.id);
       _handleDioError(e);
     }
   }
 
   Future<void> skipProfile(DatingProfile profile) async {
+    if (_swipedIds.contains(profile.id)) return;
+    _swipedIds.add(profile.id);
     _nextProfile();
     if (useMock) return;
-    try {
-      await RequestService().post('/dating/profiles/${profile.id}/skip');
-    } catch (_) {}
+    try { await RequestService().post('/dating/profiles/${profile.id}/skip'); } catch (_) {}
   }
 
   void _nextProfile() {
@@ -222,28 +211,38 @@ class DatingController extends GetxController {
       currentIndex.value++;
     } else {
       suggestions.clear();
+      currentIndex.value = 0;
     }
   }
 
   void dismissMatch() => newMatch.value = null;
 
   // ─────────────────────────────────────────────────────────────────────────
-  // LIKED PROFILES
+  // LIKED PROFILES — chargement backend avec déduplication
   // ─────────────────────────────────────────────────────────────────────────
   Future<void> loadLikedProfiles() async {
     try {
       if (useMock) {
         await Future.delayed(const Duration(milliseconds: 500));
-        likedProfiles.value = _mockProfiles().take(6).toList();
+        final profiles = _mockProfiles().take(4).toList();
+        _likedIds.clear();
+        for (final p in profiles) { _likedIds.add(p.id); }
+        likedProfiles.value = profiles;
         return;
       }
       final r = await RequestService().get('/dating/likes');
       final list = r.data['data'] as List<dynamic>;
-      likedProfiles.value =
-          list.map((e) => DatingProfile.fromJson(e as Map<String, dynamic>)).toList();
-    } catch (e) {
-      debugPrint('loadLikedProfiles error: $e');
-    }
+      final profiles = list.map((e) => DatingProfile.fromJson(e as Map<String, dynamic>)).toList();
+      // Déduplication
+      final seen = <int>{};
+      final deduped = <DatingProfile>[];
+      for (final p in profiles) {
+        if (!seen.contains(p.id)) { seen.add(p.id); deduped.add(p); }
+      }
+      _likedIds.clear();
+      _likedIds.addAll(seen);
+      likedProfiles.value = deduped;
+    } catch (e) { debugPrint('loadLikedProfiles error: $e'); }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -254,11 +253,8 @@ class DatingController extends GetxController {
       if (useMock) return;
       final r = await RequestService().get('/dating/matches');
       final list = r.data['data'] as List<dynamic>;
-      matches.value =
-          list.map((e) => DatingMatch.fromJson(e as Map<String, dynamic>)).toList();
-    } catch (e) {
-      debugPrint('loadMatches error: $e');
-    }
+      matches.value = list.map((e) => DatingMatch.fromJson(e as Map<String, dynamic>)).toList();
+    } catch (e) { debugPrint('loadMatches error: $e'); }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -266,45 +262,45 @@ class DatingController extends GetxController {
   // ─────────────────────────────────────────────────────────────────────────
   List<DatingProfile> _mockProfiles() {
     const data = [
-      {'name': 'Kadidjath dld_01', 'age': 23, 'city': 'Cotonou, Akpakpa', 'gender': 'female'},
-      {'name': 'Dorcas_01',        'age': 21, 'city': 'Cotonou',          'gender': 'female'},
-      {'name': 'Aicha B.',         'age': 25, 'city': 'Porto-Novo',        'gender': 'female'},
-      {'name': 'Rachelle D.',      'age': 22, 'city': 'Parakou',           'gender': 'female'},
-      {'name': 'Fatou T.',         'age': 20, 'city': 'Cotonou, Fidjrossè','gender': 'female'},
-      {'name': 'Marie K.',         'age': 24, 'city': 'Abomey-Calavi',     'gender': 'female'},
+      {'id':1, 'name': 'Kadidjath D.', 'age': 23, 'city': 'Cotonou, Akpakpa', 'gender': 'female',
+        'bio': 'Passionnée de mode et de musique. Aime les sorties culturelles.'},
+      {'id':2, 'name': 'Dorcas K.',    'age': 21, 'city': 'Cotonou',          'gender': 'female',
+        'bio': 'Étudiante en droit. Amour de la lecture et des voyages.'},
+      {'id':3, 'name': 'Aicha B.',     'age': 25, 'city': 'Porto-Novo',       'gender': 'female',
+        'bio': 'Chef cuisinière. Fan de gastronomie africaine.'},
+      {'id':4, 'name': 'Rachelle D.', 'age': 22, 'city': 'Parakou',          'gender': 'female',
+        'bio': 'Sportive et dynamique. Football et danse.'},
+      {'id':5, 'name': 'Fatou T.',     'age': 20, 'city': 'Fidjrossè',        'gender': 'female',
+        'bio': 'Artiste peintre. Adore les musées.'},
+      {'id':6, 'name': 'Marie K.',     'age': 24, 'city': 'Abomey-Calavi',    'gender': 'female',
+        'bio': 'Entrepreneuse. Tech et innovation.'},
     ];
-    final femalePhotos = List.generate(12, (i) =>
-        'https://randomuser.me/api/portraits/women/${i + 20}.jpg');
+    final photos = List.generate(12, (i) => 'https://randomuser.me/api/portraits/women/${i+20}.jpg');
     final interests = [
       ['Musique', 'Voyage', 'Mode'],
       ['Sport', 'Cinéma', 'Cuisine'],
       ['Tech', 'Lecture', 'Danse'],
       ['Gaming', 'Art', 'Sorties'],
     ];
-
     return List.generate(data.length, (i) {
       final d = data[i];
       return DatingProfile(
-        id:         i + 1,
-        name:       d['name'] as String,
-        age:        d['age'] as int,
-        city:       d['city'] as String,
-        bio:        'Passionnée de vie, j\'aime les rencontres sincères.',
-        avatarUrl:  femalePhotos[i % femalePhotos.length],
-        photos:     [femalePhotos[i % femalePhotos.length],
-                     femalePhotos[(i + 1) % femalePhotos.length]],
-        interests:  interests[i % interests.length],
-        gender:     d['gender'] as String,
-        distance:   (i + 1) * 2.5,
+        id:        d['id'] as int,
+        name:      d['name'] as String,
+        age:       d['age'] as int,
+        city:      d['city'] as String,
+        bio:       d['bio'] as String,
+        avatarUrl: photos[i % photos.length],
+        photos:    [photos[i % photos.length], photos[(i+1) % photos.length]],
+        interests: interests[i % interests.length],
+        gender:    d['gender'] as String,
+        distance:  (i + 1) * 2.5,
       );
     });
   }
 
   void _handleDioError(DioException e) {
-    final msg = e.response != null
-        ? 'Erreur ${e.response?.statusCode}'
-        : e.message ?? 'Erreur réseau';
-    ToastHelper.showToast(msg,
-        backgroundColor: Colors.red, textColor: Colors.white);
+    final msg = e.response != null ? 'Erreur ${e.response?.statusCode}' : e.message ?? 'Erreur réseau';
+    ToastHelper.showToast(msg, backgroundColor: Colors.red, textColor: Colors.white);
   }
 }

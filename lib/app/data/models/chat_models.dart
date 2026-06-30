@@ -42,7 +42,7 @@ class ChatMessage {
   final int senderId;
   final String senderName;
   final String? senderAvatar;
-  final String? senderRole;      // ← rôle du sender (User, Admin, Super Admin)
+  final String? senderRole;
   final String content;
   final String? mediaUrl;
   final String? localFilePath;
@@ -54,6 +54,12 @@ class ChatMessage {
   final MessageType type;
   final MessageStatus status;
   final bool isPending;
+
+  // Reply
+  final int? replyToId;
+  final String? replyToSenderName;
+  final String? replyToContent;
+  final MessageType? replyToType;
 
   const ChatMessage({
     required this.id,
@@ -74,37 +80,34 @@ class ChatMessage {
     this.type = MessageType.text,
     this.status = MessageStatus.sent,
     this.isPending = false,
+    this.replyToId,
+    this.replyToSenderName,
+    this.replyToContent,
+    this.replyToType,
   });
 
-  /// Vrai si le sender a un rôle admin ou super admin
   bool get isAdminSender {
     if (senderRole == null) return false;
     final r = senderRole!.toLowerCase();
     return r == 'admin' || r == 'super admin' || r == 'administrator';
   }
 
+  bool get hasReply => replyToId != null;
+
   String get timeLabel {
-    final now  = DateTime.now();
-    final diff = now.difference(sentAt);
-    if (diff.inDays == 0) {
-      return '${sentAt.hour.toString().padLeft(2,'0')}:${sentAt.minute.toString().padLeft(2,'0')}';
-    }
-    if (diff.inDays == 1) return 'Hier';
-    return '${sentAt.day}/${sentAt.month}';
+    return '${sentAt.hour.toString().padLeft(2,'0')}:${sentAt.minute.toString().padLeft(2,'0')}';
   }
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    final replyTo = json['reply_to'] as Map<String, dynamic>?;
     return ChatMessage(
       id:              _i(json['id']),
       channelId:       _i(json['channel_id'] ?? 0),
       conversationId:  json['conversation_id'] != null ? _i(json['conversation_id']) : null,
       senderId:        _i(json['sender_id'] ?? json['user_id'] ?? 0),
-      senderName:      json['sender_name']?.toString() ??
-                       json['user']?['name']?.toString() ?? 'Utilisateur',
-      senderAvatar:    json['sender_avatar']?.toString() ??
-                       json['user']?['avatar_url']?.toString(),
-      senderRole:      json['sender_role']?.toString() ??
-                       json['user']?['role']?.toString(),
+      senderName:      json['sender_name']?.toString() ?? json['user']?['name']?.toString() ?? 'Utilisateur',
+      senderAvatar:    json['sender_avatar']?.toString() ?? json['user']?['avatar_url']?.toString(),
+      senderRole:      json['sender_role']?.toString() ?? json['user']?['role']?.toString(),
       content:         json['content']?.toString() ?? '',
       mediaUrl:        json['media_url']?.toString(),
       fileName:        json['file_name']?.toString(),
@@ -114,6 +117,10 @@ class ChatMessage {
       isMe:            _b(json['is_me']),
       type:            MessageTypeX.fromString(json['type']?.toString()),
       status:          MessageStatus.sent,
+      replyToId:       replyTo != null ? _i(replyTo['id']) : null,
+      replyToSenderName: replyTo?['sender_name']?.toString(),
+      replyToContent:  replyTo?['content']?.toString(),
+      replyToType:     replyTo != null ? MessageTypeX.fromString(replyTo['type']?.toString()) : null,
     );
   }
 
@@ -121,16 +128,24 @@ class ChatMessage {
     MessageStatus? status,
     bool? isPending,
     String? mediaUrl,
+    int? replyToId,
+    String? replyToSenderName,
+    String? replyToContent,
+    MessageType? replyToType,
   }) => ChatMessage(
     id: id, channelId: channelId, conversationId: conversationId,
     senderId: senderId, senderName: senderName, senderAvatar: senderAvatar,
-    senderRole: senderRole,
-    content: content, mediaUrl: mediaUrl ?? this.mediaUrl,
+    senderRole: senderRole, content: content,
+    mediaUrl: mediaUrl ?? this.mediaUrl,
     localFilePath: localFilePath,
     fileName: fileName, fileSizeBytes: fileSizeBytes,
     audioDurationSec: audioDurationSec, sentAt: sentAt, isMe: isMe, type: type,
     status: status ?? this.status,
     isPending: isPending ?? this.isPending,
+    replyToId: replyToId ?? this.replyToId,
+    replyToSenderName: replyToSenderName ?? this.replyToSenderName,
+    replyToContent: replyToContent ?? this.replyToContent,
+    replyToType: replyToType ?? this.replyToType,
   );
 
   static int _i(dynamic v) => v is int ? v : int.tryParse('$v') ?? 0;
@@ -182,13 +197,9 @@ class ChatChannel {
       membersCount: _i(json['members_count']),
       isJoined:     _b(json['is_joined']),
       isOnline:     _b(json['is_online']),
-      lastMessage:  json['last_message'] != null
-          ? ChatMessage.fromJson(json['last_message'])
-          : null,
+      lastMessage:  json['last_message'] != null ? ChatMessage.fromJson(json['last_message']) : null,
       unreadCount:  _i(json['unread_count']),
-      tags:         (json['tags'] as List<dynamic>? ?? [])
-                        .map((t) => t.toString())
-                        .toList(),
+      tags:         (json['tags'] as List<dynamic>? ?? []).map((t) => t.toString()).toList(),
     );
   }
 
@@ -239,13 +250,9 @@ class PrivateConversation {
       otherUserName:   json['other_user_name']?.toString() ?? '',
       otherUserAvatar: json['other_user_avatar']?.toString(),
       otherIsOnline:   _b(json['other_is_online']),
-      lastMessage:     json['last_message'] != null
-          ? ChatMessage.fromJson(json['last_message'])
-          : null,
+      lastMessage:     json['last_message'] != null ? ChatMessage.fromJson(json['last_message']) : null,
       unreadCount:     _i(json['unread_count']),
-      lastMessageAt:   json['last_message_at'] != null
-          ? DateTime.tryParse(json['last_message_at'].toString())
-          : null,
+      lastMessageAt:   json['last_message_at'] != null ? DateTime.tryParse(json['last_message_at'].toString()) : null,
     );
   }
 
