@@ -43,8 +43,6 @@ workflows:
   # ══════════════════════════════════════════════════════════════════
   ios-workflow:
     name: iOS Release (IPA)
-    max_build_duration: 60
-    instance_type: mac_mini_m2
 
     integrations:
       app_store_connect: Grand Public API Key
@@ -54,47 +52,28 @@ workflows:
       xcode: latest
       cocoapods: default
 
-      # ⚠️ MODE MANUEL (OBLIGATOIRE DANS TON CAS)
-      # ios_signing:
-      #   certificates:
-      #     - "distribution"   # ← remplace par le nom exact Codemagic
-      #   provisioning_profiles:
-      #     - "Grand Public Bénin Prod Provisioning Profile"
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.maxafrica.gpbenin
-
     scripts:
-      - name: Installer les dépendances Flutter
-        script: flutter pub get
+      - flutter clean
 
-      - name: Générer les icônes launcher
-        script: dart run flutter_launcher_icons
+      - flutter pub get
 
-      - name: Installer les pods iOS
-        script: |
-          cd ios && pod install
+      - dart run flutter_launcher_icons
 
-      - name: Setup iOS code signing
-        script: |
-          xcode-project use-profiles
+      - rm -rf ios/Runner/Assets.xcassets/LaunchImage.imageset
 
-      - name: Build IPA signé
-        script: |
-          flutter build ipa \
-            --release \
-            --export-options-plist=/Users/builder/export_options.plist \
-            --build-name=1.0.$BUILD_NUMBER \
-            --build-number=$BUILD_NUMBER
+      - cd ios && pod install
 
-    artifacts:
-      - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
+      - xcode-project use-profiles
+
+      - flutter build ipa \
+          --release \
+          --export-options-plist=/Users/builder/export_options.plist \
+          --build-name=1.0.$BUILD_NUMBER \
+          --build-number=$BUILD_NUMBER
 
     publishing:
       app_store_connect:
         auth: integration
-
         submit_to_testflight: true
 
         beta_groups:
@@ -103,6 +82,3 @@ workflows:
       email:
         recipients:
           - abdulmoustapha64@gmail.com
-        notify:
-          success: true
-          failure: true
