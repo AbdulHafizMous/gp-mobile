@@ -45,35 +45,36 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
+
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.maxafrica.gpbenin
 
     scripts:
-      - name: Clean Flutter
-        script: flutter clean
-
-      - name: Install dependencies
+      - name: Installer les dépendances Flutter
         script: flutter pub get
 
-      - name: Generate icons
+      - name: Générer les icônes launcher
         script: dart run flutter_launcher_icons
 
-      - name: Remove LaunchImage (fix Apple rejection)
-        script: rm -rf ios/Runner/Assets.xcassets/LaunchImage.imageset
+      - name: Installer les pods iOS
+        script: |
+          cd ios && pod install
 
-      - name: Install pods
-        script: cd ios && pod install
+      - name: Setup iOS code signing
+        script: |
+          xcode-project use-profiles
 
-      - name: Setup code signing
-        script: xcode-project use-profiles
-
-      - name: Build IPA
+      - name: Build IPA signé
         script: |
           flutter build ipa --release \
-            --export-options-plist=/Users/builder/export_options.plist \
             --build-name=1.0.$BUILD_NUMBER \
             --build-number=$BUILD_NUMBER
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - build/ios/archive/*.xcarchive
+      - /tmp/xcodebuild_logs/*.log
 
     publishing:
       app_store_connect:
