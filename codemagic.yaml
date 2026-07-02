@@ -1,8 +1,5 @@
 workflows:
 
-  # ══════════════════════════════════════════════════════════════════
-  # ANDROID — App Bundle (.aab)
-  # ══════════════════════════════════════════════════════════════════
   android-workflow:
     name: Android Release (AAB)
     max_build_duration: 60
@@ -38,9 +35,6 @@ workflows:
           failure: true
 
 
-  # ══════════════════════════════════════════════════════════════════
-  # iOS — IPA signé (DEV OK)
-  # ══════════════════════════════════════════════════════════════════
   ios-workflow:
     name: iOS Release (IPA)
 
@@ -53,32 +47,41 @@ workflows:
       cocoapods: default
 
     scripts:
-      - flutter clean
+      - name: Clean Flutter
+        script: flutter clean
 
-      - flutter pub get
+      - name: Install dependencies
+        script: flutter pub get
 
-      - dart run flutter_launcher_icons
+      - name: Generate icons
+        script: dart run flutter_launcher_icons
 
-      - rm -rf ios/Runner/Assets.xcassets/LaunchImage.imageset
+      - name: Remove LaunchImage (fix Apple rejection)
+        script: rm -rf ios/Runner/Assets.xcassets/LaunchImage.imageset
 
-      - cd ios && pod install
+      - name: Install pods
+        script: cd ios && pod install
 
-      - xcode-project use-profiles
+      - name: Setup code signing
+        script: xcode-project use-profiles
 
-      - flutter build ipa \
-          --release \
-          --export-options-plist=/Users/builder/export_options.plist \
-          --build-name=1.0.$BUILD_NUMBER \
-          --build-number=$BUILD_NUMBER
+      - name: Build IPA
+        script: |
+          flutter build ipa --release \
+            --export-options-plist=/Users/builder/export_options.plist \
+            --build-name=1.0.$BUILD_NUMBER \
+            --build-number=$BUILD_NUMBER
 
     publishing:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
-
         beta_groups:
           - Internal
 
       email:
         recipients:
           - abdulmoustapha64@gmail.com
+        notify:
+          success: true
+          failure: true
