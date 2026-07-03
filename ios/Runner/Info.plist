@@ -1,93 +1,126 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+"http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+
 <plist version="1.0">
+<dict>
+
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+
+	<key>CFBundleDisplayName</key>
+	<string>Grand Public</string>
+
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+
+	<key>CFBundleName</key>
+	<string>Grand Public</string>
+
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+
+	<!-- Autoriser les connexions HTTP si nécessaire -->
+	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>CFBundleDevelopmentRegion</key>
-		<string>$(DEVELOPMENT_LANGUAGE)</string>
-		<key>CFBundleDisplayName</key>
-		<string>Grand Public</string>
-		<key>CFBundleExecutable</key>
-		<string>$(EXECUTABLE_NAME)</string>
-		<key>CFBundleIdentifier</key>
-		<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-		<key>CFBundleInfoDictionaryVersion</key>
-		<string>6.0</string>
-		<key>CFBundleName</key>
-		<string>grand_public_v2</string>
-		<key>CFBundlePackageType</key>
-		<string>APPL</string>
-		<key>CFBundleShortVersionString</key>
-		<string>$(FLUTTER_BUILD_NAME)</string>
-		<key>CFBundleSignature</key>
-		<string>????</string>
-		<key>CFBundleVersion</key>
-		<string>$(FLUTTER_BUILD_NUMBER)</string>
-		<key>LSRequiresIPhoneOS</key>
-		<true />
-		<key>UILaunchStoryboardName</key>
-		<string>LaunchScreen</string>
-		<key>UIMainStoryboardFile</key>
-		<string>Main</string>
-		<key>UISupportedInterfaceOrientations</key>
-		<array>
-			<string>UIInterfaceOrientationPortrait</string>
-			<string>UIInterfaceOrientationLandscapeLeft</string>
-			<string>UIInterfaceOrientationLandscapeRight</string>
-		</array>
-
-		<key>NSAppTransportSecurity</key>
-		<dict>
-			<key>NSAllowsArbitraryLoads</key>
-			<true />
-		</dict>
-
-		<key>UISupportedInterfaceOrientations~ipad</key>
-		<array>
-			<string>UIInterfaceOrientationPortrait</string>
-			<string>UIInterfaceOrientationPortraitUpsideDown</string>
-			<string>UIInterfaceOrientationLandscapeLeft</string>
-			<string>UIInterfaceOrientationLandscapeRight</string>
-		</array>
-		<key>CADisableMinimumFrameDurationOnPhone</key>
-		<true />
-		<key>UIApplicationSupportsIndirectInputEvents</key>
-		<true />
-
-		<!-- Dans le <dict> principal -->
-		<!-- ─── URL Schemes (Google + Facebook) ──────────── -->
-		<key>CFBundleURLTypes</key>
-		<array>
-			<dict>
-				<key>CFBundleTypeRole</key>
-				<string>Editor</string>
-				<key>CFBundleURLSchemes</key>
-				<array>
-					<!-- Trouve cette valeur dans GoogleService-Info.plist → REVERSED_CLIENT_ID -->
-					<string>com.googleusercontent.apps.530288780124-ge0togu9tue53lpgvb95n4fg56t0ooc0</string>
-				</array>
-			</dict>
-			<dict>
-				<key>CFBundleTypeRole</key>
-				<string>Editor</string>
-				<key>CFBundleURLSchemes</key>
-				<array>
-					<string>fb1490444422472747</string>
-				</array>
-			</dict>
-		</array>
-
-		<!-- ─── Facebook ─────────────────────────────────── -->
-		<key>FacebookAppID</key>
-		<string>1490444422472747</string>
-		<key>FacebookClientToken</key>
-		<string>596c64b58dd44e3d0d01ee14ad50b6d9</string>
-		<key>FacebookDisplayName</key>
-		<string>GrandPublic</string>
-
-		<key>LSApplicationQueriesSchemes</key>
-		<array>
-			<string>fbapi</string>
-			<string>fb-messenger-share-api</string>
-		</array>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
 	</dict>
+
+	<!-- ===================== -->
+	<!-- Google Sign-In -->
+	<!-- ===================== -->
+
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.530288780124-sohtqd98eq5rsdhvdpfcf5cepo81mjqt</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- ===================== -->
+	<!-- Permissions -->
+	<!-- ===================== -->
+
+	<key>NSCameraUsageDescription</key>
+	<string>Grand Public utilise la caméra pour scanner des QR codes, prendre une photo de profil et partager des images.</string>
+
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Grand Public accède à votre photothèque afin de vous permettre de sélectionner et partager des photos.</string>
+
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Grand Public peut enregistrer des images dans votre photothèque lorsque vous le demandez.</string>
+
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Grand Public utilise le microphone pour enregistrer et envoyer des messages vocaux.</string>
+
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Grand Public peut utiliser votre position pour améliorer certains services proposés dans l'application.</string>
+
+	<!-- ===================== -->
+	<!-- Firebase -->
+	<!-- ===================== -->
+
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<true/>
+
+	<!-- ===================== -->
+	<!-- URL Schemes autorisés -->
+	<!-- ===================== -->
+
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+		<string>http</string>
+	</array>
+
+</dict>
 </plist>
