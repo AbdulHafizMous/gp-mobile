@@ -57,18 +57,16 @@ class DefaultFirebaseOptions {
     projectId: 'grand-public-f4fd5',
     storageBucket: 'grand-public-f4fd5.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyB69eJxyQLTvpZxJmApTckzWEEV55TlWPQ',
     appId: '1:530288780124:ios:e8bb3ab3f29fe9dff99799',
     messagingSenderId: '530288780124',
     projectId: 'grand-public-f4fd5',
     storageBucket: 'grand-public-f4fd5.firebasestorage.app',
-    androidClientId: '530288780124-jc2bbce3jtbi3i5l9qo1api0cmvou6fl.apps.googleusercontent.com',
+    androidClientId: '530288780124-h5is4qg62rlrf4ifr2mpv38h9goh22p5.apps.googleusercontent.com',
     iosClientId: '530288780124-sohtqd98eq5rsdhvdpfcf5cepo81mjqt.apps.googleusercontent.com',
     iosBundleId: 'com.maxafrica.gpbenin',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyB69eJxyQLTvpZxJmApTckzWEEV55TlWPQ',
     appId: '1:530288780124:ios:76379b2aa618d2c8f99799',
