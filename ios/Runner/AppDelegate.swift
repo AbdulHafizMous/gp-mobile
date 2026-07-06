@@ -9,7 +9,7 @@ import FirebaseMessaging
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    FirebaseApp.configure()
+    // FirebaseApp.configure()
     GeneratedPluginRegistrant.register(with: self)
 
     // Demande permission notifications iOS

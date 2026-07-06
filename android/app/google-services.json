@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "530288780124-h5is4qg62rlrf4ifr2mpv38h9goh22p5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.maxafrica.gpbenin",
+            "certificate_hash": "332c4427c134e516f1db0fe112a5b6e50499129a"
+          }
+        },
+        {
+          "client_id": "530288780124-jak797d45prc7vdsqtag1hjdefc4e2lb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.maxafrica.gpbenin",
+            "certificate_hash": "24e5d1b03b06e6a4b9f87cc30092502e6e2c335d"
+          }
+        },
+        {
           "client_id": "530288780124-v2m5pomu1iih003inicssigo0eqhrlup.apps.googleusercontent.com",
           "client_type": 3
         }
