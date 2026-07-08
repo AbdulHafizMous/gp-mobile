@@ -9,6 +9,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 enum RegisterMode { normal, socialCompletion }
 
@@ -273,6 +274,61 @@ class RegisterController extends GetxController {
     } catch (e) {
       debugPrint('Google login error: $e');
       _showError('La connexion avec Google a échoué. Réessayez.');
+    } finally {
+      isSocialLoading.value = false;
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // APPLE LOGIN — identique au LoginController (obligatoire Guideline 4.8 Apple)
+  // ══════════════════════════════════════════════════════════════════════════
+  Future<void> loginWithApple() async {
+    isSocialLoading.value = true;
+    try {
+      if (useMock) {
+        await Future.delayed(const Duration(milliseconds: 800));
+        await _handleSocialLoginResponse(
+          _mockSocialResponse(provider: 'apple'),
+          provider: 'Apple',
+        );
+        return;
+      }
+
+      final AuthorizationCredentialAppleID appleCredential =
+          await SignInWithApple.getAppleIDCredential(
+            scopes: [
+              AppleIDAuthorizationScopes.email,
+              AppleIDAuthorizationScopes.fullName,
+            ],
+          );
+
+      final String? idToken = appleCredential.identityToken;
+
+      if (idToken == null) {
+        _showError('Impossible de récupérer le token Apple. Réessayez.');
+        return;
+      }
+
+      final response = await RequestService().post(
+        '/auth/social',
+        data: {'provider': 'apple', 'token': idToken, 'device_name': 'mobile'},
+      );
+
+      await _handleSocialLoginResponse(
+        response.data['data'],
+        provider: 'Apple',
+      );
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) {
+        // Annulation volontaire de l'utilisateur, rien à afficher
+      } else {
+        _showError('La connexion avec Apple a échoué. Réessayez.');
+      }
+    } on DioException catch (e) {
+      _handleDioError(e);
+    } catch (e) {
+      debugPrint('Apple login error: $e');
+      _showError('La connexion avec Apple a échoué. Réessayez.');
     } finally {
       isSocialLoading.value = false;
     }

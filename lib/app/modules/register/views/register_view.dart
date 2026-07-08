@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:country_pickers/country.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -300,6 +302,25 @@ class RegisterView extends GetView<RegisterController> {
                                   width: 48,
                                 ),
                               ),
+                              if (Platform.isIOS) ...[
+                                const SizedBox(width: 25),
+                                GestureDetector(
+                                  onTap: controller.loginWithApple,
+                                  child: Container(
+                                    height: 48,
+                                    width: 48,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.black,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.apple,
+                                      color: Colors.white,
+                                      size: 30,
+                                    ),
+                                  ),
+                                ),
+                              ],
                               // const SizedBox(width: 25),
                               // GestureDetector(
                               //   // onTap: controller.loginWithFacebook,

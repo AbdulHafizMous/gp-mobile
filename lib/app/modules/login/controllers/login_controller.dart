@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:country_pickers/country.dart';
 import 'package:country_pickers/country_pickers.dart';
+import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 // import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
@@ -10,6 +14,7 @@ import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 enum LoginType { phone, email }
 
@@ -172,6 +177,109 @@ class LoginController extends GetxController {
     } finally {
       isSocialLoading.value = false;
     }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // APPLE LOGIN (obligatoire — Guideline 4.8 Apple)
+  // ══════════════════════════════════════════════════════════════════════════
+  Future<void> loginWithApple() async {
+    isSocialLoading.value = true;
+    try {
+      if (useMock) {
+        await _handleSocialLoginResponse(
+          _mockSocialResponse(provider: 'apple'),
+          provider: 'Apple',
+        );
+        return;
+      }
+
+      // 1. Génère un nonce sécurisé (exigé par Firebase pour Sign in with Apple)
+      final String rawNonce = _generateNonce();
+      final String hashedNonce = _sha256ofString(rawNonce);
+
+      final AuthorizationCredentialAppleID appleCredential =
+          await SignInWithApple.getAppleIDCredential(
+            scopes: [
+              AppleIDAuthorizationScopes.email,
+              AppleIDAuthorizationScopes.fullName,
+            ],
+            nonce: hashedNonce,
+          );
+
+      // 2. Échange contre un Firebase ID Token
+      final OAuthCredential credential = OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+      );
+
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithCredential(credential);
+
+      // Apple ne renvoie le nom que lors de la toute première autorisation
+      final String appleFullName = [
+        appleCredential.givenName,
+        appleCredential.familyName,
+      ].where((e) => e != null && e.isNotEmpty).join(' ').trim();
+
+      if (appleFullName.isNotEmpty && userCredential.user != null) {
+        await userCredential.user!.updateDisplayName(appleFullName);
+      }
+
+      final String? firebaseToken = await userCredential.user?.getIdToken();
+
+      if (firebaseToken == null) {
+        _showError('Impossible d\'obtenir le token Firebase. Réessayez.');
+        return;
+      }
+
+      // 3. Envoie le Firebase Token au backend
+      final response = await RequestService().post(
+        '/auth/social',
+        data: {
+          'provider': 'apple',
+          'token': firebaseToken,
+          'device_name': 'mobile',
+        },
+      );
+
+      await _handleSocialLoginResponse(
+        response.data['data'],
+        provider: 'Apple',
+      );
+    } on SignInWithAppleAuthorizationException catch (e) {
+      debugPrint('SignInWithAppleException: ${e.code} - ${e.message}');
+      if (e.code == AuthorizationErrorCode.canceled) {
+        // Annulation volontaire de l'utilisateur, rien à afficher
+      } else {
+        _showError('La connexion avec Apple a échoué. Réessayez.');
+      }
+    } on FirebaseAuthException catch (e) {
+      debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
+      _showError('Erreur Firebase : ${e.message ?? 'Réessayez.'}');
+    } on DioException catch (e) {
+      _handleDioError(e, isSocial: true);
+    } catch (e) {
+      debugPrint('Apple login error: $e');
+      _showError('La connexion avec Apple a échoué. Réessayez.');
+    } finally {
+      isSocialLoading.value = false;
+    }
+  }
+
+  /// Génère une chaîne aléatoire cryptographiquement sûre pour le nonce Apple.
+  String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
+  }
+
+  /// Retourne le SHA-256 (hex) d'une chaîne, exigé par Firebase pour vérifier le nonce Apple.
+  String _sha256ofString(String input) {
+    return sha256.convert(utf8.encode(input)).toString();
   }
 
   // ══════════════════════════════════════════════════════════════════════════
