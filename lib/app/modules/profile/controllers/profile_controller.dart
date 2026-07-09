@@ -456,6 +456,41 @@ class ProfileController extends GetxController {
     Get.offAllNamed('/login');
   }
 
+  // ── Delete account (Guideline 5.1.1(v) Apple) ─────────────────────────────
+  final isDeletingAccount = false.obs;
+
+  Future<void> deleteAccount() async {
+    isDeletingAccount.value = true;
+    try {
+      if (useMock) {
+        await Future.delayed(const Duration(milliseconds: 600));
+      } else {
+        await RequestService().delete('/auth/account');
+      }
+
+      await GetStorage().erase();
+
+      await ToastHelper.showToast(
+        'Votre compte a été supprimé avec succès.',
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+      );
+
+      Get.offAllNamed('/login');
+    } on DioException catch (e) {
+      _handleDioError(e);
+    } catch (e) {
+      debugPrint('deleteAccount error: $e');
+      await ToastHelper.showToast(
+        'Une erreur est survenue lors de la suppression du compte.',
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    } finally {
+      isDeletingAccount.value = false;
+    }
+  }
+
   void _handleDioError(DioException e) {
     final msg = e.response != null
         ? 'Erreur ${e.response?.statusCode}'

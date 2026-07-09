@@ -714,11 +714,84 @@ class _MainProfilePage extends GetView<ProfileController> {
               ),
             ),
 
+            const SizedBox(height: 12),
+
+            // ── Suppression de compte (Guideline 5.1.1(v) Apple) ─────────
+            SizedBox(
+              width: double.infinity,
+              child: Obx(
+                () => OutlinedButton(
+                  onPressed: controller.isDeletingAccount.value
+                      ? null
+                      : () => _confirmDeleteAccount(context),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.red),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: controller.isDeletingAccount.value
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.red,
+                          ),
+                        )
+                      : const Text(
+                          'Supprimer mon compte',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+
             const SizedBox(height: 32),
           ],
         ),
       );
     });
+  }
+
+  // ── Dialogue de confirmation de suppression de compte ────────────────────
+  void _confirmDeleteAccount(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Supprimer mon compte ?'),
+        content: const Text(
+          'Cette action est définitive et irréversible. Toutes vos données '
+          '(profil, messages, abonnements, favoris…) seront supprimées.\n\n'
+          'Voulez-vous vraiment continuer ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              controller.deleteAccount();
+            },
+            child: const Text(
+              'Supprimer définitivement',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
