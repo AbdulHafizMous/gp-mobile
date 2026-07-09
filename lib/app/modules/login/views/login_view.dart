@@ -12,6 +12,7 @@ import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 // import 'package:grand_public_v2/app/utils/toast_helper.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../controllers/login_controller.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -410,46 +411,66 @@ class LoginView extends GetView<LoginController> {
                   fontWeight: FontWeight.w300,
                 ),
               ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: () => controller.loginWithGoogle(),
-                    child: Image.asset(GOOGLE_LOGO, height: 48, width: 48),
-                  ),
-                  if (Platform.isIOS) ...[
-                    const SizedBox(width: 25),
-                    GestureDetector(
-                      onTap: () => controller.loginWithApple(),
-                      child: Container(
-                        height: 48,
-                        width: 48,
-                        decoration: const BoxDecoration(
-                          color: Colors.black,
-                          shape: BoxShape.circle,
+              const SizedBox(height: 14),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Obx(
+                  () => controller.isSocialLoading.value
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                          ),
+                        )
+                      : Column(
+                          children: [
+                            // ── Google (bouton pleine largeur) ──────────
+                            SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: OutlinedButton.icon(
+                                onPressed: () => controller.loginWithGoogle(),
+                                icon: Image.asset(
+                                  GOOGLE_LOGO,
+                                  height: 22,
+                                  width: 22,
+                                ),
+                                label: const Text(
+                                  'Continuer avec Google',
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  side: BorderSide.none,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // ── Apple (bouton officiel — Guideline 4.8) ──
+                            if (Platform.isIOS) ...[
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 48,
+                                child: SignInWithAppleButton(
+                                  onPressed: () => controller.loginWithApple(),
+                                  text: 'Continuer avec Apple',
+                                  style: SignInWithAppleButtonStyle.black,
+                                  borderRadius: BorderRadius.circular(30),
+                                  height: 48,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                        child: const Icon(
-                          Icons.apple,
-                          color: Colors.white,
-                          size: 30,
-                        ),
-                      ),
-                    ),
-                  ],
-                  // const SizedBox(width: 25),
-                  // GestureDetector(
-                  //   // onTap: () => controller.loginWithFacebook(),
-                  //   onTap: () async {
-                  //     await ToastHelper.showToast(
-                  //       'Bientôt disponible',
-                  //       backgroundColor: Colors.orange,
-                  //       textColor: Colors.white,
-                  //     );
-                  //   },
-                  //   child: Image.asset(FACEBOOK_LOGO, height: 48, width: 48),
-                  // ),
-                ],
+                ),
               ),
               const SizedBox(height: 10),
               const Text(
