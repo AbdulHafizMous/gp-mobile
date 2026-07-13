@@ -1,9 +1,5 @@
-import 'dart:convert';
-import 'dart:math';
-
 import 'package:country_pickers/country.dart';
 import 'package:country_pickers/country_pickers.dart';
-import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 // import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
@@ -180,12 +176,14 @@ class LoginController extends GetxController {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // APPLE LOGIN (obligatoire — Guideline 4.8 Apple)
+  // APPLE LOGIN — CORRIGÉ : passe par Firebase avant d'envoyer au backend
+  // (identique au LoginController — obligatoire Guideline 4.8 Apple)
   // ══════════════════════════════════════════════════════════════════════════
   Future<void> loginWithApple() async {
     isSocialLoading.value = true;
     try {
       if (useMock) {
+        await Future.delayed(const Duration(milliseconds: 800));
         await _handleSocialLoginResponse(
           _mockSocialResponse(provider: 'apple'),
           provider: 'Apple',
@@ -193,29 +191,31 @@ class LoginController extends GetxController {
         return;
       }
 
-      // 1. Génère un nonce sécurisé (exigé par Firebase pour Sign in with Apple)
-      final String rawNonce = _generateNonce();
-      final String hashedNonce = _sha256ofString(rawNonce);
+      // 1. Génère un nonce sécurisé (OBLIGATOIRE pour Firebase + Apple)
+      final String rawNonce = vgenerateNonce();
+      final String hashedNonce = vsha256ofString(rawNonce);
 
+      // 2. Demande le credential Apple avec le nonce hashé
       final AuthorizationCredentialAppleID appleCredential =
           await SignInWithApple.getAppleIDCredential(
             scopes: [
               AppleIDAuthorizationScopes.email,
               AppleIDAuthorizationScopes.fullName,
             ],
-            nonce: hashedNonce,
+            nonce: hashedNonce, // ← manquait dans le RegisterController
           );
 
-      // 2. Échange contre un Firebase ID Token
+      // 3. Échange contre un Firebase credential
       final OAuthCredential credential = OAuthProvider('apple.com').credential(
         idToken: appleCredential.identityToken,
-        rawNonce: rawNonce,
+        rawNonce: rawNonce, // ← manquait
       );
 
+      // 4. Connexion Firebase (génère un vrai Firebase ID Token)
       final UserCredential userCredential = await FirebaseAuth.instance
           .signInWithCredential(credential);
 
-      // Apple ne renvoie le nom que lors de la toute première autorisation
+      // Apple ne renvoie le nom QUE lors de la première autorisation
       final String appleFullName = [
         appleCredential.givenName,
         appleCredential.familyName,
@@ -225,6 +225,7 @@ class LoginController extends GetxController {
         await userCredential.user!.updateDisplayName(appleFullName);
       }
 
+      // 5. Récupère le Firebase ID Token (ce que le backend attend)
       final String? firebaseToken = await userCredential.user?.getIdToken();
 
       if (firebaseToken == null) {
@@ -232,12 +233,13 @@ class LoginController extends GetxController {
         return;
       }
 
-      // 3. Envoie le Firebase Token au backend
+      // 6. Envoie le Firebase Token au backend
       final response = await RequestService().post(
         '/auth/social',
         data: {
           'provider': 'apple',
-          'token': firebaseToken,
+          'token':
+              firebaseToken, // ← Firebase ID Token, PAS l'identityToken Apple brut
           'device_name': 'mobile',
         },
       );
@@ -249,7 +251,7 @@ class LoginController extends GetxController {
     } on SignInWithAppleAuthorizationException catch (e) {
       debugPrint('SignInWithAppleException: ${e.code} - ${e.message}');
       if (e.code == AuthorizationErrorCode.canceled) {
-        // Annulation volontaire de l'utilisateur, rien à afficher
+        // Annulation volontaire — rien à afficher
       } else {
         _showError('La connexion avec Apple a échoué. Réessayez.');
       }
@@ -257,29 +259,13 @@ class LoginController extends GetxController {
       debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
       _showError('Erreur Firebase : ${e.message ?? 'Réessayez.'}');
     } on DioException catch (e) {
-      _handleDioError(e, isSocial: true);
+      _handleDioError(e);
     } catch (e) {
       debugPrint('Apple login error: $e');
       _showError('La connexion avec Apple a échoué. Réessayez.');
     } finally {
       isSocialLoading.value = false;
     }
-  }
-
-  /// Génère une chaîne aléatoire cryptographiquement sûre pour le nonce Apple.
-  String _generateNonce([int length = 32]) {
-    const charset =
-        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
-    final random = Random.secure();
-    return List.generate(
-      length,
-      (_) => charset[random.nextInt(charset.length)],
-    ).join();
-  }
-
-  /// Retourne le SHA-256 (hex) d'une chaîne, exigé par Firebase pour vérifier le nonce Apple.
-  String _sha256ofString(String input) {
-    return sha256.convert(utf8.encode(input)).toString();
   }
 
   // ══════════════════════════════════════════════════════════════════════════
