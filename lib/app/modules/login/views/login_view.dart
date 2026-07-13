@@ -10,6 +10,7 @@ import 'package:grand_public_v2/app/components/primary_loading_button.dart';
 import 'package:grand_public_v2/app/components/toogle_tab.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
+import 'package:grand_public_v2/app/shared/widgets/social_buttons.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 // import 'package:grand_public_v2/app/utils/toast_helper.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -423,53 +424,29 @@ class LoginView extends GetView<LoginController> {
                           ),
                         )
                       : Column(
-                          children: [
-                            // ── Google (bouton pleine largeur) ──────────
-                            SizedBox(
-                              width: double.infinity,
-                              height: 48,
-                              child: OutlinedButton.icon(
-                                onPressed: () => controller.loginWithGoogle(),
-                                icon: Image.asset(
-                                  GOOGLE_LOGO,
-                                  height: 22,
-                                  width: 22,
-                                ),
-                                label: const Text(
-                                  'Continuer avec Google',
-                                  style: TextStyle(
-                                    color: Colors.black87,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  side: BorderSide.none,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // ── Apple (bouton officiel — Guideline 4.8) ──
-                            if (Platform.isIOS) ...[
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                width: double.infinity,
-                                height: 48,
-                                child: SignInWithAppleButton(
-                                  onPressed: () => controller.loginWithApple(),
-                                  text: 'Continuer avec Apple',
-                                  style: SignInWithAppleButtonStyle.black,
-                                  borderRadius: BorderRadius.circular(30),
-                                  height: 48,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
+  children: [
+    // ── Google
+    GoogleSignInButton(
+      onPressed: () => controller.loginWithGoogle(),
+    ),
+ 
+    // ── Apple (iOS seulement — Guideline 4.8)
+    if (Platform.isIOS) ...[
+      const SizedBox(height: 12),
+      SizedBox(
+        width: double.infinity,
+        height: 48,
+        child: SignInWithAppleButton(
+          onPressed: () => controller.loginWithApple(),
+          text: 'Continuer avec Apple',
+          style: SignInWithAppleButtonStyle.black,
+          borderRadius: BorderRadius.circular(30),
+          height: 48,
+        ),
+      ),
+    ],
+  ],
+),
                 ),
               ),
               const SizedBox(height: 10),

@@ -1,6 +1,7 @@
 import 'package:country_pickers/country.dart';
 import 'package:country_pickers/country_pickers.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 // import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:get/get.dart';
@@ -280,7 +281,8 @@ class RegisterController extends GetxController {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // APPLE LOGIN — identique au LoginController (obligatoire Guideline 4.8 Apple)
+  // APPLE LOGIN — CORRIGÉ : passe par Firebase avant d'envoyer au backend
+  // (identique au LoginController — obligatoire Guideline 4.8 Apple)
   // ══════════════════════════════════════════════════════════════════════════
   Future<void> loginWithApple() async {
     isSocialLoading.value = true;
@@ -294,24 +296,57 @@ class RegisterController extends GetxController {
         return;
       }
 
+      // 1. Génère un nonce sécurisé (OBLIGATOIRE pour Firebase + Apple)
+      final String rawNonce = vgenerateNonce();
+      final String hashedNonce = vsha256ofString(rawNonce);
+
+      // 2. Demande le credential Apple avec le nonce hashé
       final AuthorizationCredentialAppleID appleCredential =
           await SignInWithApple.getAppleIDCredential(
             scopes: [
               AppleIDAuthorizationScopes.email,
               AppleIDAuthorizationScopes.fullName,
             ],
+            nonce: hashedNonce, // ← manquait dans le RegisterController
           );
 
-      final String? idToken = appleCredential.identityToken;
+      // 3. Échange contre un Firebase credential
+      final OAuthCredential credential = OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce, // ← manquait
+      );
 
-      if (idToken == null) {
-        _showError('Impossible de récupérer le token Apple. Réessayez.');
+      // 4. Connexion Firebase (génère un vrai Firebase ID Token)
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithCredential(credential);
+
+      // Apple ne renvoie le nom QUE lors de la première autorisation
+      final String appleFullName = [
+        appleCredential.givenName,
+        appleCredential.familyName,
+      ].where((e) => e != null && e.isNotEmpty).join(' ').trim();
+
+      if (appleFullName.isNotEmpty && userCredential.user != null) {
+        await userCredential.user!.updateDisplayName(appleFullName);
+      }
+
+      // 5. Récupère le Firebase ID Token (ce que le backend attend)
+      final String? firebaseToken = await userCredential.user?.getIdToken();
+
+      if (firebaseToken == null) {
+        _showError('Impossible d\'obtenir le token Firebase. Réessayez.');
         return;
       }
 
+      // 6. Envoie le Firebase Token au backend
       final response = await RequestService().post(
         '/auth/social',
-        data: {'provider': 'apple', 'token': idToken, 'device_name': 'mobile'},
+        data: {
+          'provider': 'apple',
+          'token':
+              firebaseToken, // ← Firebase ID Token, PAS l'identityToken Apple brut
+          'device_name': 'mobile',
+        },
       );
 
       await _handleSocialLoginResponse(
@@ -319,11 +354,15 @@ class RegisterController extends GetxController {
         provider: 'Apple',
       );
     } on SignInWithAppleAuthorizationException catch (e) {
+      debugPrint('SignInWithAppleException: ${e.code} - ${e.message}');
       if (e.code == AuthorizationErrorCode.canceled) {
-        // Annulation volontaire de l'utilisateur, rien à afficher
+        // Annulation volontaire — rien à afficher
       } else {
         _showError('La connexion avec Apple a échoué. Réessayez.');
       }
+    } on FirebaseAuthException catch (e) {
+      debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
+      _showError('Erreur Firebase : ${e.message ?? 'Réessayez.'}');
     } on DioException catch (e) {
       _handleDioError(e);
     } catch (e) {
@@ -333,7 +372,6 @@ class RegisterController extends GetxController {
       isSocialLoading.value = false;
     }
   }
-
   // ══════════════════════════════════════════════════════════════════════════
   // FACEBOOK LOGIN — identique au LoginController
   // ══════════════════════════════════════════════════════════════════════════

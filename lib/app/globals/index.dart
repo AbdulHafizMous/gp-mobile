@@ -2,6 +2,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/data/models/user.dart';
+import 'dart:convert';
+import 'dart:math';
+import 'package:crypto/crypto.dart';
 
 // For Test
 const bool useMock = false;
@@ -78,3 +81,23 @@ class SimplePhoneFormatter extends TextInputFormatter {
     );
   }
 }
+
+
+// Apple Auth
+
+
+  /// Génère une chaîne aléatoire cryptographiquement sûre pour le nonce Apple.
+  String vgenerateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
+  }
+
+  /// Retourne le SHA-256 (hex) d'une chaîne, exigé par Firebase pour vérifier le nonce Apple.
+  String vsha256ofString(String input) {
+    return sha256.convert(utf8.encode(input)).toString();
+  }
