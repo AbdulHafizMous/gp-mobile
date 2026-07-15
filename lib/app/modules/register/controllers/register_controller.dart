@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:country_pickers/country.dart';
 import 'package:country_pickers/country_pickers.dart';
+import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -244,16 +248,35 @@ class RegisterController extends GetxController {
       final GoogleSignInAccount googleUser = await GoogleSignIn.instance
           .authenticate();
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
-      final String? idToken = googleAuth.idToken;
+      final String? googleIdToken = googleAuth.idToken;
 
-      if (idToken == null) {
+      if (googleIdToken == null) {
         _showError('Impossible de récupérer le token Google. Réessayez.');
+        return;
+      }
+
+      // Échange contre un Firebase ID Token (le backend n'accepte que ça)
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        idToken: googleIdToken,
+      );
+
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithCredential(credential);
+
+      final String? firebaseToken = await userCredential.user?.getIdToken();
+
+      if (firebaseToken == null) {
+        _showError('Impossible d\'obtenir le token Firebase. Réessayez.');
         return;
       }
 
       final response = await RequestService().post(
         '/auth/social',
-        data: {'provider': 'google', 'token': idToken, 'device_name': 'mobile'},
+        data: {
+          'provider': 'google',
+          'token': firebaseToken,
+          'device_name': 'mobile',
+        },
       );
 
       await _handleSocialLoginResponse(
@@ -270,6 +293,9 @@ class RegisterController extends GetxController {
         default:
           _showError('La connexion avec Google a échoué. Réessayez.');
       }
+    } on FirebaseAuthException catch (e) {
+      debugPrint('FirebaseAuthException (Google): ${e.code} - ${e.message}');
+      _showError('Erreur Firebase : ${e.message ?? 'Réessayez.'}');
     } on DioException catch (e) {
       _handleDioError(e);
     } catch (e) {
@@ -281,8 +307,7 @@ class RegisterController extends GetxController {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // APPLE LOGIN — CORRIGÉ : passe par Firebase avant d'envoyer au backend
-  // (identique au LoginController — obligatoire Guideline 4.8 Apple)
+  // APPLE LOGIN — identique au LoginController (obligatoire Guideline 4.8 Apple)
   // ══════════════════════════════════════════════════════════════════════════
   Future<void> loginWithApple() async {
     isSocialLoading.value = true;
@@ -296,31 +321,29 @@ class RegisterController extends GetxController {
         return;
       }
 
-      // 1. Génère un nonce sécurisé (OBLIGATOIRE pour Firebase + Apple)
-      final String rawNonce = vgenerateNonce();
-      final String hashedNonce = vsha256ofString(rawNonce);
+      // 1. Génère un nonce sécurisé (exigé par Firebase pour Sign in with Apple)
+      final String rawNonce = _generateNonce();
+      final String hashedNonce = _sha256ofString(rawNonce);
 
-      // 2. Demande le credential Apple avec le nonce hashé
       final AuthorizationCredentialAppleID appleCredential =
           await SignInWithApple.getAppleIDCredential(
             scopes: [
               AppleIDAuthorizationScopes.email,
               AppleIDAuthorizationScopes.fullName,
             ],
-            nonce: hashedNonce, // ← manquait dans le RegisterController
+            nonce: hashedNonce,
           );
 
-      // 3. Échange contre un Firebase credential
+      // 2. Échange contre un Firebase ID Token (le backend n'accepte que ça)
       final OAuthCredential credential = OAuthProvider('apple.com').credential(
         idToken: appleCredential.identityToken,
-        rawNonce: rawNonce, // ← manquait
+        rawNonce: rawNonce,
       );
 
-      // 4. Connexion Firebase (génère un vrai Firebase ID Token)
       final UserCredential userCredential = await FirebaseAuth.instance
           .signInWithCredential(credential);
 
-      // Apple ne renvoie le nom QUE lors de la première autorisation
+      // Apple ne renvoie le nom que lors de la toute première autorisation
       final String appleFullName = [
         appleCredential.givenName,
         appleCredential.familyName,
@@ -330,7 +353,6 @@ class RegisterController extends GetxController {
         await userCredential.user!.updateDisplayName(appleFullName);
       }
 
-      // 5. Récupère le Firebase ID Token (ce que le backend attend)
       final String? firebaseToken = await userCredential.user?.getIdToken();
 
       if (firebaseToken == null) {
@@ -338,13 +360,11 @@ class RegisterController extends GetxController {
         return;
       }
 
-      // 6. Envoie le Firebase Token au backend
       final response = await RequestService().post(
         '/auth/social',
         data: {
           'provider': 'apple',
-          'token':
-              firebaseToken, // ← Firebase ID Token, PAS l'identityToken Apple brut
+          'token': firebaseToken,
           'device_name': 'mobile',
         },
       );
@@ -356,12 +376,14 @@ class RegisterController extends GetxController {
     } on SignInWithAppleAuthorizationException catch (e) {
       debugPrint('SignInWithAppleException: ${e.code} - ${e.message}');
       if (e.code == AuthorizationErrorCode.canceled) {
-        // Annulation volontaire — rien à afficher
+        // Annulation volontaire de l'utilisateur, rien à afficher
       } else {
-        _showError('La connexion avec Apple a échoué. Réessayez.');
+        _showError(
+          'La connexion avec Apple a échoué (${e.code}). Réessayez.',
+        );
       }
     } on FirebaseAuthException catch (e) {
-      debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
+      debugPrint('FirebaseAuthException (Apple): ${e.code} - ${e.message}');
       _showError('Erreur Firebase : ${e.message ?? 'Réessayez.'}');
     } on DioException catch (e) {
       _handleDioError(e);
@@ -372,6 +394,23 @@ class RegisterController extends GetxController {
       isSocialLoading.value = false;
     }
   }
+
+  /// Génère une chaîne aléatoire cryptographiquement sûre pour le nonce Apple.
+  String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
+  }
+
+  /// Retourne le SHA-256 (hex) d'une chaîne, exigé par Firebase pour vérifier le nonce Apple.
+  String _sha256ofString(String input) {
+    return sha256.convert(utf8.encode(input)).toString();
+  }
+
   // ══════════════════════════════════════════════════════════════════════════
   // FACEBOOK LOGIN — identique au LoginController
   // ══════════════════════════════════════════════════════════════════════════
