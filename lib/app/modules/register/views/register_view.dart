@@ -286,7 +286,7 @@ class RegisterView extends GetView<RegisterController> {
                 if (!isSocial) ...[
                   const SizedBox(height: 20),
                   const Text(
-                    'Ou continuez avec',
+                    'Ou',
                     style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                   const SizedBox(height: 12),

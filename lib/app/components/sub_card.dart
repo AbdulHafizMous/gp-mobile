@@ -190,7 +190,7 @@ class _SubscribeButton extends StatelessWidget {
       () => ElevatedButton(
         onPressed: ctrl.isSubscribing.value
             ? null
-            : () => ctrl.handleSubscribeWithKkiapay(
+            : () => ctrl.handleSubscribeOnWeb(
                 context: context,
                 plan: subscription,
               ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-// ignore: library_prefixes
-import 'package:kkiapay_flutter_sdk/utils/config.dart' as GPTheme;
+import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 class PrimaryLoadingButton extends StatelessWidget {
   const PrimaryLoadingButton({super.key});
@@ -17,7 +16,7 @@ class PrimaryLoadingButton extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: const Center(
+        child: Center(
           child: CircularProgressIndicator(
             color: GPTheme.primaryColor,
           ),
