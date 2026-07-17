@@ -6,6 +6,7 @@ import 'package:country_pickers/country_pickers.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 // import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -111,6 +112,14 @@ class LoginController extends GetxController {
         return;
       }
 
+      // 0. Nettoie toute session Google résiduelle/corrompue avant de relancer
+      //    le flux (évite les échecs silencieux au 2e essai sur iPad/iPhone).
+      try {
+        await GoogleSignIn.instance.signOut();
+      } catch (_) {
+        // Ignoré : pas de session à nettoyer.
+      }
+
       // 1. Obtient le Google ID Token
       final GoogleSignInAccount googleUser = await GoogleSignIn.instance
           .authenticate();
@@ -168,12 +177,19 @@ class LoginController extends GetxController {
       }
     } on FirebaseAuthException catch (e) {
       debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
-      _showError('Erreur Firebase : ${e.message ?? 'Réessayez.'}');
+      _showError(
+        'Erreur Firebase (${e.code}) : ${e.message ?? 'Réessayez.'}',
+      );
+    } on PlatformException catch (e) {
+      // Erreurs natives iOS/Android non couvertes par GoogleSignInException
+      // (ex : présentation de l'écran de connexion impossible sur iPad).
+      debugPrint('PlatformException (Google): ${e.code} - ${e.message}');
+      _showError('La connexion avec Google a échoué (${e.code}). Réessayez.');
     } on DioException catch (e) {
       _handleDioError(e, isSocial: true);
     } catch (e) {
       debugPrint('Google login error: $e');
-      _showError('La connexion avec Google a échoué. Réessayez.');
+      _showError('La connexion avec Google a échoué ($e).');
     } finally {
       isSocialLoading.value = false;
     }
@@ -257,12 +273,17 @@ class LoginController extends GetxController {
       }
     } on FirebaseAuthException catch (e) {
       debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
-      _showError('Erreur Firebase : ${e.message ?? 'Réessayez.'}');
+      _showError(
+        'Erreur Firebase (${e.code}) : ${e.message ?? 'Réessayez.'}',
+      );
+    } on PlatformException catch (e) {
+      debugPrint('PlatformException (Apple): ${e.code} - ${e.message}');
+      _showError('La connexion avec Apple a échoué (${e.code}). Réessayez.');
     } on DioException catch (e) {
       _handleDioError(e, isSocial: true);
     } catch (e) {
       debugPrint('Apple login error: $e');
-      _showError('La connexion avec Apple a échoué ($e). Réessayez.');
+      _showError('La connexion avec Apple a échoué ($e).');
     } finally {
       isSocialLoading.value = false;
     }

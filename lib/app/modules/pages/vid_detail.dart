@@ -1051,7 +1051,7 @@ class _VidDetailState extends State<VidDetail> {
   }
 
   void _handlePPV(BuildContext context, SpaceVideo video) {
-    ctrl.handlePayPerViewWithKkiapay(
+    ctrl.handlePayPerViewOnWeb(
       context: context,
       video: video,
       onPurchaseSuccess: () {

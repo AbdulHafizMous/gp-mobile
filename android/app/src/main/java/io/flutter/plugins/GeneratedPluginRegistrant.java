@@ -71,11 +71,6 @@ public final class GeneratedPluginRegistrant {
       Log.e(TAG, "Error registering plugin image_picker_android, io.flutter.plugins.imagepicker.ImagePickerPlugin", e);
     }
     try {
-      flutterEngine.getPlugins().add(new co.kkiapay.kkiapay_flutter_sdk.KkiapayFlutterSdkPlugin());
-    } catch (Exception e) {
-      Log.e(TAG, "Error registering plugin kkiapay_flutter_sdk, co.kkiapay.kkiapay_flutter_sdk.KkiapayFlutterSdkPlugin", e);
-    }
-    try {
       flutterEngine.getPlugins().add(new dev.steenbakker.mobile_scanner.MobileScannerPlugin());
     } catch (Exception e) {
       Log.e(TAG, "Error registering plugin mobile_scanner, dev.steenbakker.mobile_scanner.MobileScannerPlugin", e);

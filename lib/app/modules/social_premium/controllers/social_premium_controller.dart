@@ -1,17 +1,15 @@
 // lib/app/modules/social_premium/controllers/social_premium_controller.dart
 
-import 'dart:convert';
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
-import 'package:kkiapay_flutter_sdk/kkiapay_flutter_sdk.dart';
-import 'package:uuid/uuid.dart';
-import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/data/models/subscription.dart';
 import 'package:grand_public_v2/app/data/models/user.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
+import 'package:grand_public_v2/app/services/web_account_link_service.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
@@ -25,9 +23,6 @@ class SocialPremiumController extends GetxController {
   // ── Historique des abonnements ─────────────────────────────────────────────
   final subscriptionHistory = <ActiveSubscription>[].obs;
   final isLoadingHistory = false.obs;
-
-  final _uuid = const Uuid();
-  final _storage = GetStorage();
 
   // ══════════════════════════════════════════════════════════════════════════
   //  FETCH PLANS DISPONIBLES
@@ -105,10 +100,11 @@ class SocialPremiumController extends GetxController {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  POINT D'ENTRÉE KKIAPAY
+  //  ABONNEMENT — redirection vers le site web pour le paiement
+  //  (Apple Guideline 3.1.1 : plus de paiement in-app pour du contenu digital)
   // ══════════════════════════════════════════════════════════════════════════
 
-  Future<void> handleSubscribeWithKkiapay({
+  Future<void> handleSubscribeOnWeb({
     required BuildContext context,
     required Subscription plan,
   }) async {
@@ -117,143 +113,72 @@ class SocialPremiumController extends GetxController {
     if (hasActive) {
       final confirmed = await _showChangePlanDialog(context, plan);
       if (confirmed != true) return;
+    } else {
+      final confirmed = await _showRedirectToWebDialog(context, plan);
+      if (confirmed != true) return;
     }
 
     selectedPlan.value = plan;
-
-    final kkiapay = KKiaPay(
-      callback: (dynamic response, BuildContext ctx) async {
-        debugPrint('kkiapay callback: $response');
-        final status = response['status']?.toString() ?? '';
-        try {
-          switch (status) {
-            case 'PAYMENT_CANCELLED':
-              try {
-                Get.back();
-              } catch (_) {}
-              break;
-            case 'PAYMENT_SUCCESS':
-              try {
-                Get.back();
-              } catch (_) {}
-              final transactionId = response['transactionId']?.toString() ?? '';
-              final amount = response['requestData']?['amount'];
-              await _doSubscribe(
-                context: context,
-                plan: plan,
-                transactionId: transactionId,
-                metadata: {'amount': amount, 'kkiapay_response': response},
-              );
-              break;
-            default:
-              debugPrint('KKiaPay EVENT: $status');
-          }
-        } catch (e) {
-          debugPrint('KKiaPay callback error: $e');
-        }
-      },
-      amount: plan.price.toInt(),
-      apikey: FEEX_API_KEY,
-      sandbox: true,
-      data: jsonEncode({'trans_key': _uuid.v4(), 'subscription_id': plan.id}),
-      phone: _storage.read('phone') ?? '',
-      name: _storage.read('username') ?? '',
-      reason: plan.name,
-      email: _storage.read('email') ?? '',
-      countries: const ['BJ'],
-    );
-
-    Get.to(() => kkiapay);
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  //  APPEL API BACKEND
-  // ══════════════════════════════════════════════════════════════════════════
-
-  Future<void> _doSubscribe({
-    required BuildContext context,
-    required Subscription plan,
-    required String transactionId,
-    Map<String, dynamic>? metadata,
-  }) async {
     isSubscribing.value = true;
     try {
-      if (useMock) {
-        await Future.delayed(const Duration(seconds: 1));
-        final mockSub = ActiveSubscription(
-          id: DateTime.now().millisecondsSinceEpoch,
-          paymentRef: transactionId,
-          startsAt: DateTime.now(),
-          endsAt: DateTime.now().add(Duration(days: plan.durationMonths * 30)),
-          isActive: true,
-          plan: SubscriptionPlan(
-            id: plan.id,
-            name: plan.name,
-            description: plan.shortDescription,
-            price: plan.price,
-            durationMonths: plan.durationMonths,
-          ),
-        );
-        // Désactiver l'ancien abonnement dans l'historique mock
-        final updatedHistory = subscriptionHistory
-            .map(
-              (s) => s.isActive
-                  ? ActiveSubscription(
-                      id: s.id,
-                      paymentRef: s.paymentRef,
-                      startsAt: s.startsAt,
-                      endsAt: s.endsAt,
-                      cancelledAt: DateTime.now(),
-                      isActive: false,
-                      plan: s.plan,
-                    )
-                  : s,
-            )
-            .toList();
-        subscriptionHistory.value = [mockSub, ...updatedHistory];
-        activeUser.value = activeUser.value.copyWith(
-          activeSubscription: mockSub,
-        );
-        if (context.mounted) _showPaymentSuccessDialog(context, plan);
-        return;
-      }
-
-      final response = await RequestService().post(
-        '/subscribe',
-        data: {
-          'subscription_plan_id': plan.id,
-          'payment_ref': transactionId,
-          'payment_data': ?metadata,
-        },
+      await WebAccountLinkService.openWebAccount(
+        intent: 'subscribe',
+        planId: plan.id,
       );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        await _refreshActiveUser();
-        // Rafraîchir aussi l'historique
-        await fetchMySubscriptions();
-        if (context.mounted) _showPaymentSuccessDialog(context, plan);
-      } else {
-        final message =
-            response.data['message']?.toString() ?? 'Une erreur est survenue.';
-        if (context.mounted) _showPaymentFailedDialog(context, message);
-      }
-    } on DioException catch (e) {
-      final reason =
-          e.response?.data?['message']?.toString() ??
-          e.message ??
-          'Erreur réseau';
-      if (context.mounted) _showPaymentFailedDialog(context, reason);
-    } catch (e) {
-      if (context.mounted) {
-        _showPaymentFailedDialog(
-          context,
-          'Une erreur inattendue est survenue.',
-        );
-      }
     } finally {
       isSubscribing.value = false;
       selectedPlan.value = null;
+      // Rafraîchit au mieux l'état (utile si l'utilisateur avait déjà payé
+      // récemment sur le site avant de revenir sur cet écran).
+      unawaited(_refreshActiveUser());
+      unawaited(fetchMySubscriptions());
     }
+  }
+
+  Future<bool?> _showRedirectToWebDialog(
+    BuildContext context,
+    Subscription plan,
+  ) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.open_in_new_rounded, color: GPTheme.primaryColor),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'Paiement sur le site',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Pour souscrire au plan "${plan.name}" (${plan.price.toStringAsFixed(0)} FCFA), '
+          'vous allez être redirigé vers notre site pour finaliser le paiement en '
+          'toute sécurité. Vous serez automatiquement connecté(e).',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GPTheme.primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Continuer'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _refreshActiveUser() async {
@@ -304,8 +229,9 @@ class SocialPremiumController extends GetxController {
             ),
             const SizedBox(height: 8),
             Text(
-              'Votre abonnement actuel sera immédiatement désactivé si vous continuez. '
-              'Vous passerez au plan "${newPlan.name}" (${newPlan.price.toStringAsFixed(0)} FCFA).',
+              'Votre abonnement actuel sera remplacé si vous continuez. '
+              'Vous allez être redirigé(e) vers notre site pour passer au plan '
+              '"${newPlan.name}" (${newPlan.price.toStringAsFixed(0)} FCFA).',
             ),
             const SizedBox(height: 8),
             const Text(
@@ -329,118 +255,6 @@ class SocialPremiumController extends GetxController {
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Continuer'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showPaymentSuccessDialog(BuildContext context, Subscription plan) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.check_circle_rounded,
-                color: Colors.green.shade600,
-                size: 48,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Paiement réussi !',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Vous êtes maintenant abonné au plan "${plan.name}". '
-              'Profitez de tous nos contenus exclusifs !',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey),
-            ),
-          ],
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade600,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Super, merci !'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showPaymentFailedDialog(BuildContext context, String reason) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.cancel_rounded,
-                color: Colors.red.shade600,
-                size: 48,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Paiement échoué',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              reason,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade700),
-            ),
-          ],
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade600,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Réessayer plus tard'),
-            ),
           ),
         ],
       ),

@@ -70,36 +70,40 @@ final sections = [
       ),
     ],
   ),
-  SectionModel(
-    title: "Music",
-    description:
-        "Découvrez les tendances musicales, artistes et contenus exclusifs.",
-    icon: Icons.music_note_outlined,
-    route: "/home/music",
-    drawerItems: [
-      DrawerItem(
-        title: "Tendances",
-        icon: Icons.trending_up_rounded,
-        route: "/home/music/trending",
-      ),
-      DrawerItem(
-        title: "Artistes",
-        icon: Icons.person_outlined,
-        route: "/home/music/artists",
-      ),
-      DrawerItem(
-        title: "Playlists",
-        icon: Icons.queue_music_rounded,
-        route: "/home/music/playlists",
-      ),
-      DrawerItem(
-        title: "Uploader un son",
-        icon: Icons.upload_rounded,
-        route: "/home/music/upload",
-        requiredRoles: ["Admin", "Super Admin", "creator"],
-      ),
-    ],
-  ),
+  // ── "Music" retiré du bottom nav : fonctionnalité non disponible pour le
+  // moment (page "BIENTÔT"). Un reviewer/utilisateur qui tombe sur un onglet
+  // vide donne l'impression d'une app incomplète (Apple Guideline 4.2).
+  // Décommenter dès que la fonctionnalité Music sera prête à être publiée.
+  // SectionModel(
+  //   title: "Music",
+  //   description:
+  //       "Découvrez les tendances musicales, artistes et contenus exclusifs.",
+  //   icon: Icons.music_note_outlined,
+  //   route: "/home/music",
+  //   drawerItems: [
+  //     DrawerItem(
+  //       title: "Tendances",
+  //       icon: Icons.trending_up_rounded,
+  //       route: "/home/music/trending",
+  //     ),
+  //     DrawerItem(
+  //       title: "Artistes",
+  //       icon: Icons.person_outlined,
+  //       route: "/home/music/artists",
+  //     ),
+  //     DrawerItem(
+  //       title: "Playlists",
+  //       icon: Icons.queue_music_rounded,
+  //       route: "/home/music/playlists",
+  //     ),
+  //     DrawerItem(
+  //       title: "Uploader un son",
+  //       icon: Icons.upload_rounded,
+  //       route: "/home/music/upload",
+  //       requiredRoles: ["Admin", "Super Admin", "creator"],
+  //     ),
+  //   ],
+  // ),
   SectionModel(
     title: "Club",
     description:
@@ -159,30 +163,32 @@ final sections = [
       ),
     ],
   ),
-  SectionModel(
-    title: "Shop",
-    description: "Achetez en live et explorez les produits tendance.",
-    icon: Icons.shopping_cart_outlined,
-    route: "/home/shop",
-    drawerItems: [
-      DrawerItem(
-        title: "Catalogue",
-        icon: Icons.storefront_outlined,
-        route: "/home/shop/catalog",
-      ),
-      DrawerItem(
-        title: "Mes commandes",
-        icon: Icons.receipt_long_outlined,
-        route: "/home/shop/orders",
-      ),
-      DrawerItem(
-        title: "Gérer les produits",
-        icon: Icons.inventory_2_outlined,
-        route: "/home/shop/manage",
-        requiredRoles: ["Admin", "Super Admin", "seller"],
-      ),
-    ],
-  ),
+  // ── "Shop" retiré du bottom nav pour la même raison que "Music" (page
+  // "BIENTÔT" uniquement). Décommenter dès que prêt.
+  // SectionModel(
+  //   title: "Shop",
+  //   description: "Achetez en live et explorez les produits tendance.",
+  //   icon: Icons.shopping_cart_outlined,
+  //   route: "/home/shop",
+  //   drawerItems: [
+  //     DrawerItem(
+  //       title: "Catalogue",
+  //       icon: Icons.storefront_outlined,
+  //       route: "/home/shop/catalog",
+  //     ),
+  //     DrawerItem(
+  //       title: "Mes commandes",
+  //       icon: Icons.receipt_long_outlined,
+  //       route: "/home/shop/orders",
+  //     ),
+  //     DrawerItem(
+  //       title: "Gérer les produits",
+  //       icon: Icons.inventory_2_outlined,
+  //       route: "/home/shop/manage",
+  //       requiredRoles: ["Admin", "Super Admin", "seller"],
+  //     ),
+  //   ],
+  // ),
 ];
 
 var fixedDrawerItems = [

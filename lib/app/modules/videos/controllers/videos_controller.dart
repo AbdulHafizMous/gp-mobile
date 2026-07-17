@@ -1,18 +1,15 @@
 // lib/app/modules/videos/controllers/videos_controller.dart
 
-import 'dart:convert';
+import 'dart:async';
 import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
-import 'package:kkiapay_flutter_sdk/kkiapay_flutter_sdk.dart';
-import 'package:uuid/uuid.dart';
-import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/data/models/space_model.dart';
 import 'package:grand_public_v2/app/data/models/video_comment.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
+import 'package:grand_public_v2/app/services/web_account_link_service.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 
 class VideosController extends GetxController {
@@ -40,9 +37,6 @@ class VideosController extends GetxController {
 
   // ── PPV ────────────────────────────────────────────────────────────────────
   final isPurchasing = false.obs;
-
-  final _uuid = const Uuid();
-  final _storage = GetStorage();
 
   @override
   void onClose() {
@@ -267,212 +261,92 @@ class VideosController extends GetxController {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  PAY-PER-VIEW — KKiaPay puis backend
+  //  PAY-PER-VIEW — redirection vers le site web pour le paiement
+  //  (Apple Guideline 3.1.1 : plus de paiement in-app pour du contenu digital)
   // ══════════════════════════════════════════════════════════════════════════
 
-  /// Lance KKiaPay pour le PPV.
-  /// Sur succès de paiement → appelle [_doPurchaseVideo] → dialogue succès/échec
-  /// [onPurchaseSuccess] : callback appelé si tout se passe bien (pour init le player)
-  void handlePayPerViewWithKkiapay({
+  /// Redirige vers le site pour payer l'accès à une vidéo à l'unité.
+  /// L'utilisateur est automatiquement connecté sur le site via un lien à
+  /// usage unique. Le déblocage effectif se fait côté serveur ; on rafraîchit
+  /// simplement l'état localement au retour (best effort).
+  Future<void> handlePayPerViewOnWeb({
     required BuildContext context,
     required SpaceVideo video,
     required VoidCallback onPurchaseSuccess,
-  }) {
+  }) async {
     if (video.ppvPrice == null) return;
 
-    final kkiapay = KKiaPay(
-      callback: (dynamic response, BuildContext ctx) async {
-        debugPrint('kkiapay PPV callback: $response');
-        final status = response['status']?.toString() ?? '';
-        try {
-          switch (status) {
-            case 'PAYMENT_CANCELLED':
-              try { Get.back(); } catch (_) {}
-              break;
-
-            case 'PAYMENT_SUCCESS':
-              try { Get.back(); } catch (_) {}
-              final transactionId =
-                  response['transactionId']?.toString() ?? '';
-              await _doPurchaseVideo(
-                context: context,
-                video: video,
-                transactionId: transactionId,
-                metadata: {'kkiapay_response': response},
-                onSuccess: onPurchaseSuccess,
-              );
-              break;
-
-            default:
-              debugPrint('KKiaPay PPV EVENT: $status');
-          }
-        } catch (e) {
-          debugPrint('KKiaPay PPV callback error: $e');
-        }
-      },
-      amount: video.ppvPrice!.toInt(),
-      apikey: FEEX_API_KEY,
-      sandbox: true,
-      data: jsonEncode({
-        'trans_key': _uuid.v4(),
-        'video_id': video.id,
-        'type': 'ppv',
-      }),
-      phone: _storage.read('phone') ?? '',
-      name: _storage.read('username') ?? '',
-      reason: 'Accès vidéo : ${video.title}',
-      email: _storage.read('email') ?? '',
-      countries: const ['BJ'],
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.open_in_new_rounded),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'Paiement sur le site',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Pour débloquer "${video.title}" (${video.ppvPrice!.toStringAsFixed(0)} FCFA), '
+          'vous allez être redirigé(e) vers notre site pour finaliser le paiement en '
+          'toute sécurité. Vous serez automatiquement connecté(e).',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Continuer'),
+          ),
+        ],
+      ),
     );
 
-    Get.to(() => kkiapay);
-  }
+    if (confirmed != true) return;
 
-  Future<void> _doPurchaseVideo({
-    required BuildContext context,
-    required SpaceVideo video,
-    required String transactionId,
-    Map<String, dynamic>? metadata,
-    required VoidCallback onSuccess,
-  }) async {
     isPurchasing.value = true;
     try {
-      if (useMock) {
-        await Future.delayed(const Duration(seconds: 1));
-        currentVideo.value = currentVideo.value?.copyWith(canRead: true)
-            ?? video.copyWith(canRead: true);
-        if (context.mounted) {
-          _showPurchaseSuccessDialog(context, video);
-          onSuccess();
-        }
-        return;
-      }
-
-      final response = await RequestService().post(
-        '/videos/${video.id}/purchase',
-        data: {
-          'transaction_id': transactionId,
-          'metadata': ?metadata,
-        },
+      await WebAccountLinkService.openWebAccount(
+        intent: 'media',
+        mediaId: video.id,
       );
-
-      if (response.statusCode == 200) {
-        currentVideo.value = currentVideo.value?.copyWith(canRead: true)
-            ?? video.copyWith(canRead: true);
-        if (context.mounted) {
-          _showPurchaseSuccessDialog(context, video);
-          onSuccess();
-        }
-      } else {
-        final message =
-            response.data['message']?.toString() ?? 'Une erreur est survenue.';
-        if (context.mounted) _showPurchaseFailedDialog(context, message);
-      }
-    } on DioException catch (e) {
-      final reason = e.response?.data?['message']?.toString()
-          ?? e.message
-          ?? 'Erreur réseau';
-      if (context.mounted) _showPurchaseFailedDialog(context, reason);
-    } catch (e) {
-      if (context.mounted) {
-        _showPurchaseFailedDialog(context, 'Une erreur inattendue est survenue.');
-      }
     } finally {
       isPurchasing.value = false;
+      // Rafraîchit au mieux l'état d'accès de la vidéo (utile si l'achat
+      // avait déjà été fait récemment sur le site).
+      unawaited(_refreshCurrentVideoAccess(video, onPurchaseSuccess));
     }
   }
 
-  void _showPurchaseSuccessDialog(BuildContext context, SpaceVideo video) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                  color: Colors.green.shade50, shape: BoxShape.circle),
-              child: Icon(Icons.check_circle_rounded,
-                  color: Colors.green.shade600, size: 48),
-            ),
-            const SizedBox(height: 16),
-            const Text('Accès débloqué !',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center),
-            const SizedBox(height: 8),
-            Text(
-              'Vous pouvez maintenant regarder "${video.title}".',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey),
-            ),
-          ],
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade600,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-              ),
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Regarder maintenant'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showPurchaseFailedDialog(BuildContext context, String reason) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                  color: Colors.red.shade50, shape: BoxShape.circle),
-              child: Icon(Icons.cancel_rounded,
-                  color: Colors.red.shade600, size: 48),
-            ),
-            const SizedBox(height: 16),
-            const Text('Paiement échoué',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center),
-            const SizedBox(height: 8),
-            Text(reason,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey.shade700)),
-          ],
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade600,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-              ),
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Réessayer plus tard'),
-            ),
-          ),
-        ],
-      ),
-    );
+  Future<void> _refreshCurrentVideoAccess(
+    SpaceVideo video,
+    VoidCallback onPurchaseSuccess,
+  ) async {
+    try {
+      if (useMock) return;
+      final response = await RequestService().get('/videos/${video.id}');
+      if (response.statusCode == 200) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final refreshed = SpaceVideo.fromJson(data);
+        currentVideo.value = refreshed;
+        if (refreshed.canRead) onPurchaseSuccess();
+      }
+    } catch (e) {
+      debugPrint('_refreshCurrentVideoAccess error: $e');
+    }
   }
 
   // ══════════════════════════════════════════════════════════════════════════

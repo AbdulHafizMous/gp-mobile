@@ -405,7 +405,7 @@ class LoginView extends GetView<LoginController> {
 
               const SizedBox(height: 10),
               const Text(
-                "Ou continuez avec",
+                "Ou",
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 12,
