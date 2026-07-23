@@ -223,9 +223,14 @@ class LoginController extends GetxController {
           );
 
       // 2. Échange contre un Firebase ID Token
+      // NB: Firebase exige aussi l'authorizationCode Apple en tant
+      // qu'"accessToken" du credential OAuth. Sans lui, Firebase répond
+      // par erreur "invalid-credential: Invalid OAuth response from apple.com"
+      // (cause du rejet Apple Guideline 2.1(a) sur ce build).
       final OAuthCredential credential = OAuthProvider('apple.com').credential(
         idToken: appleCredential.identityToken,
         rawNonce: rawNonce,
+        accessToken: appleCredential.authorizationCode,
       );
 
       final UserCredential userCredential = await FirebaseAuth.instance
