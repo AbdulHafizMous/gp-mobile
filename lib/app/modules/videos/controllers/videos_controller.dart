@@ -1,10 +1,19 @@
 // lib/app/modules/videos/controllers/videos_controller.dart
 
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:math';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:kkiapay_flutter_sdk/kkiapay_flutter_sdk.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:uuid/uuid.dart';
+import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/data/models/space_model.dart';
 import 'package:grand_public_v2/app/data/models/video_comment.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
@@ -37,6 +46,8 @@ class VideosController extends GetxController {
 
   // ── PPV ────────────────────────────────────────────────────────────────────
   final isPurchasing = false.obs;
+  final _uuid = const Uuid();
+  final _storage = GetStorage();
 
   @override
   void onClose() {
@@ -258,6 +269,285 @@ class VideosController extends GetxController {
   void setReplyingTo(VideoComment? comment) {
     replyingTo.value = comment;
     if (comment != null) commentController.text = '@${comment.userName} ';
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  POINT D'ENTRÉE UNIQUE — appelé depuis les vues (vid_detail.dart)
+  //  iOS  -> RevenueCat / StoreKit (obligatoire, Guideline 3.1.1)
+  //  Autres plateformes -> Kkiapay natif OU redirection web, selon
+  //  `useExternalPaywall` (lib/app/constants/index.dart)
+  // ══════════════════════════════════════════════════════════════════════════
+  Future<void> handlePayPerView({
+    required BuildContext context,
+    required SpaceVideo video,
+    required VoidCallback onPurchaseSuccess,
+  }) {
+    if (!kIsWeb && Platform.isIOS) {
+      return _purchaseVideoWithRevenueCat(
+        context: context,
+        video: video,
+        onSuccess: onPurchaseSuccess,
+      );
+    }
+    if (useExternalPaywall) {
+      return handlePayPerViewOnWeb(
+        context: context,
+        video: video,
+        onPurchaseSuccess: onPurchaseSuccess,
+      );
+    }
+    return _purchaseVideoWithKkiapay(
+      context: context,
+      video: video,
+      onSuccess: onPurchaseSuccess,
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  PAY-PER-VIEW — RevenueCat (Apple StoreKit)
+  // ══════════════════════════════════════════════════════════════════════════
+  Future<void> _purchaseVideoWithRevenueCat({
+    required BuildContext context,
+    required SpaceVideo video,
+    required VoidCallback onSuccess,
+  }) async {
+    final appleProductId = video.appleProductId;
+    if (appleProductId == null || appleProductId.isEmpty) {
+      _showPurchaseFailedDialog(
+        context,
+        'Cette vidéo n\'est pas encore disponible à l\'achat sur l\'App Store.',
+      );
+      return;
+    }
+
+    isPurchasing.value = true;
+    try {
+      final products = await Purchases.getProducts([appleProductId]);
+      if (products.isEmpty) {
+        _showPurchaseFailedDialog(context, 'Produit introuvable sur l\'App Store.');
+        return;
+      }
+
+      final result = await Purchases.purchase(
+        PurchaseParams.storeProduct(products.first),
+      );
+      final transactionId = result.storeTransaction.transactionIdentifier;
+
+      await _doPurchaseVideoBackend(
+        context: context,
+        video: video,
+        transactionId: transactionId,
+        metadata: {
+          'gateway': 'apple_storekit_revenuecat',
+          'apple_product_id': appleProductId,
+        },
+        onSuccess: onSuccess,
+      );
+    } on PlatformException catch (e) {
+      final code = PurchasesErrorHelper.getErrorCode(e);
+      if (code != PurchasesErrorCode.purchaseCancelledError) {
+        _showPurchaseFailedDialog(
+          context,
+          e.message ?? 'Le paiement Apple a échoué. Réessayez.',
+        );
+      }
+    } catch (e) {
+      debugPrint('RevenueCat PPV error: $e');
+      _showPurchaseFailedDialog(context, 'Une erreur inattendue est survenue.');
+    } finally {
+      isPurchasing.value = false;
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  PAY-PER-VIEW — Kkiapay natif (Android / non-iOS quand useExternalPaywall=false)
+  // ══════════════════════════════════════════════════════════════════════════
+  Future<void> _purchaseVideoWithKkiapay({
+    required BuildContext context,
+    required SpaceVideo video,
+    required VoidCallback onSuccess,
+  }) async {
+    if (video.ppvPrice == null) return;
+
+    final kkiapay = KKiaPay(
+      callback: (dynamic response, BuildContext ctx) async {
+        final status = response['status']?.toString() ?? '';
+        try {
+          switch (status) {
+            case 'PAYMENT_CANCELLED':
+              try { Get.back(); } catch (_) {}
+              break;
+            case 'PAYMENT_SUCCESS':
+              try { Get.back(); } catch (_) {}
+              final transactionId =
+                  response['transactionId']?.toString() ?? '';
+              await _doPurchaseVideoBackend(
+                context: context,
+                video: video,
+                transactionId: transactionId,
+                metadata: {'kkiapay_response': response},
+                onSuccess: onSuccess,
+              );
+              break;
+            default:
+              debugPrint('KKiaPay PPV EVENT: $status');
+          }
+        } catch (e) {
+          debugPrint('KKiaPay PPV callback error: $e');
+        }
+      },
+      amount: video.ppvPrice!.toInt(),
+      apikey: FEEX_API_KEY,
+      sandbox: true,
+      data: jsonEncode({
+        'trans_key': _uuid.v4(),
+        'video_id': video.id,
+        'type': 'ppv',
+      }),
+      phone: _storage.read('phone') ?? '',
+      name: _storage.read('username') ?? '',
+      reason: 'Accès vidéo : ${video.title}',
+      email: _storage.read('email') ?? '',
+      countries: const ['BJ'],
+    );
+
+    Get.to(() => kkiapay);
+  }
+
+  Future<void> _doPurchaseVideoBackend({
+    required BuildContext context,
+    required SpaceVideo video,
+    required String transactionId,
+    Map<String, dynamic>? metadata,
+    required VoidCallback onSuccess,
+  }) async {
+    isPurchasing.value = true;
+    try {
+      final response = await RequestService().post(
+        '/videos/${video.id}/purchase',
+        data: {
+          'transaction_id': transactionId,
+          if (metadata != null) 'metadata': metadata,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        currentVideo.value =
+            currentVideo.value?.copyWith(canRead: true) ?? video.copyWith(canRead: true);
+        if (context.mounted) {
+          _showPurchaseSuccessDialog(context, video);
+          onSuccess();
+        }
+      } else {
+        final message =
+            response.data['message']?.toString() ?? 'Une erreur est survenue.';
+        if (context.mounted) _showPurchaseFailedDialog(context, message);
+      }
+    } on DioException catch (e) {
+      final reason = e.response?.data?['message']?.toString() ??
+          e.message ??
+          'Erreur réseau';
+      if (context.mounted) _showPurchaseFailedDialog(context, reason);
+    } catch (e) {
+      if (context.mounted) {
+        _showPurchaseFailedDialog(context, 'Une erreur inattendue est survenue.');
+      }
+    } finally {
+      isPurchasing.value = false;
+    }
+  }
+
+  void _showPurchaseSuccessDialog(BuildContext context, SpaceVideo video) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                  color: Colors.green.shade50, shape: BoxShape.circle),
+              child: Icon(Icons.check_circle_rounded,
+                  color: Colors.green.shade600, size: 48),
+            ),
+            const SizedBox(height: 16),
+            const Text('Accès débloqué !',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            Text(
+              'Vous pouvez maintenant regarder "${video.title}".',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade600,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Regarder maintenant'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPurchaseFailedDialog(BuildContext context, String reason) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                  color: Colors.red.shade50, shape: BoxShape.circle),
+              child: Icon(Icons.cancel_rounded,
+                  color: Colors.red.shade600, size: 48),
+            ),
+            const SizedBox(height: 16),
+            const Text('Paiement échoué',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            Text(reason,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey.shade700)),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade600,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Réessayer plus tard'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // ══════════════════════════════════════════════════════════════════════════

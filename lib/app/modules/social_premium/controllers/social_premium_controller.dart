@@ -1,10 +1,19 @@
 // lib/app/modules/social_premium/controllers/social_premium_controller.dart
 
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:kkiapay_flutter_sdk/kkiapay_flutter_sdk.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:uuid/uuid.dart';
+import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/data/models/subscription.dart';
 import 'package:grand_public_v2/app/data/models/user.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
@@ -23,6 +32,9 @@ class SocialPremiumController extends GetxController {
   // ── Historique des abonnements ─────────────────────────────────────────────
   final subscriptionHistory = <ActiveSubscription>[].obs;
   final isLoadingHistory = false.obs;
+
+  final _uuid = const Uuid();
+  final _storage = GetStorage();
 
   // ══════════════════════════════════════════════════════════════════════════
   //  FETCH PLANS DISPONIBLES
@@ -97,6 +109,305 @@ class SocialPremiumController extends GetxController {
     } finally {
       isLoadingHistory.value = false;
     }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  POINT D'ENTRÉE UNIQUE — appelé depuis les vues (sub_card.dart, etc.)
+  //  iOS  -> RevenueCat / StoreKit (obligatoire, Guideline 3.1.1)
+  //  Autres plateformes -> Kkiapay natif OU redirection web, selon
+  //  `useExternalPaywall` (lib/app/constants/index.dart)
+  // ══════════════════════════════════════════════════════════════════════════
+  Future<void> handleSubscribe({
+    required BuildContext context,
+    required Subscription plan,
+  }) {
+    if (!kIsWeb && Platform.isIOS) {
+      return _subscribeWithRevenueCat(context: context, plan: plan);
+    }
+    if (useExternalPaywall) {
+      return handleSubscribeOnWeb(context: context, plan: plan);
+    }
+    return _subscribeWithKkiapay(context: context, plan: plan);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  ABONNEMENT — RevenueCat (Apple StoreKit)
+  // ══════════════════════════════════════════════════════════════════════════
+  Future<void> _subscribeWithRevenueCat({
+    required BuildContext context,
+    required Subscription plan,
+  }) async {
+    final hasActive = activeUser.value.hasActiveSubscription;
+    if (hasActive) {
+      final confirmed = await _showChangePlanDialog(context, plan);
+      if (confirmed != true) return;
+    }
+
+    final appleProductId = plan.appleProductId;
+    if (appleProductId == null || appleProductId.isEmpty) {
+      _showPaymentFailedDialog(
+        context,
+        'Ce forfait n\'est pas encore configuré pour l\'App Store. '
+        'Merci de réessayer plus tard.',
+      );
+      return;
+    }
+
+    selectedPlan.value = plan;
+    isSubscribing.value = true;
+    try {
+      final products = await Purchases.getProducts([appleProductId]);
+      if (products.isEmpty) {
+        _showPaymentFailedDialog(context, 'Forfait introuvable sur l\'App Store.');
+        return;
+      }
+
+      final result = await Purchases.purchase(
+        PurchaseParams.storeProduct(products.first),
+      );
+
+      final transactionId =
+          result.storeTransaction.transactionIdentifier;
+
+      await _doSubscribeBackend(
+        context: context,
+        plan: plan,
+        transactionId: transactionId,
+        metadata: {
+          'gateway': 'apple_storekit_revenuecat',
+          'apple_product_id': appleProductId,
+        },
+      );
+    } on PlatformException catch (e) {
+      final code = PurchasesErrorHelper.getErrorCode(e);
+      if (code != PurchasesErrorCode.purchaseCancelledError) {
+        _showPaymentFailedDialog(
+          context,
+          e.message ?? 'Le paiement Apple a échoué. Réessayez.',
+        );
+      }
+    } catch (e) {
+      debugPrint('RevenueCat subscribe error: $e');
+      _showPaymentFailedDialog(context, 'Une erreur inattendue est survenue.');
+    } finally {
+      isSubscribing.value = false;
+      selectedPlan.value = null;
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  ABONNEMENT — Kkiapay natif (Android / non-iOS quand useExternalPaywall=false)
+  // ══════════════════════════════════════════════════════════════════════════
+  Future<void> _subscribeWithKkiapay({
+    required BuildContext context,
+    required Subscription plan,
+  }) async {
+    final hasActive = activeUser.value.hasActiveSubscription;
+    if (hasActive) {
+      final confirmed = await _showChangePlanDialog(context, plan);
+      if (confirmed != true) return;
+    }
+
+    selectedPlan.value = plan;
+
+    final kkiapay = KKiaPay(
+      callback: (dynamic response, BuildContext ctx) async {
+        final status = response['status']?.toString() ?? '';
+        try {
+          switch (status) {
+            case 'PAYMENT_CANCELLED':
+              try {
+                Get.back();
+              } catch (_) {}
+              break;
+            case 'PAYMENT_SUCCESS':
+              try {
+                Get.back();
+              } catch (_) {}
+              final transactionId =
+                  response['transactionId']?.toString() ?? '';
+              final amount = response['requestData']?['amount'];
+              await _doSubscribeBackend(
+                context: context,
+                plan: plan,
+                transactionId: transactionId,
+                metadata: {'amount': amount, 'kkiapay_response': response},
+              );
+              break;
+            default:
+              debugPrint('KKiaPay EVENT: $status');
+          }
+        } catch (e) {
+          debugPrint('KKiaPay callback error: $e');
+        }
+      },
+      amount: plan.price.toInt(),
+      apikey: FEEX_API_KEY,
+      sandbox: true,
+      data: jsonEncode({'trans_key': _uuid.v4(), 'subscription_id': plan.id}),
+      phone: _storage.read('phone') ?? '',
+      name: _storage.read('username') ?? '',
+      reason: plan.name,
+      email: _storage.read('email') ?? '',
+      countries: const ['BJ'],
+    );
+
+    Get.to(() => kkiapay);
+  }
+
+  Future<void> _doSubscribeBackend({
+    required BuildContext context,
+    required Subscription plan,
+    required String transactionId,
+    Map<String, dynamic>? metadata,
+  }) async {
+    isSubscribing.value = true;
+    try {
+      final response = await RequestService().post(
+        '/subscribe',
+        data: {
+          'subscription_plan_id': plan.id,
+          'payment_ref': transactionId,
+          if (metadata != null) 'payment_data': metadata,
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await _refreshActiveUser();
+        await fetchMySubscriptions();
+        if (context.mounted) _showPaymentSuccessDialog(context, plan);
+      } else {
+        final message =
+            response.data['message']?.toString() ?? 'Une erreur est survenue.';
+        if (context.mounted) _showPaymentFailedDialog(context, message);
+      }
+    } on DioException catch (e) {
+      final reason = e.response?.data?['message']?.toString() ??
+          e.message ??
+          'Erreur réseau';
+      if (context.mounted) _showPaymentFailedDialog(context, reason);
+    } catch (e) {
+      if (context.mounted) {
+        _showPaymentFailedDialog(
+          context,
+          'Une erreur inattendue est survenue.',
+        );
+      }
+    } finally {
+      isSubscribing.value = false;
+      selectedPlan.value = null;
+    }
+  }
+
+  void _showPaymentSuccessDialog(BuildContext context, Subscription plan) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.check_circle_rounded,
+                color: Colors.green.shade600,
+                size: 48,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Paiement réussi !',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Vous êtes maintenant abonné au plan "${plan.name}".',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade600,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Super, merci !'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPaymentFailedDialog(BuildContext context, String reason) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.cancel_rounded,
+                color: Colors.red.shade600,
+                size: 48,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Paiement échoué',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              reason,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade700),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade600,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Réessayer plus tard'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // ══════════════════════════════════════════════════════════════════════════

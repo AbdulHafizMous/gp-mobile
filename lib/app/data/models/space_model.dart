@@ -29,6 +29,7 @@ class SpaceVideo {
   final String? spaceName;
   final String? spaceLogoUrl;
   final String? categoryName;
+  final String? appleProductId; // produit RevenueCat/StoreKit pour le PPV iOS
 
   const SpaceVideo({
     required this.id,
@@ -54,6 +55,7 @@ class SpaceVideo {
     this.spaceName,
     this.spaceLogoUrl,
     this.categoryName,
+    this.appleProductId,
   });
 
   /// Le live est-il actif en ce moment ?
@@ -112,6 +114,7 @@ class SpaceVideo {
       spaceName: json['space_name']?.toString() ?? '',
       spaceLogoUrl: json['space_logo_url']?.toString() ?? '',
       categoryName: json['category_name']?.toString() ?? '',
+      appleProductId: json['apple_product_id']?.toString(),
     );
   }
 
@@ -147,6 +150,7 @@ class SpaceVideo {
       liveStartsAt: liveStartsAt,
       liveEndsAt: liveEndsAt,
       spaceName: spaceName,
+      appleProductId: appleProductId,
       spaceLogoUrl: spaceLogoUrl,
       categoryName: categoryName,
     );
