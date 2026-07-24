@@ -8,6 +8,7 @@ class Subscription {
   final String duration;
   final double price;
   final int durationMonths;
+  final String? appleProductId;
 
   const Subscription({
     required this.id,
@@ -16,6 +17,7 @@ class Subscription {
     required this.duration,
     required this.price,
     this.durationMonths = 1,
+    this.appleProductId,
   });
 
   factory Subscription.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class Subscription {
       duration: '${json['duration_months'] ?? 1} mois',
       price: double.tryParse(json['price']?.toString() ?? '0') ?? 0,
       durationMonths: _parseInt(json['duration_months']),
+      appleProductId: json['apple_product_id']?.toString(),
     );
   }
 

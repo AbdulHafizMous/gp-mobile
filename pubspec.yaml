@@ -20,6 +20,11 @@ dependencies:
   fluttertoast: ^9.0.0
   url_launcher: ^6.3.2
   feexpay_flutter: ^1.0.12
+  uuid: ^4.5.2
+  kkiapay_flutter_sdk: ^1.3.4
+  # Apple Guideline 3.1.1 : IAP obligatoire pour le contenu payant consommé
+  # dans l'app sur iOS. RevenueCat encapsule StoreKit proprement.
+  purchases_flutter: ^9.5.0
   carousel_slider: ^5.1.1
   youtube_player_flutter: ^9.1.3
   pusher_channels_flutter: ^2.5.0

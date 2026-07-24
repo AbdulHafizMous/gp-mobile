@@ -1,11 +1,16 @@
+import 'dart:io' show Platform;
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 // import 'package:grand_public_v2/app/services/notification_service.dart';
+import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/firebase_options.dart';
 
 import 'app/routes/app_pages.dart';
@@ -19,6 +24,18 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   debugPrint('Background message: ${message.messageId}');
   debugPrint('Titre: ${message.notification?.title}');
+}
+
+/// Initialise RevenueCat (StoreKit) — nécessaire uniquement sur iOS pour
+/// rester conforme à la Guideline 3.1.1 d'Apple (contenu payant = IAP).
+Future<void> _initRevenueCat() async {
+  await Purchases.setLogLevel(LogLevel.warn);
+  final configuration = PurchasesConfiguration(REVENUECAT_IOS_API_KEY);
+  final userId = GetStorage().read<String>('user_id');
+  if (userId != null && userId.isNotEmpty) {
+    configuration.appUserID = userId;
+  }
+  await Purchases.configure(configuration);
 }
 
 Future<void> main() async {
@@ -38,6 +55,12 @@ Future<void> main() async {
 
   // 4. GetStorage
   await GetStorage.init();
+
+  // 4bis. RevenueCat (Apple IAP — Guideline 3.1.1). iOS uniquement :
+  // Android/le reste continuent d'utiliser Kkiapay / le paiement web.
+  if (!kIsWeb && Platform.isIOS) {
+    await _initRevenueCat();
+  }
 
   // 5. Notifications (Done in Main Page Ctrl)
   // await NotificationService.init();

@@ -21,3 +21,10 @@ const FEEX_API_KEY = "90366b50372111f189b307c79e518cc5";
 // clarifié avec Apple (IAP requis, ou fonctionnalité retirée sur iOS).
 // ══════════════════════════════════════════════════════════════════════════
 const bool useExternalPaywall = true;
+
+// ══════════════════════════════════════════════════════════════════════════
+// REVENUECAT (Apple In-App Purchase — Guideline 3.1.1)
+// Utilisé UNIQUEMENT sur iOS, quel que soit `useExternalPaywall`.
+// Remplace par ta vraie clé publique API iOS depuis le dashboard RevenueCat.
+// ══════════════════════════════════════════════════════════════════════════
+const String REVENUECAT_IOS_API_KEY = "REPLACE_WITH_REVENUECAT_PUBLIC_IOS_KEY";
