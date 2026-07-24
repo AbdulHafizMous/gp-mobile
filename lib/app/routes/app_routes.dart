@@ -32,6 +32,8 @@ abstract class Routes {
   static const PROFILE = _Paths.PROFILE;
   static const SEARCH = _Paths.SEARCH;
   static const NOTIFS = _Paths.NOTIFS;
+  static const SHOP = _Paths.SHOP;
+  static const SHOP_MY_LISTINGS = _Paths.SHOP_MY_LISTINGS;
 }
 
 abstract class _Paths {
@@ -65,4 +67,6 @@ abstract class _Paths {
   static const PROFILE = '/profile';
   static const SEARCH = '/search';
   static const NOTIFS = '/notifs';
+  static const SHOP = '/shop';
+  static const SHOP_MY_LISTINGS = '/shop/my-listings';
 }

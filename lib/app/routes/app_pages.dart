@@ -10,6 +10,7 @@ import 'package:grand_public_v2/app/modules/notifs/bindings/notifs_binding.dart'
 import 'package:grand_public_v2/app/modules/notifs/views/notifs_view.dart';
 import 'package:grand_public_v2/app/modules/reset_password/bindings/reset_password_binding.dart';
 import 'package:grand_public_v2/app/modules/reset_password/views/reset_password_view.dart';
+import 'package:grand_public_v2/app/modules/shop/views/shop_my_listings_view.dart';
 import 'package:grand_public_v2/app/modules/update_required/bindings/update_required_binding.dart';
 import 'package:grand_public_v2/app/modules/update_required/views/update_required_view.dart';
 import 'package:grand_public_v2/app/modules/space/bindings/space_binding.dart';
@@ -49,6 +50,8 @@ import '../modules/sucess_page/bindings/sucess_page_binding.dart';
 import '../modules/sucess_page/views/sucess_page_view.dart';
 import '../modules/videos/bindings/videos_binding.dart';
 import '../modules/videos/views/videos_view.dart';
+import '../modules/shop/bindings/shop_binding.dart';
+import '../modules/shop/views/shop_view.dart';
 
 part 'app_routes.dart';
 
@@ -73,6 +76,11 @@ class AppPages {
       name: _Paths.NOTIFS,
       page: () => NotifsView(),
       binding: NotifsBinding(),
+    ),
+    GetPage(
+      name: _Paths.SHOP,
+      page: () => const ShopView(),
+      binding: ShopBinding(),
     ),
     GetPage(
       name: _Paths.SPLASH,
@@ -184,6 +192,11 @@ class AppPages {
       name: _Paths.PROFILE,
       page: () => const ProfileView(),
       binding: ProfileBinding(),
+    ),
+    GetPage(
+      name: _Paths.SHOP_MY_LISTINGS,
+      page: () => const ShopMyListingsView(),
+      binding: ShopBinding(),
     ),
   ];
 }

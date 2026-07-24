@@ -246,10 +246,10 @@ class PromoDetailView extends StatelessWidget {
                     horizontal: 12,
                     vertical: 6,
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  // decoration: BoxDecoration(
+                  //   color: Colors.grey.shade100,
+                  //   borderRadius: BorderRadius.circular(8),
+                  // ),
                   child: Text(
                     usage.qrCode,
                     style: const TextStyle(
