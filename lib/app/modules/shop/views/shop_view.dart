@@ -7,6 +7,20 @@ import 'package:grand_public_v2/app/modules/shop/views/shop_detail_view.dart';
 import 'package:grand_public_v2/app/modules/shop/views/shop_my_listings_view.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// THEME HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+extension _Tx on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+  Color get bg => isDark ? const Color(0xFF0D0D0D) : Colors.white;
+  Color get cardBg => isDark ? const Color(0xFF1E1E1E) : Colors.white;
+  Color get inputBg => isDark ? Colors.white10 : Colors.grey.shade100;
+  Color get primary => Theme.of(this).textTheme.bodyLarge!.color!;
+  Color get subtle => Theme.of(this).hintColor;
+  // Color get divider => Theme.of(this).dividerColor;
+  Color get appBarBg => isDark ? const Color(0xFF111111) : GPTheme.primaryColor;
+}
+
 class ShopView extends StatelessWidget {
   const ShopView({super.key});
 
@@ -22,10 +36,12 @@ class ShopView extends StatelessWidget {
     });
 
     return Scaffold(
+      backgroundColor: context.bg,
       appBar: AppBar(
         title: const Text('Shop — Bons plans'),
-        backgroundColor: GPTheme.primaryColor,
+        backgroundColor: context.appBarBg,
         foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.list_alt_rounded),
@@ -42,21 +58,38 @@ class ShopView extends StatelessWidget {
         onPressed: () => Get.to(() => const ShopCreateView()),
       ),
       body: RefreshIndicator(
+        color: GPTheme.primaryColor,
         onRefresh: () => controller.fetchFeed(reset: true),
         child: CustomScrollView(
           controller: scrollController,
           slivers: [
-            SliverToBoxAdapter(child: _searchBar(context)),
-            SliverToBoxAdapter(child: _categoryChips()),
+            SliverToBoxAdapter(child: _searchBar(context, controller)),
+            SliverToBoxAdapter(child: _categoryChips(context, controller)),
             Obx(() {
               if (controller.isLoadingFeed.value) {
-                return const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
-                );
+                return Center(
+                  child: CircularProgressIndicator(color: GPTheme.primaryColor),
+                ).let((w) => SliverFillRemaining(child: w));
               }
               if (controller.listings.isEmpty) {
-                return const SliverFillRemaining(
-                  child: Center(child: Text('Aucune annonce pour le moment.')),
+                return SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.storefront_outlined,
+                          size: 48,
+                          color: context.subtle,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Aucune annonce pour le moment.',
+                          style: TextStyle(color: context.subtle),
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               }
               return SliverPadding(
@@ -77,10 +110,14 @@ class ShopView extends StatelessWidget {
             }),
             Obx(
               () => controller.isLoadingMore.value
-                  ? const SliverToBoxAdapter(
+                  ? SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Center(child: CircularProgressIndicator()),
+                        padding: const EdgeInsets.all(16),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: GPTheme.primaryColor,
+                          ),
+                        ),
                       ),
                     )
                   : const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -91,16 +128,22 @@ class ShopView extends StatelessWidget {
     );
   }
 
-  Widget _searchBar(BuildContext context) {
-    final controller = Get.put(ShopController());
+  Widget _searchBar(BuildContext context, ShopController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
       child: TextField(
+        style: TextStyle(color: context.primary, fontSize: 14),
         decoration: InputDecoration(
           hintText: 'Rechercher une annonce...',
-          prefixIcon: const Icon(Icons.search),
+          hintStyle: TextStyle(color: context.subtle, fontSize: 14),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: context.subtle,
+            size: 20,
+          ),
           filled: true,
-          fillColor: Colors.grey.shade100,
+          fillColor: context.inputBg,
+          contentPadding: const EdgeInsets.symmetric(vertical: 4),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none,
@@ -111,11 +154,14 @@ class ShopView extends StatelessWidget {
     );
   }
 
-  Widget _categoryChips() {
-    final controller = Get.put(ShopController());
+  Widget _categoryChips(BuildContext context, ShopController controller) {
     return Obx(() {
       final cats = controller.categories;
+      // On récupère la valeur sélectionnée actuelle
+      final selectedId = controller.selectedCategoryId.value;
+
       if (cats.isEmpty) return const SizedBox(height: 8);
+
       return SizedBox(
         height: 48,
         child: ListView.builder(
@@ -124,18 +170,22 @@ class ShopView extends StatelessWidget {
           itemCount: cats.length + 1,
           itemBuilder: (ctx, i) {
             if (i == 0) {
-              final selected = controller.selectedCategoryId.value == null;
+              final isSelected = selectedId == null;
               return _chip(
+                context,
                 'Toutes',
-                selected,
+                isSelected,
                 () => controller.selectCategory(null),
               );
             }
+
             final cat = cats[i - 1];
-            final selected = controller.selectedCategoryId.value == cat.id;
+            final isSelected = selectedId == cat.id;
+
             return _chip(
+              context,
               cat.name,
-              selected,
+              isSelected,
               () => controller.selectCategory(cat.id),
             );
           },
@@ -144,18 +194,32 @@ class ShopView extends StatelessWidget {
     });
   }
 
-  Widget _chip(String label, bool selected, VoidCallback onTap) {
+  Widget _chip(
+    BuildContext context,
+    String label,
+    bool selected,
+    VoidCallback onTap,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: ChoiceChip(
         label: Text(label),
         selected: selected,
         onSelected: (_) => onTap(),
+        backgroundColor: context.inputBg,
         selectedColor: GPTheme.primaryColor,
-        labelStyle: TextStyle(color: selected ? Colors.white : Colors.black87),
+        labelStyle: TextStyle(
+          color: selected ? Colors.white : context.primary,
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+        ),
+        side: BorderSide.none,
       ),
     );
   }
+}
+
+extension _Let<T> on T {
+  R let<R>(R Function(T) f) => f(this);
 }
 
 class _ListingCard extends StatelessWidget {
@@ -168,11 +232,11 @@ class _ListingCard extends StatelessWidget {
       onTap: () => Get.to(() => ShopDetailView(listingId: listing.id)),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardBg,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withOpacity(context.isDark ? 0.3 : 0.06),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -187,8 +251,11 @@ class _ListingCard extends StatelessWidget {
               child: listing.coverImageUrl.isNotEmpty
                   ? Image.network(listing.coverImageUrl, fit: BoxFit.cover)
                   : Container(
-                      color: Colors.grey.shade200,
-                      child: const Icon(Icons.image_not_supported),
+                      color: context.inputBg,
+                      child: Icon(
+                        Icons.image_not_supported,
+                        color: context.subtle,
+                      ),
                     ),
             ),
             Padding(
@@ -200,9 +267,10 @@ class _ListingCard extends StatelessWidget {
                     listing.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
+                      color: context.primary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -219,32 +287,22 @@ class _ListingCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(
-                        Icons.favorite,
-                        size: 13,
-                        color: Colors.grey.shade400,
-                      ),
+                      Icon(Icons.favorite, size: 13, color: context.subtle),
                       const SizedBox(width: 2),
                       Text(
                         '${listing.likesCount}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade600,
-                        ),
+                        style: TextStyle(fontSize: 11, color: context.subtle),
                       ),
                       const SizedBox(width: 8),
                       Icon(
                         Icons.remove_red_eye,
                         size: 13,
-                        color: Colors.grey.shade400,
+                        color: context.subtle,
                       ),
                       const SizedBox(width: 2),
                       Text(
                         '${listing.viewsCount}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade600,
-                        ),
+                        style: TextStyle(fontSize: 11, color: context.subtle),
                       ),
                     ],
                   ),

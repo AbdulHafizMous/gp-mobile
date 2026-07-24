@@ -16,6 +16,7 @@ class ShopController extends GetxController {
   final categories = <ShopCategory>[].obs;
   final selectedCategoryId = Rxn<int>();
 
+
   // ── Feed (pagination par curseur) ──────────────────────────────────────
   final listings = <ShopListing>[].obs;
   final isLoadingFeed = false.obs;
@@ -67,10 +68,12 @@ class ShopController extends GetxController {
       debugPrint('fetchCategories error: $e');
     }
   }
-
   void selectCategory(int? categoryId) {
     if (selectedCategoryId.value == categoryId) return;
-    selectedCategoryId.value = categoryId;
+    
+    // La mise à jour de .value va maintenant notifier Obx() automatiquement
+    selectedCategoryId.value = categoryId; 
+    
     fetchFeed(reset: true);
   }
 

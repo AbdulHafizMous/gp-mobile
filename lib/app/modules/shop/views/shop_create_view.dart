@@ -6,6 +6,21 @@ import 'package:image_picker/image_picker.dart';
 import 'package:grand_public_v2/app/modules/shop/controllers/shop_controller.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// THEME HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+extension _Tx on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+  Color get bg => isDark ? const Color(0xFF0D0D0D) : Colors.white;
+  Color get inputBg => isDark ? Colors.white10 : Colors.grey.shade100;
+  Color get primary => Theme.of(this).textTheme.bodyLarge!.color!;
+  Color get subtle => Theme.of(this).hintColor;
+  Color get borderColor =>
+      isDark ? Colors.white24 : Colors.grey.shade400;
+  Color get appBarBg =>
+      isDark ? const Color(0xFF111111) : GPTheme.primaryColor;
+}
+
 class ShopCreateView extends GetView<ShopController> {
   const ShopCreateView({super.key});
 
@@ -75,50 +90,74 @@ class ShopCreateView extends GetView<ShopController> {
     }
 
     return Scaffold(
+      backgroundColor: context.bg,
       appBar: AppBar(
         title: const Text('Déposer une annonce'),
-        backgroundColor: GPTheme.primaryColor,
+        backgroundColor: context.appBarBg,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text(
+          Text(
             'Catégorie',
-            style: TextStyle(fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: context.primary,
+            ),
           ),
           const SizedBox(height: 6),
           Obx(
             () => DropdownButtonFormField<int>(
               value: selectedCategory.value,
+              dropdownColor: context.isDark
+                  ? const Color(0xFF1E1E1E)
+                  : Colors.white,
+              style: TextStyle(color: context.primary, fontSize: 14),
               items: controller.categories
                   .map(
                     (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
                   )
                   .toList(),
               onChanged: (v) => selectedCategory.value = v,
-              decoration: _inputDecoration('Choisir une catégorie'),
+              decoration: _inputDecoration(context, 'Choisir une catégorie'),
             ),
           ),
           const SizedBox(height: 16),
-          const Text('Titre', style: TextStyle(fontWeight: FontWeight.w600)),
+          Text(
+            'Titre',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: context.primary,
+            ),
+          ),
           const SizedBox(height: 6),
           TextField(
             controller: titleCtrl,
+            style: TextStyle(color: context.primary, fontSize: 14),
             decoration: _inputDecoration(
+              context,
               'Ex: Téléphone Techno Pop 3, bon état',
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Description',
-            style: TextStyle(fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: context.primary,
+            ),
           ),
           const SizedBox(height: 6),
           TextField(
             controller: descCtrl,
             maxLines: 4,
-            decoration: _inputDecoration('Décrivez votre annonce en détail...'),
+            style: TextStyle(color: context.primary, fontSize: 14),
+            decoration: _inputDecoration(
+              context,
+              'Décrivez votre annonce en détail...',
+            ),
           ),
           const SizedBox(height: 16),
           Row(
@@ -127,22 +166,30 @@ class ShopCreateView extends GetView<ShopController> {
                 child: TextField(
                   controller: priceCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: _inputDecoration('Prix (FCFA) — optionnel'),
+                  style: TextStyle(color: context.primary, fontSize: 14),
+                  decoration: _inputDecoration(
+                    context,
+                    'Prix (FCFA) — optionnel',
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: TextField(
                   controller: cityCtrl,
-                  decoration: _inputDecoration('Ville'),
+                  style: TextStyle(color: context.primary, fontSize: 14),
+                  decoration: _inputDecoration(context, 'Ville'),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Photos (3 maximum)',
-            style: TextStyle(fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: context.primary,
+            ),
           ),
           const SizedBox(height: 8),
           Obx(
@@ -180,15 +227,16 @@ class ShopCreateView extends GetView<ShopController> {
                       width: 90,
                       height: 90,
                       decoration: BoxDecoration(
+                        color: context.inputBg,
                         border: Border.all(
-                          color: Colors.grey.shade400,
+                          color: context.borderColor,
                           style: BorderStyle.solid,
                         ),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.add_a_photo_outlined,
-                        color: Colors.grey,
+                        color: context.subtle,
                       ),
                     ),
                   ),
@@ -196,15 +244,22 @@ class ShopCreateView extends GetView<ShopController> {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Vidéo (15 Mo max, optionnel)',
-            style: TextStyle(fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: context.primary,
+            ),
           ),
           const SizedBox(height: 8),
           Obx(
             () => video.value == null
                 ? OutlinedButton.icon(
                     onPressed: pickVideo,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: context.primary,
+                      side: BorderSide(color: context.borderColor),
+                    ),
                     icon: const Icon(Icons.videocam_outlined),
                     label: const Text('Ajouter une vidéo'),
                   )
@@ -216,10 +271,11 @@ class ShopCreateView extends GetView<ShopController> {
                         child: Text(
                           video.value!.path.split('/').last,
                           overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: context.primary),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close),
+                        icon: Icon(Icons.close, color: context.subtle),
                         onPressed: () => video.value = null,
                       ),
                     ],
@@ -257,11 +313,12 @@ class ShopCreateView extends GetView<ShopController> {
     );
   }
 
-  InputDecoration _inputDecoration(String hint) {
+  InputDecoration _inputDecoration(BuildContext context, String hint) {
     return InputDecoration(
       hintText: hint,
+      hintStyle: TextStyle(color: context.subtle, fontSize: 14),
       filled: true,
-      fillColor: Colors.grey.shade100,
+      fillColor: context.inputBg,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
