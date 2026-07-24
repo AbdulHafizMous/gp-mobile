@@ -5,6 +5,7 @@ import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/club/views/club_view.dart';
 import 'package:grand_public_v2/app/modules/space/views/spaces_list_view.dart';
 import 'package:grand_public_v2/app/modules/social/views/social_view.dart';
+import 'package:grand_public_v2/app/modules/shop/views/shop_view.dart';
 
 class DrawerItem {
   final String title;
@@ -57,11 +58,6 @@ final sections = [
         icon: Icons.grid_view_rounded,
         route: "/home/spaces",
       ),
-      // DrawerItem(
-      //   title: "Mes espaces",
-      //   icon: Icons.favorite_border_rounded,
-      //   route: "/home/spaces/favorites",
-      // ),
       DrawerItem(
         title: "Gérer les espaces",
         icon: Icons.settings_outlined,
@@ -119,23 +115,12 @@ final sections = [
         icon: Icons.local_offer_outlined,
         route: "/home/club",
       ),
-      // DrawerItem(
-      //   title: "Mes avantages",
-      //   icon: Icons.card_giftcard_rounded,
-      //   route: "/home/club/benefits",
-      // ),
       DrawerItem(
         title: "Validations",
         icon: Icons.verified_outlined,
         route: "/home/club/validations",
         requiredRoles: ["Admin", "Super Admin", "Partner"],
       ),
-      // DrawerItem(
-      //   title: "Gestion des offres",
-      //   icon: Icons.manage_accounts_outlined,
-      //   route: "/home/club/manage",
-      //   // requiredRoles: ["Admin", "Super Admin"],
-      // ),
     ],
   ),
   SectionModel(
@@ -163,41 +148,36 @@ final sections = [
       ),
     ],
   ),
-  // ── "Shop" retiré du bottom nav pour la même raison que "Music" (page
-  // "BIENTÔT" uniquement). Décommenter dès que prêt.
-  // SectionModel(
-  //   title: "Shop",
-  //   description: "Achetez en live et explorez les produits tendance.",
-  //   icon: Icons.shopping_cart_outlined,
-  //   route: "/home/shop",
-  //   drawerItems: [
-  //     DrawerItem(
-  //       title: "Catalogue",
-  //       icon: Icons.storefront_outlined,
-  //       route: "/home/shop/catalog",
-  //     ),
-  //     DrawerItem(
-  //       title: "Mes commandes",
-  //       icon: Icons.receipt_long_outlined,
-  //       route: "/home/shop/orders",
-  //     ),
-  //     DrawerItem(
-  //       title: "Gérer les produits",
-  //       icon: Icons.inventory_2_outlined,
-  //       route: "/home/shop/manage",
-  //       requiredRoles: ["Admin", "Super Admin", "seller"],
-  //     ),
-  //   ],
-  // ),
+  // ── Shop : petites annonces / bons plans entre utilisateurs ────────────
+  SectionModel(
+    title: "Shop",
+    description:
+        "Achetez, vendez et échangez vos bons plans entre utilisateurs.",
+    icon: Icons.storefront_outlined,
+    isLive: true,
+    page: const ShopView(),
+    drawerItems: [
+      DrawerItem(
+        title: "Annonces",
+        icon: Icons.storefront_outlined,
+        route: "/shop",
+      ),
+      DrawerItem(
+        title: "Mes annonces",
+        icon: Icons.list_alt_rounded,
+        route: "/shop/my-listings",
+      ),
+    ],
+  ),
 ];
 
 var fixedDrawerItems = [
-  if(!activeUser.value.role.contains("Super Admin"))
-  DrawerItem(
-    title: "Premium",
-    icon: Icons.workspace_premium_outlined,
-    route: "/social-premium",
-  ),
+  if (!activeUser.value.role.contains("Super Admin"))
+    DrawerItem(
+      title: "Premium",
+      icon: Icons.workspace_premium_outlined,
+      route: "/social-premium",
+    ),
   DrawerItem(title: "Liens", icon: Icons.link_rounded, route: "/social-link"),
   DrawerItem(
     title: "À propos",

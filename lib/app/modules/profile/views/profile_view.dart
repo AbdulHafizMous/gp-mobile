@@ -31,6 +31,7 @@ class _ProfileViewState extends State<ProfileView> {
   void initState() {
     super.initState();
     _ctrl = Get.find<ProfileController>();
+    _ctrl.loadAvatars();
 
     // Enregistre l'intercepteur de retour :
     // - Si on est sur une sous-page → revient au main profil (retourne true)
@@ -783,10 +784,7 @@ class _MainProfilePage extends GetView<ProfileController> {
             },
             child: const Text(
               'Supprimer définitivement',
-              style: TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
             ),
           ),
         ],

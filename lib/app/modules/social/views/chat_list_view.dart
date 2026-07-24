@@ -458,66 +458,84 @@ class _ChannelTile extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      // Tags
-                      ...channel.tags
-                          .take(2)
-                          .map(
-                            (t) => Container(
-                              margin: const EdgeInsets.only(right: 6),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: GPTheme.primaryColor.withOpacity(
-                                  isDark ? 0.15 : 0.08,
+                      // 1. Zone de gauche : Défilante (Tags + Membres)
+                      Expanded(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics:
+                              const BouncingScrollPhysics(), // Scroll fluide
+                          child: Row(
+                            children: [
+                              // Tags
+                              ...channel.tags.map(
+                                (t) => Container(
+                                  margin: const EdgeInsets.only(right: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: GPTheme.primaryColor.withOpacity(
+                                      isDark ? 0.15 : 0.08,
+                                    ),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '#$t',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: GPTheme.primaryColor,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ),
-                                borderRadius: BorderRadius.circular(20),
                               ),
-                              child: Text(
-                                '#$t',
+                              const SizedBox(width: 4),
+                              // Membres
+                              Icon(
+                                Icons.people_outline_rounded,
+                                size: 13,
+                                color: context.subtle,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                '${channel.membersCount}',
                                 style: TextStyle(
-                                  fontSize: 10,
-                                  color: GPTheme.primaryColor,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 11,
+                                  color: context.subtle,
                                 ),
                               ),
-                            ),
-                          ),
-                      // Membres
-                      Icon(
-                        Icons.people_outline_rounded,
-                        size: 13,
-                        color: context.subtle,
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        '${channel.membersCount}',
-                        style: TextStyle(fontSize: 11, color: context.subtle),
-                      ),
-                      const Spacer(),
-                      // Badge unread
-                      if (channel.unreadCount > 0)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: GPTheme.primaryColor,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '${channel.unreadCount}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                            ),
+                              // Badge unread (s'il y en a un)
+                              if (channel.unreadCount > 0) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: GPTheme.primaryColor,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '${channel.unreadCount}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
-                      // Bouton rejoindre / quitter
-                      const SizedBox(width: 8),
+                      ),
+
+                      // Espacement fixe entre la liste défilante et le bouton
+                      const SizedBox(width: 10),
+
+                      // 2. Zone de droite : Bouton FIXE (Ne défile jamais)
                       if (!channel.isJoined)
                         GestureDetector(
                           onTap: onJoin,

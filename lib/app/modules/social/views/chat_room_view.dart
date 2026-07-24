@@ -2501,20 +2501,20 @@ class _AttachItem extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // TOAST HELPER (import guard)
 // ─────────────────────────────────────────────────────────────────────────────
-class ToastHelper {
-  static Future<void> showToast(
-    String msg, {
-    Color? backgroundColor,
-    Color? textColor,
-  }) async {
-    Get.snackbar(
-      '',
-      msg,
-      backgroundColor: backgroundColor ?? Colors.black87,
-      colorText: textColor ?? Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(12),
-      duration: const Duration(seconds: 3),
-    );
-  }
-}
+// class ToastHelper {
+//   static Future<void> showToast(
+//     String msg, {
+//     Color? backgroundColor,
+//     Color? textColor,
+//   }) async {
+//     Get.snackbar(
+//       '',
+//       msg,
+//       backgroundColor: backgroundColor ?? Colors.black87,
+//       colorText: textColor ?? Colors.white,
+//       snackPosition: SnackPosition.BOTTOM,
+//       margin: const EdgeInsets.all(12),
+//       duration: const Duration(seconds: 3),
+//     );
+//   }
+// }

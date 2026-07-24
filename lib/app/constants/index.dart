@@ -20,7 +20,7 @@ const FEEX_API_KEY = "90366b50372111f189b307c79e518cc5";
 // sur un build iOS destiné à l'App Store tant que ce point n'est pas
 // clarifié avec Apple (IAP requis, ou fonctionnalité retirée sur iOS).
 // ══════════════════════════════════════════════════════════════════════════
-const bool useExternalPaywall = true;
+const bool useExternalPaywall = false;
 
 // ══════════════════════════════════════════════════════════════════════════
 // REVENUECAT (Apple In-App Purchase — Guideline 3.1.1)

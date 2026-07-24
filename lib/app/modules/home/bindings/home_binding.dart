@@ -8,6 +8,8 @@ import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dar
 import 'package:grand_public_v2/app/modules/notifs/views/notifs_view.dart';
 import 'package:grand_public_v2/app/modules/profile/controllers/profile_controller.dart';
 import 'package:grand_public_v2/app/modules/profile/views/profile_view.dart';
+import 'package:grand_public_v2/app/modules/shop/views/shop_my_listings_view.dart';
+import 'package:grand_public_v2/app/modules/shop/views/shop_view.dart';
 import 'package:grand_public_v2/app/modules/social/controllers/chat_controller.dart';
 import 'package:grand_public_v2/app/modules/social/controllers/dating_controller.dart';
 import 'package:grand_public_v2/app/modules/social/views/social_view.dart';
@@ -38,7 +40,10 @@ class HomeBinding extends Bindings {
 
       // ── Club ────────────────────────────────────────────────────────────
       ctrl.registerPage('/home/club', (_) => const ClubView());
-      ctrl.registerPage('/home/club/validations', (_) => const PartnerScannerView());
+      ctrl.registerPage(
+        '/home/club/validations',
+        (_) => const PartnerScannerView(),
+      );
 
       // ── Notifications ──────────────────────────────────────────────────
       ctrl.registerPage('/notifs', (_) => const NotifsView());
@@ -65,8 +70,12 @@ class HomeBinding extends Bindings {
 
       // ── Pages fixes du drawer ──────────────────────────────────────────
       ctrl.registerPage('/social-premium', (_) => const SocialPremiumView());
-      ctrl.registerPage('/social-link',    (_) => const SocialLinkView());
-      ctrl.registerPage('/social-about',   (_) => const SocialAboutView());
+      ctrl.registerPage('/social-link', (_) => const SocialLinkView());
+      ctrl.registerPage('/social-about', (_) => const SocialAboutView());
+
+      // -- Shop : Mes annonces (ouvre ShopView sur l'onglet Mes annonces) ─────
+      ctrl.registerPage('/shop', (_) => const ShopView());
+      ctrl.registerPage('/shop/my-listings', (_) => const ShopMyListingsView());
     });
   }
 }
