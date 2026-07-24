@@ -30,6 +30,8 @@ class SpaceVideo {
   final String? spaceLogoUrl;
   final String? categoryName;
   final String? appleProductId; // produit RevenueCat/StoreKit pour le PPV iOS
+  final String sourceType; // 'youtube' (défaut) ou 'upload' (hébergé chez nous)
+  final String? videoFileUrl; // URL du fichier vidéo si sourceType == 'upload'
 
   const SpaceVideo({
     required this.id,
@@ -56,6 +58,8 @@ class SpaceVideo {
     this.spaceLogoUrl,
     this.categoryName,
     this.appleProductId,
+    this.sourceType = 'youtube',
+    this.videoFileUrl,
   });
 
   /// Le live est-il actif en ce moment ?
@@ -115,6 +119,8 @@ class SpaceVideo {
       spaceLogoUrl: json['space_logo_url']?.toString() ?? '',
       categoryName: json['category_name']?.toString() ?? '',
       appleProductId: json['apple_product_id']?.toString(),
+      sourceType: json['source_type']?.toString() ?? 'youtube',
+      videoFileUrl: json['video_file_url']?.toString(),
     );
   }
 
@@ -151,6 +157,8 @@ class SpaceVideo {
       liveEndsAt: liveEndsAt,
       spaceName: spaceName,
       appleProductId: appleProductId,
+      sourceType: sourceType,
+      videoFileUrl: videoFileUrl,
       spaceLogoUrl: spaceLogoUrl,
       categoryName: categoryName,
     );

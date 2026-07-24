@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:video_player/video_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:grand_public_v2/app/data/models/space_model.dart';
 import 'package:grand_public_v2/app/data/models/video_comment.dart';
@@ -42,6 +43,7 @@ class VidDetail extends StatefulWidget {
 class _VidDetailState extends State<VidDetail> {
   late final VideosController ctrl;
   YoutubePlayerController? _ytCtrl;
+  VideoPlayerController? _nativeCtrl; // vidéo hébergée sur notre serveur
   bool _playerReady = false;
   bool _showControls = true;
 
@@ -64,11 +66,42 @@ class _VidDetailState extends State<VidDetail> {
 
   void _maybeInitPlayer(SpaceVideo video) {
     if (!video.canRead) return;
+
+    // ── Vidéo hébergée directement sur notre serveur ──────────────────────
+    if (video.sourceType == 'upload' &&
+        video.videoFileUrl != null &&
+        video.videoFileUrl!.isNotEmpty) {
+      _initNativePlayer(video.videoFileUrl!);
+      return;
+    }
+
+    // ── Vidéo YouTube (comportement existant) ─────────────────────────────
     final ytId = _extractYoutubeId(
       video.youtubeId.isNotEmpty ? video.youtubeId : video.videoUrl,
     );
     if (ytId == null) return;
     _initPlayer(ytId);
+  }
+
+  void _initNativePlayer(String url) {
+    _ytCtrl?.dispose();
+    _ytCtrl = null;
+    _nativeCtrl?.dispose();
+    _nativeCtrl = VideoPlayerController.networkUrl(Uri.parse(url))
+      ..addListener(_onNativePlayerUpdate)
+      ..initialize().then((_) {
+        if (!mounted) return;
+        setState(() => _playerReady = true);
+        ctrl.totalDuration.value = _nativeCtrl!.value.duration;
+      });
+  }
+
+  void _onNativePlayerUpdate() {
+    if (!mounted || _nativeCtrl == null) return;
+    final v = _nativeCtrl!.value;
+    ctrl.isPlaying.value = v.isPlaying;
+    ctrl.currentPosition.value = v.position;
+    ctrl.totalDuration.value = v.duration;
   }
 
   void _initPlayer(String ytId) {
@@ -97,12 +130,18 @@ class _VidDetailState extends State<VidDetail> {
   void dispose() {
     _ytCtrl?.removeListener(_onPlayerUpdate);
     _ytCtrl?.dispose();
+    _nativeCtrl?.removeListener(_onNativePlayerUpdate);
+    _nativeCtrl?.dispose();
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
   void _togglePlay() {
+    if (_nativeCtrl != null) {
+      _nativeCtrl!.value.isPlaying ? _nativeCtrl!.pause() : _nativeCtrl!.play();
+      return;
+    }
     if (_ytCtrl == null) return;
     _ytCtrl!.value.isPlaying ? _ytCtrl!.pause() : _ytCtrl!.play();
   }
@@ -110,6 +149,10 @@ class _VidDetailState extends State<VidDetail> {
   void _toggleMute() {
     final muted = !ctrl.isMuted.value;
     ctrl.isMuted.value = muted;
+    if (_nativeCtrl != null) {
+      _nativeCtrl!.setVolume(muted ? 0 : 1);
+      return;
+    }
     muted ? _ytCtrl!.mute() : _ytCtrl!.unMute();
   }
 
@@ -239,6 +282,15 @@ class _VidDetailState extends State<VidDetail> {
           // Contenu
           if (!video.canRead)
             _lockedLayer(video)
+          else if (_playerReady && _nativeCtrl != null)
+            FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: _nativeCtrl!.value.size.width,
+                height: _nativeCtrl!.value.size.height,
+                child: VideoPlayer(_nativeCtrl!),
+              ),
+            )
           else if (_playerReady && _ytCtrl != null)
             YoutubePlayer(
               controller: _ytCtrl!,
@@ -390,9 +442,16 @@ class _VidDetailState extends State<VidDetail> {
               ),
               child: Slider(
                 value: progress,
-                onChanged: (v) => _ytCtrl?.seekTo(
-                  Duration(milliseconds: (v * dur.inMilliseconds).round()),
-                ),
+                onChanged: (v) {
+                  final target = Duration(
+                    milliseconds: (v * dur.inMilliseconds).round(),
+                  );
+                  if (_nativeCtrl != null) {
+                    _nativeCtrl!.seekTo(target);
+                  } else {
+                    _ytCtrl?.seekTo(target);
+                  }
+                },
               ),
             ),
             Row(
@@ -521,7 +580,11 @@ class _VidDetailState extends State<VidDetail> {
                         : null,
                     onTap: () {
                       ctrl.playbackSpeed.value = s;
-                      _ytCtrl?.setPlaybackRate(s);
+                      if (_nativeCtrl != null) {
+                        _nativeCtrl!.setPlaybackSpeed(s);
+                      } else {
+                        _ytCtrl?.setPlaybackRate(s);
+                      }
                       Navigator.of(ctx).pop();
                     },
                   );
