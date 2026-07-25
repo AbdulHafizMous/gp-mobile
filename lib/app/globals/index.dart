@@ -9,14 +9,14 @@ import 'package:crypto/crypto.dart';
 // For Test
 const bool useMock = false;
 // Versionning
-const String kAppVersion = '1.0.0';
+const String kAppVersion = '1.0.5';
 // User
 final activeUser = User.empty().obs;
 //
 
 const String kPlayStoreUrl =
     'https://play.google.com/store/apps/details?id=com.maxafrica.gpbenin';
-const String kAppStoreUrl = 'https://apps.apple.com/app/idTON_APP_ID';
+const String kAppStoreUrl = 'https://apps.apple.com/app/com.maxafrica.gpbenin';
 
 class GPTextStyle extends TextStyle {
   const GPTextStyle({
