@@ -154,7 +154,7 @@ final sections = [
     description:
         "Achetez, vendez et échangez vos bons plans entre utilisateurs.",
     icon: Icons.storefront_outlined,
-    isLive: true,
+    isLive: false,
     page: const ShopView(),
     drawerItems: [
       DrawerItem(
