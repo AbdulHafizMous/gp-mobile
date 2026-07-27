@@ -27,4 +27,4 @@ const bool useExternalPaywall = false;
 // Utilisé UNIQUEMENT sur iOS, quel que soit `useExternalPaywall`.
 // Remplace par ta vraie clé publique API iOS depuis le dashboard RevenueCat.
 // ══════════════════════════════════════════════════════════════════════════
-const String REVENUECAT_IOS_API_KEY = "REPLACE_WITH_REVENUECAT_PUBLIC_IOS_KEY";
+const String REVENUECAT_IOS_API_KEY = "test_IvVqfCoTzVlLZFpIrQUrnFYqEpi";
