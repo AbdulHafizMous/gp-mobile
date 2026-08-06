@@ -70,45 +70,45 @@ class _ChatListViewState extends State<ChatListView>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Titre + icône refresh
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 12, 0),
-                    child: Row(
-                      children: [
-                        const Text(
-                          'My GP',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const Spacer(),
-                        Obx(
-                          () => _ctrl.isChannelsLoading.value
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white54,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : IconButton(
-                                  onPressed: () {
-                                    _ctrl.loadChannels();
-                                    _ctrl.loadPrivateConversations();
-                                  },
-                                  icon: const Icon(
-                                    Icons.refresh_rounded,
-                                    color: Colors.white60,
-                                    size: 20,
-                                  ),
-                                ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // Padding(
+                  //   padding: const EdgeInsets.fromLTRB(16, 12, 12, 0),
+                  //   child: Row(
+                  //     children: [
+                  //       const Text(
+                  //         'My GP',
+                  //         style: TextStyle(
+                  //           color: Colors.white,
+                  //           fontSize: 24,
+                  //           fontWeight: FontWeight.w900,
+                  //           letterSpacing: 0.5,
+                  //         ),
+                  //       ),
+                  //       const Spacer(),
+                  //       Obx(
+                  //         () => _ctrl.isChannelsLoading.value
+                  //             ? const SizedBox(
+                  //                 width: 18,
+                  //                 height: 18,
+                  //                 child: CircularProgressIndicator(
+                  //                   color: Colors.white54,
+                  //                   strokeWidth: 2,
+                  //                 ),
+                  //               )
+                  //             : IconButton(
+                  //                 onPressed: () {
+                  //                   _ctrl.loadChannels();
+                  //                   _ctrl.loadPrivateConversations();
+                  //                 },
+                  //                 icon: const Icon(
+                  //                   Icons.refresh_rounded,
+                  //                   color: Colors.white60,
+                  //                   size: 20,
+                  //                 ),
+                  //               ),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
                   // Search
                   Padding(
                     padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
@@ -119,7 +119,7 @@ class _ChatListViewState extends State<ChatListView>
                   TabBar(
                     controller: _tab,
                     isScrollable: true,
-                    tabAlignment: TabAlignment.start,
+                    tabAlignment: TabAlignment.center,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     indicatorColor: GPTheme.primaryColor,
                     indicatorWeight: 3,

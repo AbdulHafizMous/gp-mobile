@@ -4,7 +4,7 @@ import 'package:grand_public_v2/app/data/models/shop_models.dart';
 import 'package:grand_public_v2/app/modules/shop/controllers/shop_controller.dart';
 import 'package:grand_public_v2/app/modules/shop/views/shop_create_view.dart';
 import 'package:grand_public_v2/app/modules/shop/views/shop_detail_view.dart';
-import 'package:grand_public_v2/app/modules/shop/views/shop_my_listings_view.dart';
+// import 'package:grand_public_v2/app/modules/shop/views/shop_my_listings_view.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -18,7 +18,7 @@ extension _Tx on BuildContext {
   Color get primary => Theme.of(this).textTheme.bodyLarge!.color!;
   Color get subtle => Theme.of(this).hintColor;
   // Color get divider => Theme.of(this).dividerColor;
-  Color get appBarBg => isDark ? const Color(0xFF111111) : GPTheme.primaryColor;
+  // Color get appBarBg => isDark ? const Color(0xFF111111) : GPTheme.primaryColor;
 }
 
 class ShopView extends StatelessWidget {
@@ -37,19 +37,19 @@ class ShopView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: context.bg,
-      appBar: AppBar(
-        title: const Text('Shop — Bons plans'),
-        backgroundColor: context.appBarBg,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.list_alt_rounded),
-            tooltip: 'Mes annonces',
-            onPressed: () => Get.to(() => const ShopMyListingsView()),
-          ),
-        ],
-      ),
+      // appBar: AppBar(
+      //   title: const Text('Shop — Bons plans'),
+      //   backgroundColor: context.appBarBg,
+      //   foregroundColor: Colors.white,
+      //   elevation: 0,
+      //   actions: [
+      // IconButton(
+      //   icon: const Icon(Icons.list_alt_rounded),
+      //   tooltip: 'Mes annonces',
+      //   onPressed: () => Get.to(() => const ShopMyListingsView()),
+      // ),
+      //   ],
+      // ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: GPTheme.primaryColor,
         foregroundColor: Colors.white,
@@ -130,26 +130,37 @@ class ShopView extends StatelessWidget {
 
   Widget _searchBar(BuildContext context, ShopController controller) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-      child: TextField(
-        style: TextStyle(color: context.primary, fontSize: 14),
-        decoration: InputDecoration(
-          hintText: 'Rechercher une annonce...',
-          hintStyle: TextStyle(color: context.subtle, fontSize: 14),
-          prefixIcon: Icon(
-            Icons.search_rounded,
-            color: context.subtle,
-            size: 20,
+      padding: const EdgeInsets.fromLTRB(10, 12, 10, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              style: TextStyle(color: context.primary, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Rechercher une annonce...',
+                hintStyle: TextStyle(color: context.subtle, fontSize: 14),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: context.subtle,
+                  size: 20,
+                ),
+                filled: true,
+                fillColor: context.inputBg,
+                contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              onSubmitted: controller.search,
+            ),
           ),
-          filled: true,
-          fillColor: context.inputBg,
-          contentPadding: const EdgeInsets.symmetric(vertical: 4),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
-          ),
-        ),
-        onSubmitted: controller.search,
+          // IconButton(
+          //   icon: const Icon(Icons.list_alt_rounded),
+          //   tooltip: 'Mes annonces',
+          //   onPressed: () => Get.to(() => const ShopMyListingsView()),
+          // ),
+        ],
       ),
     );
   }
@@ -207,6 +218,8 @@ class ShopView extends StatelessWidget {
         selected: selected,
         onSelected: (_) => onTap(),
         backgroundColor: context.inputBg,
+        iconTheme: IconThemeData(color: Colors.white),
+        showCheckmark: false,
         selectedColor: GPTheme.primaryColor,
         labelStyle: TextStyle(
           color: selected ? Colors.white : context.primary,

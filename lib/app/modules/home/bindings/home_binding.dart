@@ -65,6 +65,15 @@ class HomeBinding extends Bindings {
         return const SocialView();
       });
 
+      // ── Social : Dating (ouvre SocialView sur l'onglet Dating) ─────────
+      ctrl.registerPage('/social/shop', (_) {
+        if (Get.isRegistered<ChatController>()) {
+          Get.find<ChatController>().socialTab.value = 2;
+        }
+        return const ShopView();
+      });
+
+
       // ── Social : Modération ────────────────────────────────────────────
       // ctrl.registerPage('/social/moderation', (_) => const ModerationView());
 
@@ -74,8 +83,8 @@ class HomeBinding extends Bindings {
       ctrl.registerPage('/social-about', (_) => const SocialAboutView());
 
       // -- Shop : Mes annonces (ouvre ShopView sur l'onglet Mes annonces) ─────
-      ctrl.registerPage('/shop', (_) => const ShopView());
-      ctrl.registerPage('/shop/my-listings', (_) => const ShopMyListingsView());
+      // ctrl.registerPage('/social/shop', (_) => const ShopView());
+      ctrl.registerPage('/social/shop/my-listings', (_) => const ShopMyListingsView());
     });
   }
 }
