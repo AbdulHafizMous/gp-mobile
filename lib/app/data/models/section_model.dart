@@ -5,7 +5,7 @@ import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/club/views/club_view.dart';
 import 'package:grand_public_v2/app/modules/space/views/spaces_list_view.dart';
 import 'package:grand_public_v2/app/modules/social/views/social_view.dart';
-import 'package:grand_public_v2/app/modules/shop/views/shop_view.dart';
+// import 'package:grand_public_v2/app/modules/shop/views/shop_view.dart';
 
 class DrawerItem {
   final String title;
@@ -101,29 +101,6 @@ final sections = [
   //   ],
   // ),
   SectionModel(
-    title: "Club",
-    description:
-        "Profitez d'offres exclusives, promotions et avantages uniques.",
-    icon: Icons.local_offer_outlined,
-    hasSub: true,
-    isLive: true,
-    page: ClubView(),
-    // route: "/home/club",
-    drawerItems: [
-      DrawerItem(
-        title: "Promotions",
-        icon: Icons.local_offer_outlined,
-        route: "/home/club",
-      ),
-      DrawerItem(
-        title: "Validations",
-        icon: Icons.verified_outlined,
-        route: "/home/club/validations",
-        requiredRoles: ["Admin", "Super Admin", "Partner"],
-      ),
-    ],
-  ),
-  SectionModel(
     title: "Social",
     description: "Discutez, échangez et connectez-vous avec la communauté.",
     icon: Icons.chat_bubble_outline,
@@ -146,29 +123,63 @@ final sections = [
         route: "/social/moderation",
         requiredRoles: ["Admin", "Super Admin", "moderator"],
       ),
-    ],
-  ),
-  // ── Shop : petites annonces / bons plans entre utilisateurs ────────────
-  SectionModel(
-    title: "Shop",
-    description:
-        "Achetez, vendez et échangez vos bons plans entre utilisateurs.",
-    icon: Icons.storefront_outlined,
-    isLive: false,
-    page: const ShopView(),
-    drawerItems: [
+      //
       DrawerItem(
         title: "Annonces",
         icon: Icons.storefront_outlined,
-        route: "/shop",
+        route: "/social/shop",
       ),
       DrawerItem(
         title: "Mes annonces",
         icon: Icons.list_alt_rounded,
-        route: "/shop/my-listings",
+        route: "/social/shop/my-listings",
       ),
     ],
   ),
+  SectionModel(
+    title: "Club",
+    description:
+        "Profitez d'offres exclusives, promotions et avantages uniques.",
+    icon: Icons.local_offer_outlined,
+    hasSub: true,
+    isLive: true,
+    page: ClubView(),
+    // route: "/home/club",
+    drawerItems: [
+      DrawerItem(
+        title: "Promotions",
+        icon: Icons.local_offer_outlined,
+        route: "/home/club",
+      ),
+      DrawerItem(
+        title: "Validations",
+        icon: Icons.verified_outlined,
+        route: "/home/club/validations",
+        requiredRoles: ["Admin", "Super Admin", "Partner"],
+      ),
+    ],
+  ),
+  // ── Shop : petites annonces / bons plans entre utilisateurs ────────────
+  // SectionModel(
+  //   title: "Shop",
+  //   description:
+  //       "Achetez, vendez et échangez vos bons plans entre utilisateurs.",
+  //   icon: Icons.storefront_outlined,
+  //   isLive: true,
+  //   page: const ShopView(),
+  //   drawerItems: [
+  //     DrawerItem(
+  //       title: "Annonces",
+  //       icon: Icons.storefront_outlined,
+  //       route: "/shop",
+  //     ),
+  //     DrawerItem(
+  //       title: "Mes annonces",
+  //       icon: Icons.list_alt_rounded,
+  //       route: "/shop/my-listings",
+  //     ),
+  //   ],
+  // ),
 ];
 
 var fixedDrawerItems = [

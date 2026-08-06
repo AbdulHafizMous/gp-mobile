@@ -92,7 +92,7 @@ class _DatingAppBar extends StatelessWidget implements PreferredSizeWidget {
   const _DatingAppBar({required this.ctrl, required this.tabCtrl});
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 48);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 10);
 
   @override
   Widget build(BuildContext context) {
@@ -104,97 +104,112 @@ class _DatingAppBar extends StatelessWidget implements PreferredSizeWidget {
         bottom: false,
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 1),
-              child: Row(
-                children: [
-                  const Text(
-                    'Dating',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5,
+            // Padding(
+            //   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 1),
+            //   child: Row(
+            //     children: [
+            //       const Text(
+            //         'Dating',
+            //         style: TextStyle(
+            //           color: Colors.white,
+            //           fontSize: 22,
+            //           fontWeight: FontWeight.w900,
+            //           letterSpacing: 0.5,
+            //         ),
+            //       ),
+            //       const Spacer(),
+            //       IconButton(
+            //         onPressed: () => _showPrefsSheet(context, ctrl),
+            //         icon: const Icon(
+            //           Icons.tune_rounded,
+            //           color: Colors.white70,
+            //           size: 22,
+            //         ),
+            //         tooltip: 'Préférences',
+            //       ),
+            //     ],
+            //   ),
+            // ),
+            Row(
+              children: [
+                Expanded(
+                  child: TabBar(
+                    controller: tabCtrl,
+                    tabAlignment: TabAlignment.center,
+                    isScrollable: true,
+                    indicatorColor: Colors.white,
+                    indicatorWeight: 3,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.white38,
+                    labelStyle: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
                     ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => _showPrefsSheet(context, ctrl),
-                    icon: const Icon(
-                      Icons.tune_rounded,
-                      color: Colors.white70,
-                      size: 22,
-                    ),
-                    tooltip: 'Préférences',
-                  ),
-                ],
-              ),
-            ),
-            TabBar(
-              controller: tabCtrl,
-              tabAlignment: TabAlignment.center,
-              isScrollable: true,
-              indicatorColor: Colors.white,
-              indicatorWeight: 3,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white38,
-              labelStyle: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-              tabs: [
-                const Tab(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.explore_rounded, size: 12),
-                      SizedBox(width: 3),
-                      Text('Découvrir'),
-                    ],
-                  ),
-                ),
-                Tab(
-                  child: Obx(
-                    () => Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.favorite_rounded, size: 12),
-                        const SizedBox(width: 3),
-                        const Text('Matches'),
-                        if (ctrl.matches.isNotEmpty) ...[
-                          const SizedBox(width: 3),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white24,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '${ctrl.matches.length}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
+                    tabs: [
+                      const Tab(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.explore_rounded, size: 12),
+                            SizedBox(width: 3),
+                            Text('Découvrir'),
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        child: Obx(
+                          () => Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.favorite_rounded, size: 12),
+                              const SizedBox(width: 3),
+                              const Text('Matches'),
+                              if (ctrl.matches.isNotEmpty) ...[
+                                const SizedBox(width: 3),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white24,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '${ctrl.matches.length}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                const Tab(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.thumb_up_rounded, size: 12),
-                      SizedBox(width: 3),
-                      Text('Likés'),
+                        ),
+                      ),
+                      const Tab(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.thumb_up_rounded, size: 12),
+                            SizedBox(width: 3),
+                            Text('Likés'),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
+                ),
+                IconButton(
+                  onPressed: () => _showPrefsSheet(context, ctrl),
+                  icon: const Icon(
+                    Icons.tune_rounded,
+                    color: Colors.white70,
+                    size: 22,
+                  ),
+                  tooltip: 'Préférences',
                 ),
               ],
             ),

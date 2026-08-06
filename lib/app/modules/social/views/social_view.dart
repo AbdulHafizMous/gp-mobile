@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/modules/shop/controllers/shop_controller.dart';
+import 'package:grand_public_v2/app/modules/shop/views/shop_view.dart';
 import 'package:grand_public_v2/app/modules/social/controllers/chat_controller.dart';
 import 'package:grand_public_v2/app/modules/social/controllers/dating_controller.dart';
 import 'package:grand_public_v2/app/modules/social/views/chat_list_view.dart';
@@ -19,6 +21,9 @@ class SocialView extends StatelessWidget {
     Get.isRegistered<DatingController>()
         ? Get.find<DatingController>()
         : Get.put(DatingController());
+    Get.isRegistered<ShopController>()
+        ? Get.find<ShopController>()
+        : Get.put(ShopController());
 
     return Obx(
       () => Column(
@@ -35,7 +40,9 @@ class SocialView extends StatelessWidget {
                   FadeTransition(opacity: anim, child: child),
               child: chatCtrl.socialTab.value == 0
                   ? const ChatListView(key: ValueKey('chat'))
-                  : const DatingView(key: ValueKey('dating')),
+                  : chatCtrl.socialTab.value == 1
+                  ? const DatingView(key: ValueKey('dating'))
+                  : const ShopView(key: ValueKey('shop')),
             ),
           ),
         ],
@@ -57,7 +64,7 @@ class _SocialTopTabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       // color: GPTheme.primaryColor,
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      padding: const EdgeInsets.fromLTRB(0, 5, 0, 5),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -75,6 +82,14 @@ class _SocialTopTabBar extends StatelessWidget {
               icon: Icons.favorite_rounded,
               active: activeTab == 1,
               onTap: () => onTap(1),
+            ),
+          ),
+          Expanded(
+            child: _TopTab(
+              label: 'Bizz',
+              icon: Icons.storefront_outlined,
+              active: activeTab == 2,
+              onTap: () => onTap(2),
             ),
           ),
         ],
@@ -102,20 +117,21 @@ class _TopTab extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: active ? Colors.white : Colors.transparent,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
               size: 15,
               color: active ? GPTheme.primaryColor : Colors.white70,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 3),
             Text(
               label,
               style: TextStyle(
