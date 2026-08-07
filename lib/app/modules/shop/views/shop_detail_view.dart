@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/shop/controllers/shop_controller.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
+import 'package:video_player/video_player.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THEME HELPERS
@@ -13,8 +15,7 @@ extension _Tx on BuildContext {
   Color get primary => Theme.of(this).textTheme.bodyLarge!.color!;
   Color get subtle => Theme.of(this).hintColor;
   Color get divider => Theme.of(this).dividerColor;
-  Color get appBarBg =>
-      isDark ? const Color(0xFF111111) : GPTheme.primaryColor;
+  Color get appBarBg => isDark ? const Color(0xFF111111) : GPTheme.primaryColor;
 }
 
 class ShopDetailView extends GetView<ShopController> {
@@ -46,21 +47,58 @@ class ShopDetailView extends GetView<ShopController> {
               flexibleSpace: FlexibleSpaceBar(
                 background: listing.media.isNotEmpty
                     ? PageView(
-                        children: listing.media.map((m) {
-                          return m.type == 'image'
-                              ? Image.network(m.url, fit: BoxFit.cover)
-                              : Container(
-                                  color: Colors.black,
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.play_circle_fill,
-                                      color: Colors.white,
-                                      size: 56,
-                                    ),
-                                  ),
-                                );
-                        }).toList(),
-                      )
+  children: listing.media.map((m) {
+    if (m.type == 'image') {
+      return GestureDetector(
+        onTap: () {
+          Get.to(
+            () => FullscreenImageViewer(url: m.url),
+            transition: Transition.fadeIn,
+          );
+        },
+        child: Hero(
+          tag: m.url,
+          child: Image.network(
+            m.url,
+            fit: BoxFit.cover,
+          ),
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () {
+        Get.to(
+          () => FullscreenVideoPlayer(url: m.url),
+          transition: Transition.fadeIn,
+        );
+      },
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          _ListingVideoPlayer(url: m.url),
+
+          IgnorePointer(
+            child: Center(
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.black38,
+                  shape: BoxShape.circle,
+                ),
+                padding: const EdgeInsets.all(14),
+                child: const Icon(
+                  Icons.fullscreen,
+                  color: Colors.white,
+                  size: 34,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }).toList(),
+)
                     : Container(color: context.inputBg),
               ),
             ),
@@ -143,9 +181,7 @@ class ShopDetailView extends GetView<ShopController> {
                           icon: listing.isLiked
                               ? Icons.favorite
                               : Icons.favorite_border,
-                          color: listing.isLiked
-                              ? Colors.red
-                              : context.subtle,
+                          color: listing.isLiked ? Colors.red : context.subtle,
                           label: '${listing.likesCount}',
                           onTap: () => controller.toggleLike(listing.id),
                         ),
@@ -170,7 +206,10 @@ class ShopDetailView extends GetView<ShopController> {
                           () => ElevatedButton.icon(
                             onPressed: controller.isContacting.value
                                 ? null
-                                : () => controller.contactSeller(context, listing),
+                                : () => controller.contactSeller(
+                                    context,
+                                    listing,
+                                  ),
                             icon: const Icon(Icons.chat_bubble_outline),
                             label: Text(
                               controller.isContacting.value
@@ -277,6 +316,58 @@ class ShopDetailView extends GetView<ShopController> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ListingVideoPlayer extends StatefulWidget {
+  final String url;
+
+  const _ListingVideoPlayer({required this.url});
+
+  @override
+  State<_ListingVideoPlayer> createState() => _ListingVideoPlayerState();
+}
+
+class _ListingVideoPlayerState extends State<_ListingVideoPlayer> {
+  late final VideoPlayerController _controller;
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url))
+      ..initialize().then((_) {
+        _controller
+          ..setLooping(true)
+          ..play();
+
+        if (mounted) {
+          setState(() => _ready = true);
+        }
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_ready) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return FittedBox(
+      fit: BoxFit.cover,
+      child: SizedBox(
+        width: _controller.value.size.width,
+        height: _controller.value.size.height,
+        child: VideoPlayer(_controller),
+      ),
     );
   }
 }

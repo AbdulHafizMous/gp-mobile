@@ -23,111 +23,6 @@ extension _Tx on BuildContext {
   Color get subtle => Theme.of(this).hintColor;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// FULLSCREEN IMAGE VIEWER
-// ─────────────────────────────────────────────────────────────────────────────
-class _FullscreenImageViewer extends StatelessWidget {
-  final String url;
-  const _FullscreenImageViewer({required this.url});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: Center(
-        child: InteractiveViewer(
-          minScale: 0.5,
-          maxScale: 5.0,
-          child: url.startsWith('/')
-              ? Image.file(File(url), fit: BoxFit.contain)
-              : Image.network(
-                  url,
-                  fit: BoxFit.contain,
-                  loadingBuilder: (_, child, prog) => prog == null
-                      ? child
-                      : const CircularProgressIndicator(color: Colors.white),
-                ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FULLSCREEN VIDEO PLAYER
-// ─────────────────────────────────────────────────────────────────────────────
-class _FullscreenVideoPlayer extends StatefulWidget {
-  final String url;
-  const _FullscreenVideoPlayer({required this.url});
-
-  @override
-  State<_FullscreenVideoPlayer> createState() => _FullscreenVideoPlayerState();
-}
-
-class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
-  late VideoPlayerController _vpc;
-  bool _init = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _vpc = widget.url.startsWith('/')
-        ? VideoPlayerController.file(File(widget.url))
-        : VideoPlayerController.networkUrl(Uri.parse(widget.url));
-    _vpc.initialize().then((_) {
-      if (mounted) {
-        setState(() => _init = true);
-        _vpc.play();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _vpc.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: Center(
-        child: _init
-            ? GestureDetector(
-                onTap: () => _vpc.value.isPlaying ? _vpc.pause() : _vpc.play(),
-                child: AspectRatio(
-                  aspectRatio: _vpc.value.aspectRatio,
-                  child: VideoPlayer(_vpc),
-                ),
-              )
-            : const CircularProgressIndicator(color: Colors.white),
-      ),
-      bottomNavigationBar: _init
-          ? VideoProgressIndicator(
-              _vpc,
-              allowScrubbing: true,
-              colors: VideoProgressColors(
-                playedColor: GPTheme.primaryColor,
-                bufferedColor: Colors.white30,
-                backgroundColor: Colors.white10,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            )
-          : null,
-    );
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CHAT ROOM VIEW
@@ -523,6 +418,54 @@ class _MenuItem extends StatelessWidget {
   }
 }
 
+class _SharedMediaTile extends StatelessWidget {
+  final ChatMessage message;
+  final ChatController ctrl;
+
+  const _SharedMediaTile({required this.message, required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget child;
+
+    switch (message.type) {
+      case MessageType.image:
+        child = _ImageBubble(message: message, isMe: false);
+        break;
+
+      case MessageType.video:
+        child = _VideoBubble(message: message, isMe: false);
+        break;
+
+      case MessageType.audio:
+        child = _AudioBubble(message: message, isMe: false, ctrl: ctrl);
+        break;
+
+      case MessageType.file:
+        child = _FileBubble(message: message, isMe: false, ctrl: ctrl);
+        break;
+
+      default:
+        child = Container(
+          alignment: Alignment.center,
+          child: const Icon(Icons.help_outline),
+        );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        color: context.isDark ? const Color(0xff232323) : Colors.grey.shade100,
+        child: FittedBox(
+          fit: BoxFit.cover,
+          clipBehavior: Clip.hardEdge,
+          child: SizedBox(width: 200, height: 200, child: child),
+        ),
+      ),
+    );
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SHARED MEDIA SHEET — câblé sur ctrl.loadSharedMedia + ctrl.sharedMedia
 // ─────────────────────────────────────────────────────────────────────────────
@@ -530,6 +473,7 @@ class _SharedMediaSheet extends StatefulWidget {
   final ChatController ctrl;
   final int? channelId;
   final int? conversationId;
+
   const _SharedMediaSheet({
     required this.ctrl,
     this.channelId,
@@ -544,6 +488,7 @@ class _SharedMediaSheetState extends State<_SharedMediaSheet> {
   @override
   void initState() {
     super.initState();
+
     widget.ctrl.loadSharedMedia(
       channelId: widget.channelId,
       conversationId: widget.conversationId,
@@ -553,105 +498,101 @@ class _SharedMediaSheetState extends State<_SharedMediaSheet> {
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      maxChildSize: 0.92,
-      minChildSize: 0.4,
-      builder: (_, scrollCtrl) => Container(
-        decoration: BoxDecoration(
-          color: context.isDark ? const Color(0xFF1A1A1A) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Text(
-                'Médias partagés',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: context.primary,
+      initialChildSize: .75,
+      minChildSize: .45,
+      maxChildSize: .95,
+      builder: (_, scrollCtrl) {
+        return Container(
+          decoration: BoxDecoration(
+            color: context.isDark ? const Color(0xff1A1A1A) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 10),
+
+              Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade400,
+                  borderRadius: BorderRadius.circular(20),
                 ),
               ),
-            ),
-            Expanded(
-              child: Obx(() {
-                if (widget.ctrl.isMediaLoading.value) {
-                  return Center(
-                    child: CircularProgressIndicator(
-                      color: GPTheme.primaryColor,
+
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                child: Obx(() {
+                  return Text(
+                    "Médias partagés (${widget.ctrl.sharedMedia.length})",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 17,
+                      color: context.primary,
                     ),
                   );
-                }
-                final media = widget.ctrl.sharedMedia;
-                if (media.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.perm_media_outlined,
-                          size: 48,
-                          color: context.subtle,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Aucun média partagé',
-                          style: TextStyle(color: context.subtle),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                return GridView.builder(
-                  controller: scrollCtrl,
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  itemCount: media.length,
-                  itemBuilder: (_, i) {
-                    final m = media[i];
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: m.type == MessageType.image
-                          ? Image.network(
-                              m.mediaUrl ?? '',
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
-                                  Container(color: Colors.grey.shade300),
-                            )
-                          : Container(
-                              color: Colors.grey.shade800,
-                              child: Icon(
-                                m.type == MessageType.video
-                                    ? Icons.videocam_rounded
-                                    : m.type == MessageType.audio
-                                    ? Icons.mic_rounded
-                                    : Icons.insert_drive_file_rounded,
-                                color: Colors.white54,
-                                size: 28,
-                              ),
-                            ),
+                }),
+              ),
+
+              Expanded(
+                child: Obx(() {
+                  if (widget.ctrl.isMediaLoading.value) {
+                    return Center(
+                      child: CircularProgressIndicator(
+                        color: GPTheme.primaryColor,
+                      ),
                     );
-                  },
-                );
-              }),
-            ),
-          ],
-        ),
-      ),
+                  }
+
+                  final media = widget.ctrl.sharedMedia;
+
+                  if (media.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.photo_library_outlined,
+                            size: 56,
+                            color: context.subtle,
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          Text(
+                            "Aucun média partagé",
+                            style: TextStyle(color: context.subtle),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return GridView.builder(
+                    controller: scrollCtrl,
+                    padding: const EdgeInsets.all(14),
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: media.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 10,
+                          childAspectRatio: 1,
+                        ),
+                    itemBuilder: (_, index) {
+                      return _SharedMediaTile(
+                        message: media[index],
+                        ctrl: widget.ctrl,
+                      );
+                    },
+                  );
+                }),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -1491,7 +1432,7 @@ class _ImageBubble extends StatelessWidget {
 
     return GestureDetector(
       onTap: () => Get.to(
-        () => _FullscreenImageViewer(url: local ?? url),
+        () => FullscreenImageViewer(url: local ?? url),
         transition: Transition.fadeIn,
       ),
       child: ClipRRect(
@@ -1684,7 +1625,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
     return GestureDetector(
       onTap: _url.isNotEmpty
           ? () => Get.to(
-              () => _FullscreenVideoPlayer(url: _url),
+              () => FullscreenVideoPlayer(url: _url),
               transition: Transition.fadeIn,
             )
           : null,

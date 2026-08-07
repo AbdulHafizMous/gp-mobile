@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -5,6 +7,8 @@ import 'package:grand_public_v2/app/data/models/user.dart';
 import 'dart:convert';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
+import 'package:grand_public_v2/app/themes/app_theme.dart';
+import 'package:video_player/video_player.dart';
 
 // For Test
 const bool useMock = false;
@@ -101,3 +105,110 @@ class SimplePhoneFormatter extends TextInputFormatter {
   String vsha256ofString(String input) {
     return sha256.convert(utf8.encode(input)).toString();
   }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FULLSCREEN IMAGE VIEWER
+// ─────────────────────────────────────────────────────────────────────────────
+class FullscreenImageViewer extends StatelessWidget {
+  final String url;
+  const FullscreenImageViewer({super.key, required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          minScale: 0.5,
+          maxScale: 5.0,
+          child: url.startsWith('/')
+              ? Image.file(File(url), fit: BoxFit.contain)
+              : Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (_, child, prog) => prog == null
+                      ? child
+                      : const CircularProgressIndicator(color: Colors.white),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FULLSCREEN VIDEO PLAYER
+// ─────────────────────────────────────────────────────────────────────────────
+class FullscreenVideoPlayer extends StatefulWidget {
+  final String url;
+  const FullscreenVideoPlayer({super.key, required this.url});
+
+  @override
+  State<FullscreenVideoPlayer> createState() => FullscreenVideoPlayerState();
+}
+
+class FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
+  late VideoPlayerController _vpc;
+  bool _init = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _vpc = widget.url.startsWith('/')
+        ? VideoPlayerController.file(File(widget.url))
+        : VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    _vpc.initialize().then((_) {
+      if (mounted) {
+        setState(() => _init = true);
+        _vpc.play();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _vpc.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: Center(
+        child: _init
+            ? GestureDetector(
+                onTap: () => _vpc.value.isPlaying ? _vpc.pause() : _vpc.play(),
+                child: AspectRatio(
+                  aspectRatio: _vpc.value.aspectRatio,
+                  child: VideoPlayer(_vpc),
+                ),
+              )
+            : const CircularProgressIndicator(color: Colors.white),
+      ),
+      bottomNavigationBar: _init
+          ? VideoProgressIndicator(
+              _vpc,
+              allowScrubbing: true,
+              colors: VideoProgressColors(
+                playedColor: GPTheme.primaryColor,
+                bufferedColor: Colors.white30,
+                backgroundColor: Colors.white10,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            )
+          : null,
+    );
+  }
+}
