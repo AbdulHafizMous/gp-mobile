@@ -74,7 +74,7 @@ class NotificationService {
 
   // ── FCM Token ─────────────────────────────────────────────────────────────
   static Future<void> _saveFcmToken() async {
-    final String? token = await FirebaseMessaging.instance.getToken();
+    final String? token =  await FirebaseMessaging.instance.getToken();
     if (token != null) {
       debugPrint('FCM Token: $token');
       GetStorage().write('fcm_token', token);

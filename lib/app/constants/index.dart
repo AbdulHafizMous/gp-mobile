@@ -2,10 +2,10 @@ const LOGO_PIXEL = 'assets/images/logo_gpb.png';
 const LOGO = 'assets/images/logo_gpb.png';
 const GOOGLE_LOGO = 'assets/icons/google.png';
 const FACEBOOK_LOGO = 'assets/icons/facebook.png';
-const API_IP = "localhost";
-const API_URL = "http://$API_IP:8000/api";
-// const API_IP = "grandpublic.bj";
-// const API_URL = "https://grandpublic.bj/api";
+// const API_IP = "localhost";
+// const API_URL = "http://$API_IP:8000/api";
+const API_IP = "grandpublic.bj";
+const API_URL = "https://grandpublic.bj/api";
 const PUSHER_API_KEY = "0fe44ac921bf1cf4b22e";
 const PUSHER_API_CLUSTER = "eu";
 const FEEX_SHOP_ID = "68499e0e4e10d69c0dbfd22d";
@@ -27,4 +27,4 @@ const bool useExternalPaywall = false;
 // Utilisé UNIQUEMENT sur iOS, quel que soit `useExternalPaywall`.
 // Remplace par ta vraie clé publique API iOS depuis le dashboard RevenueCat.
 // ══════════════════════════════════════════════════════════════════════════
-const String REVENUECAT_IOS_API_KEY = "test_IvVqfCoTzVlLZFpIrQUrnFYqEpi";
+const String REVENUECAT_IOS_API_KEY = "appl_PWZcuaTWEDfdfWQSLjWXOpPqTCy";
