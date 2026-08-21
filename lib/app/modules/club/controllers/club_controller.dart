@@ -11,12 +11,59 @@ class ClubController extends GetxController {
   final isClaiming   = false.obs;
   final hasMore      = false.obs;
 
+  // ── Onglet Club (0 = Offres, 1 = Partenaires) ─────────────────────────
+  final clubTab   = 0.obs;
+  final searchCtrl = TextEditingController();
+  final searchQuery = ''.obs;
+
+  final partners        = <PartnerFiche>[].obs;
+  final isPartnersLoading = false.obs;
+
   int _page = 1;
 
   @override
   void onInit() {
     super.onInit();
     fetchPromotions();
+    fetchPartners();
+  }
+
+  void onSearchChanged(String value) {
+    searchQuery.value = value;
+    fetchPromotions(refresh: true);
+    fetchPartners();
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PARTENAIRES
+  // ══════════════════════════════════════════════════════════════════════════
+  Future<void> fetchPartners() async {
+    isPartnersLoading.value = true;
+    try {
+      if (useMock) {
+        await Future.delayed(const Duration(milliseconds: 400));
+        partners.value = [];
+        return;
+      }
+      final response = await RequestService().get(
+        '/partners',
+        queryParameters: searchQuery.value.isNotEmpty
+            ? {'search': searchQuery.value}
+            : null,
+      );
+      if (response.statusCode == 200) {
+        final list = (response.data['data'] as List)
+            .map((e) => PartnerFiche.fromJson(e))
+            .toList();
+        partners.value = list;
+      }
+    } on DioException catch (e) {
+      debugPrint('fetchPartners DioError: ${e.message}');
+    } catch (e) {
+      debugPrint('fetchPartners error: $e');
+    } finally {
+      isPartnersLoading.value = false;
+    }
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -35,7 +82,11 @@ class ClubController extends GetxController {
 
       final response = await RequestService().get(
         '/promotions',
-        queryParameters: {'page': _page, 'per_page': 20},
+        queryParameters: {
+          'page': _page,
+          'per_page': 20,
+          if (searchQuery.value.isNotEmpty) 'search': searchQuery.value,
+        },
       );
 
       if (response.statusCode == 200) {

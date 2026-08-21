@@ -10,6 +10,7 @@ import 'package:grand_public_v2/app/data/models/video_comment.dart';
 import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
 import 'package:grand_public_v2/app/modules/videos/controllers/videos_controller.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
+import 'package:grand_public_v2/app/utils/share_helper.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THEME HELPERS
@@ -331,6 +332,22 @@ class _VidDetailState extends State<VidDetail> {
               onTap: fullscreen ? _toggleFullscreen : Get.back,
             ),
           ),
+
+          // Bouton partage — permet d'envoyer ce média à un ami
+          if (!fullscreen)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: _CircleBtn(
+                icon: Icons.share_outlined,
+                onTap: () => ShareHelper.showShareSheet(
+                  context,
+                  title: video.title,
+                  path: '/media/${video.id}',
+                  type: 'media',
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -299,6 +299,33 @@ class DatingController extends GetxController {
     });
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ANNUAIRE DES UTILISATEURS — remplace l'onglet "Likés"
+  // ─────────────────────────────────────────────────────────────────────────
+  final directoryUsers = <Map<String, dynamic>>[].obs;
+  final isDirectoryLoading = false.obs;
+  final directorySearchCtrl = TextEditingController();
+
+  Future<void> loadDirectoryUsers({String? search}) async {
+    isDirectoryLoading.value = true;
+    try {
+      if (useMock) {
+        await Future.delayed(const Duration(milliseconds: 400));
+        directoryUsers.value = [];
+        return;
+      }
+      final r = await RequestService().get(
+        '/social/users',
+        queryParameters: (search != null && search.isNotEmpty) ? {'search': search} : null,
+      );
+      directoryUsers.value = List<Map<String, dynamic>>.from(r.data['data'] as List);
+    } catch (e) {
+      debugPrint('loadDirectoryUsers error: $e');
+    } finally {
+      isDirectoryLoading.value = false;
+    }
+  }
+
   void _handleDioError(DioException e) {
     final msg = e.response != null ? 'Erreur ${e.response?.statusCode}' : e.message ?? 'Erreur réseau';
     ToastHelper.showToast(msg, backgroundColor: Colors.red, textColor: Colors.white);
