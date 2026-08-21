@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/shop/controllers/shop_controller.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
+import 'package:grand_public_v2/app/utils/share_helper.dart';
 import 'package:video_player/video_player.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -44,6 +45,18 @@ class ShopDetailView extends GetView<ShopController> {
               pinned: true,
               backgroundColor: context.appBarBg,
               foregroundColor: Colors.white,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.share_outlined),
+                  onPressed: () => ShareHelper.showShareSheet(
+                    context,
+                    title: listing.title,
+                    subtitle: listing.price != null ? '${listing.price} FCFA' : null,
+                    path: '/bizz/annonce/${listing.id}',
+                    type: 'listing',
+                  ),
+                ),
+              ],
               flexibleSpace: FlexibleSpaceBar(
                 background: listing.media.isNotEmpty
                     ? PageView(

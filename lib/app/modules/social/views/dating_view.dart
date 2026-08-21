@@ -75,7 +75,7 @@ class _DatingViewState extends State<DatingView>
           children: [
             _SwipeTab(ctrl: _ctrl),
             _MatchesTab(ctrl: _ctrl),
-            _LikesTab(ctrl: _ctrl),
+            _UsersTab(ctrl: _ctrl),
           ],
         ),
       );
@@ -193,9 +193,9 @@ class _DatingAppBar extends StatelessWidget implements PreferredSizeWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.thumb_up_rounded, size: 12),
+                            Icon(Icons.people_alt_rounded, size: 12),
                             SizedBox(width: 3),
-                            Text('Likés'),
+                            Text('Utilisateurs'),
                           ],
                         ),
                       ),
@@ -765,6 +765,7 @@ class _ProfileDetailSheet extends StatelessWidget {
   const _ProfileDetailSheet({
     required this.profile,
     required this.ctrl,
+    // ignore: unused_element_parameter
     this.showMessageButton = false,
   });
 
@@ -1422,150 +1423,113 @@ class _MatchTile extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // ONGLET LIKÉS — sans doublons, cliquable pour voir le profil
 // ─────────────────────────────────────────────────────────────────────────────
-class _LikesTab extends StatelessWidget {
+class _UsersTab extends StatefulWidget {
   final DatingController ctrl;
-  const _LikesTab({required this.ctrl});
+  const _UsersTab({required this.ctrl});
+
+  @override
+  State<_UsersTab> createState() => _UsersTabState();
+}
+
+class _UsersTabState extends State<_UsersTab> {
+  @override
+  void initState() {
+    super.initState();
+    widget.ctrl.loadDirectoryUsers();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      if (ctrl.likedProfiles.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.thumb_up_outlined, size: 48, color: context.subtle),
-              const SizedBox(height: 14),
-              Text(
-                'Vous n\'avez encore liké personne',
-                style: TextStyle(color: context.subtle, fontSize: 14),
-              ),
-            ],
-          ),
-        );
-      }
-      return GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.75,
-        ),
-        itemCount: ctrl.likedProfiles.length,
-        itemBuilder: (_, i) {
-          final p = ctrl.likedProfiles[i];
-          return GestureDetector(
-            onTap: () => _showProfileDetail(context, p),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _ProfilePhoto(url: p.displayPhoto),
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          stops: const [0.5, 1.0],
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.7),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Bouton message rapide — accès direct sans passer par le sheet
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GestureDetector(
-                      onTap: () => _quickMessage(context, p),
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.chat_bubble_rounded,
-                          size: 16,
-                          color: GPTheme.primaryColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: 10,
-                    right: 10,
-                    bottom: 10,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${p.name}, ${p.age}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13,
-                          ),
-                        ),
-                        if (p.city != null)
-                          Text(
-                            p.city!,
-                            style: const TextStyle(
-                              color: Colors.white60,
-                              fontSize: 11,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
+    final ctrl = widget.ctrl;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: TextField(
+            controller: ctrl.directorySearchCtrl,
+            onChanged: (v) => ctrl.loadDirectoryUsers(search: v),
+            style: TextStyle(color: context.primary),
+            decoration: InputDecoration(
+              hintText: 'Rechercher quelqu\'un…',
+              prefixIcon: Icon(Icons.search_rounded, color: context.subtle),
+              filled: true,
+              fillColor: context.surface,
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
               ),
             ),
-          );
-        },
-      );
-    });
+          ),
+        ),
+        Expanded(
+          child: Obx(() {
+            if (ctrl.isDirectoryLoading.value && ctrl.directoryUsers.isEmpty) {
+              return Center(
+                child: CircularProgressIndicator(color: GPTheme.primaryColor),
+              );
+            }
+            if (ctrl.directoryUsers.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.people_outline_rounded, size: 48, color: context.subtle),
+                    const SizedBox(height: 14),
+                    Text('Aucun utilisateur trouvé',
+                        style: TextStyle(color: context.subtle, fontSize: 14)),
+                  ],
+                ),
+              );
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              itemCount: ctrl.directoryUsers.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 4),
+              itemBuilder: (_, i) {
+                final u = ctrl.directoryUsers[i];
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    radius: 24,
+                    backgroundColor: GPTheme.primaryColor.withOpacity(0.12),
+                    backgroundImage:
+                        u['avatar_url'] != null ? NetworkImage(u['avatar_url']) : null,
+                    child: u['avatar_url'] == null
+                        ? Text((u['name'] ?? '?').toString()[0].toUpperCase(),
+                            style: TextStyle(color: GPTheme.primaryColor, fontWeight: FontWeight.bold))
+                        : null,
+                  ),
+                  title: Text(u['name']?.toString() ?? '',
+                      style: TextStyle(color: context.primary, fontWeight: FontWeight.w700)),
+                  subtitle: u['city'] != null
+                      ? Text(u['city'].toString(), style: TextStyle(color: context.subtle, fontSize: 12))
+                      : null,
+                  trailing: IconButton(
+                    icon: Icon(Icons.chat_bubble_rounded, color: GPTheme.primaryColor),
+                    onPressed: () => _quickMessageUser(context, u['id'] as int),
+                  ),
+                  onTap: () => _quickMessageUser(context, u['id'] as int),
+                );
+              },
+            );
+          }),
+        ),
+      ],
+    );
   }
 
-  Future<void> _quickMessage(
-    BuildContext context,
-    DatingProfile profile,
-  ) async {
+  Future<void> _quickMessageUser(BuildContext context, int userId) async {
     final chatCtrl = Get.find<ChatController>();
-    final convId = await chatCtrl.startConversationWithUser(profile.id);
+    final convId = await chatCtrl.startConversationWithUser(userId);
     if (convId != null) {
       await chatCtrl.loadPrivateConversations();
-      final conv = chatCtrl.privateConversations.firstWhereOrNull(
-        (c) => c.id == convId,
-      );
+      final conv = chatCtrl.privateConversations.firstWhereOrNull((c) => c.id == convId);
       if (conv != null) {
         await chatCtrl.openPrivateConversation(conv);
-        Get.to(
-          () => ChatRoomView(privateConv: conv),
-          transition: Transition.rightToLeft,
-        );
+        Get.to(() => ChatRoomView(privateConv: conv), transition: Transition.rightToLeft);
       }
     }
-  }
-
-  void _showProfileDetail(BuildContext context, DatingProfile profile) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _ProfileDetailSheet(
-        profile: profile,
-        ctrl: ctrl,
-        showMessageButton: true,
-      ),
-    );
   }
 }
 
@@ -1601,7 +1565,7 @@ class _PreferencesSetup extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                'Bienvenue dans le Dating !',
+                'Bienvenue dans Date !',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 22,

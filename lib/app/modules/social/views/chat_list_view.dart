@@ -6,6 +6,7 @@ import 'package:grand_public_v2/app/data/models/chat_models.dart';
 import 'package:grand_public_v2/app/modules/social/controllers/chat_controller.dart';
 import 'package:grand_public_v2/app/modules/social/views/chat_room_view.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
+import 'package:grand_public_v2/app/utils/share_helper.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THEME HELPERS
@@ -165,6 +166,106 @@ class _ChatListViewState extends State<ChatListView>
             ),
           ),
         ],
+      ),
+      floatingActionButton: AnimatedBuilder(
+        animation: _tab,
+        builder: (context, _) => _tab.index == 0
+            ? FloatingActionButton(
+                backgroundColor: GPTheme.primaryColor,
+                onPressed: () => _showCreateChannelDialog(context),
+                child: const Icon(Icons.add_rounded, color: Colors.white),
+              )
+            : const SizedBox.shrink(),
+      ),
+    );
+  }
+
+  Future<void> _showCreateChannelDialog(BuildContext context) async {
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.bg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          20,
+          20,
+          MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Créer un canal',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
+                color: context.primary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Nom du canal',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: descCtrl,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Description (optionnel)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: Obx(
+                () => ElevatedButton(
+                  onPressed: _ctrl.isCreatingChannel.value
+                      ? null
+                      : () async {
+                          if (nameCtrl.text.trim().isEmpty) return;
+                          final ok = await _ctrl.createChannel(
+                            nameCtrl.text.trim(),
+                            descCtrl.text.trim(),
+                          );
+                          if (ok) Get.back();
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: GPTheme.primaryColor,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: _ctrl.isCreatingChannel.value
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Créer le canal',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -534,6 +635,19 @@ class _ChannelTile extends StatelessWidget {
 
                       // Espacement fixe entre la liste défilante et le bouton
                       const SizedBox(width: 10),
+
+                      // Bouton partage — inviter des amis à rejoindre le canal
+                      GestureDetector(
+                        onTap: () => ShareHelper.showShareSheet(
+                          context,
+                          title: 'Rejoins le canal "${channel.name}"',
+                          subtitle: channel.description,
+                          path: '/canal/${channel.id}',
+                          type: 'channel',
+                        ),
+                        child: Icon(Icons.share_outlined, size: 16, color: context.subtle),
+                      ),
+                      const SizedBox(width: 8),
 
                       // 2. Zone de droite : Bouton FIXE (Ne défile jamais)
                       if (!channel.isJoined)

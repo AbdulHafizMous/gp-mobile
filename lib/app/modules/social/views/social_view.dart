@@ -71,15 +71,15 @@ class _SocialTopTabBar extends StatelessWidget {
           Expanded(
             child: _TopTab(
               label: 'Chat',
-              icon: Icons.chat_bubble_rounded,
+              icon: Icons.forum_outlined,
               active: activeTab == 0,
               onTap: () => onTap(0),
             ),
           ),
           Expanded(
             child: _TopTab(
-              label: 'Dating',
-              icon: Icons.favorite_rounded,
+              label: 'Date',
+              icon: Icons.local_fire_department_outlined,
               active: activeTab == 1,
               onTap: () => onTap(1),
             ),

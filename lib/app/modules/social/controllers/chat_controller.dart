@@ -200,6 +200,32 @@ class ChatController extends GetxController {
     } on DioException catch (e) { _dioErr(e); }
   }
 
+  /// N'importe quel utilisateur peut créer son propre canal de discussion.
+  final isCreatingChannel = false.obs;
+
+  Future<bool> createChannel(String name, String? description) async {
+    isCreatingChannel.value = true;
+    try {
+      if (useMock) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        await loadChannels();
+        return true;
+      }
+      await RequestService().post('/social/channels', data: {
+        'name': name,
+        if (description != null && description.isNotEmpty) 'description': description,
+      });
+      await loadChannels();
+      ToastHelper.showToast('Canal créé avec succès', backgroundColor: Colors.green, textColor: Colors.white);
+      return true;
+    } on DioException catch (e) {
+      _dioErr(e);
+      return false;
+    } finally {
+      isCreatingChannel.value = false;
+    }
+  }
+
   Future<void> leaveChannel(ChatChannel channel) async {
     try {
       if (!useMock) await RequestService().post('/social/channels/${channel.id}/leave');

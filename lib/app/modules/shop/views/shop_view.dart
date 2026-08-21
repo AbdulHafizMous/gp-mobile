@@ -78,7 +78,7 @@ class ShopView extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.storefront_outlined,
+                          Icons.handshake_outlined,
                           size: 48,
                           color: context.subtle,
                         ),

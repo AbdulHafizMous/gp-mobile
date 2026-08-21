@@ -95,15 +95,76 @@ class Promotion {
 class PromotionPartner {
   final int id;
   final String name;
+  final String? companyName;
   final String? avatarUrl;
+  final String? logoUrl;
+  final String? bannerUrl;
+  final String? address;
+  final String? googleMapsLink;
 
-  const PromotionPartner({required this.id, required this.name, this.avatarUrl});
+  const PromotionPartner({
+    required this.id,
+    required this.name,
+    this.companyName,
+    this.avatarUrl,
+    this.logoUrl,
+    this.bannerUrl,
+    this.address,
+    this.googleMapsLink,
+  });
 
   factory PromotionPartner.fromJson(Map<String, dynamic> json) {
     return PromotionPartner(
       id:        json['id'] as int,
       name:      json['name']?.toString() ?? '',
+      companyName: json['company_name']?.toString(),
       avatarUrl: json['avatar_url']?.toString(),
+      logoUrl:   json['logo_url']?.toString(),
+      bannerUrl: json['banner_url']?.toString(),
+      address:   json['address']?.toString(),
+      googleMapsLink: json['google_maps_link']?.toString(),
+    );
+  }
+}
+
+/// Fiche partenaire complète (tab "Partenaires" du Club).
+class PartnerFiche {
+  final int id;
+  final String name;
+  final String companyName;
+  final String? description;
+  final String? phone;
+  final String? address;
+  final String? googleMapsLink;
+  final String? logoUrl;
+  final String? bannerUrl;
+  final int? activeOffersCount;
+
+  const PartnerFiche({
+    required this.id,
+    required this.name,
+    required this.companyName,
+    this.description,
+    this.phone,
+    this.address,
+    this.googleMapsLink,
+    this.logoUrl,
+    this.bannerUrl,
+    this.activeOffersCount,
+  });
+
+  factory PartnerFiche.fromJson(Map<String, dynamic> json) {
+    return PartnerFiche(
+      id: json['id'] as int,
+      name: json['name']?.toString() ?? '',
+      companyName: json['company_name']?.toString() ?? json['name']?.toString() ?? '',
+      description: json['description']?.toString(),
+      phone: json['phone']?.toString(),
+      address: json['address']?.toString(),
+      googleMapsLink: json['google_maps_link']?.toString(),
+      logoUrl: json['logo_url']?.toString(),
+      bannerUrl: json['banner_url']?.toString(),
+      activeOffersCount: (json['active_promotions_count'] as num?)?.toInt(),
     );
   }
 }
