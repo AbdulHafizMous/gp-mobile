@@ -45,12 +45,29 @@ class RegisterView extends GetView<RegisterController> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 40),
-                Image.asset(
-                  LOGO_PIXEL,
-                  height: 120,
+                Container(
+                  padding: const EdgeInsets.all(2),
                   width: 120,
-                  cacheHeight: 120,
-                  cacheWidth: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    image: DecorationImage(
+                      image: AssetImage(LOGO_PIXEL),
+                      fit: BoxFit.contain,
+                      scale: 0.5,
+                    ),
+                    borderRadius: BorderRadius.circular(60),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  // child: Image.asset(
+                  //   LOGO_PIXEL,
+                  //   height: 120,
+                  //   width: 120,
+                  //   cacheHeight: 120,
+                  //   cacheWidth: 120,
+                  // ),
                 ),
                 const SizedBox(height: 20),
 

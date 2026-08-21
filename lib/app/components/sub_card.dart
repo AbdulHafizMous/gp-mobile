@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/data/models/subscription.dart';
 import 'package:grand_public_v2/app/modules/social_premium/controllers/social_premium_controller.dart';
@@ -52,7 +53,7 @@ class SubCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             width: 280,
-            height: 350,
+            height: 380,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -102,6 +103,9 @@ class SubCard extends StatelessWidget {
                         isDark: isDark,
                         hasActiveSubscription: hasActiveSubscription,
                       ),
+
+                const SizedBox(height: 10),
+                const _LegalLinksRow(),
               ],
             ),
           ),
@@ -129,6 +133,39 @@ class SubCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Liens obligatoires (Guideline 3.1.2c) — CGU + Politique de confidentialité,
+// visibles directement sur l'écran d'achat de l'abonnement.
+class _LegalLinksRow extends StatelessWidget {
+  const _LegalLinksRow();
+
+  Future<void> _open(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final style = TextStyle(fontSize: 11, color: context.subtleText);
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        GestureDetector(
+          onTap: () => _open('https://grandpublic.bj/cgu'),
+          child: Text("Conditions d'utilisation", style: style.copyWith(decoration: TextDecoration.underline)),
+        ),
+        Text('  ·  ', style: style),
+        GestureDetector(
+          onTap: () => _open('https://grandpublic.bj/politique-de-confidentialite'),
+          child: Text('Confidentialité', style: style.copyWith(decoration: TextDecoration.underline)),
+        ),
+      ],
     );
   }
 }

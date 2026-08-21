@@ -87,7 +87,7 @@ class _SocialTopTabBar extends StatelessWidget {
           Expanded(
             child: _TopTab(
               label: 'Bizz',
-              icon: Icons.storefront_outlined,
+              icon: Icons.handshake_outlined,
               active: activeTab == 2,
               onTap: () => onTap(2),
             ),
