@@ -212,18 +212,42 @@ class _ChatListViewState extends State<ChatListView>
             const SizedBox(height: 16),
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(
+              style: TextStyle(color: context.primary),
+              decoration: InputDecoration(
                 labelText: 'Nom du canal',
-                border: OutlineInputBorder(),
+                labelStyle: TextStyle(color: context.subtle),
+                filled: true,
+                fillColor: context.isDark ? Colors.white10 : Colors.grey.shade100,
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: context.divider),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: GPTheme.primaryColor),
+                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: descCtrl,
               maxLines: 3,
-              decoration: const InputDecoration(
+              style: TextStyle(color: context.primary),
+              decoration: InputDecoration(
                 labelText: 'Description (optionnel)',
-                border: OutlineInputBorder(),
+                labelStyle: TextStyle(color: context.subtle),
+                filled: true,
+                fillColor: context.isDark ? Colors.white10 : Colors.grey.shade100,
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: context.divider),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: GPTheme.primaryColor),
+                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
             const SizedBox(height: 16),

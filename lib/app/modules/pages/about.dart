@@ -62,7 +62,7 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 20),
                 Text(
-                  "MEDIA : Explorez une sélection de contenus, vidéos et espaces dédiés à l'information, au divertissement et à vos centres d'intérêt.",
+                  "MEDIA : Découvrez des vidéos autour de 3 rubriques — PEOPLE, EVENTS et NEWS — pour rester connecté à l'actualité et aux grands moments du Bénin.",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
                 SizedBox(height: 20),
@@ -72,7 +72,7 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 20),
                 Text(
-                  "CLUB : Profitez des promotions, offres exclusives et avantages proposés par nos partenaires.",
+                  "CLUB : Profitez des promotions et offres exclusives de nos partenaires, et retrouvez leur annuaire complet (onglets Offres & Partenaires).",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
                 SizedBox(height: 20),
@@ -82,12 +82,12 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 20),
                 Text(
-                  "CHAT : des canaux de discussion thématiques pour échanger avec la communauté.",
+                  "CHAT : des canaux de discussion thématiques (créez le vôtre !) pour échanger avec la communauté.",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
                 SizedBox(height: 20),
                 Text(
-                  "DATING : faites de nouvelles rencontres et trouvez des personnes qui partagent vos affinités.",
+                  "DATE : faites de nouvelles rencontres, retrouvez vos matchs ♥ et écrivez à qui vous voulez depuis la liste des membres.",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
                 SizedBox(height: 20),

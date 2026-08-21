@@ -103,18 +103,18 @@ final sections = [
   SectionModel(
     title: "Social",
     description: "Discutez, échangez et connectez-vous avec la communauté.",
-    icon: Icons.chat_bubble_outline,
+    icon: Icons.forum_outlined,
     isLive: true,
     page: SocialView(),
     drawerItems: [
       DrawerItem(
         title: "Chat",
-        icon: Icons.chat_bubble_outline_rounded,
+        icon: Icons.forum_outlined,
         route: "/social/chat",
       ),
       DrawerItem(
-        title: "Dating",
-        icon: Icons.favorite_border_rounded,
+        title: "Date",
+        icon: Icons.local_fire_department_outlined,
         route: "/social/dating",
       ),
       DrawerItem(
@@ -126,7 +126,7 @@ final sections = [
       //
       DrawerItem(
         title: "Annonces",
-        icon: Icons.storefront_outlined,
+        icon: Icons.handshake_outlined,
         route: "/social/shop",
       ),
       DrawerItem(
@@ -140,7 +140,7 @@ final sections = [
     title: "Club",
     description:
         "Profitez d'offres exclusives, promotions et avantages uniques.",
-    icon: Icons.local_offer_outlined,
+    icon: Icons.card_giftcard_outlined,
     hasSub: true,
     isLive: true,
     page: ClubView(),
@@ -148,7 +148,7 @@ final sections = [
     drawerItems: [
       DrawerItem(
         title: "Promotions",
-        icon: Icons.local_offer_outlined,
+        icon: Icons.card_giftcard_outlined,
         route: "/home/club",
       ),
       DrawerItem(
