@@ -32,23 +32,25 @@ class ClubView extends StatelessWidget {
                           color: GPTheme.primaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(Icons.card_giftcard_rounded,
-                            color: GPTheme.primaryColor, size: 22),
+                        child: Icon(
+                          Icons.card_giftcard_rounded,
+                          color: GPTheme.primaryColor,
+                          size: 22,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Text(
                         'Club',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Profitez de promotions exclusives chez nos partenaires',
-                    style: TextStyle(
-                        fontSize: 13, color: Colors.grey.shade500),
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
                   ),
                 ],
               ),
@@ -59,7 +61,9 @@ class ClubView extends StatelessWidget {
               child: Obx(() {
                 if (ctrl.isLoading.value && ctrl.promotions.isEmpty) {
                   return Center(
-                    child: CircularProgressIndicator(color: GPTheme.primaryColor),
+                    child: CircularProgressIndicator(
+                      color: GPTheme.primaryColor,
+                    ),
                   );
                 }
 
@@ -72,15 +76,19 @@ class ClubView extends StatelessWidget {
                   color: GPTheme.primaryColor,
                   child: ListView.separated(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     itemCount: ctrl.promotions.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (ctx, i) => _PromoCard(
                       promo: ctrl.promotions[i],
-                      onTap: () => Get.to(() => PromoDetailView(
-                            promo: ctrl.promotions[i],
-                            ctrl: ctrl,
-                          )),
+                      onTap: () => Get.to(
+                        () => PromoDetailView(
+                          promo: ctrl.promotions[i],
+                          ctrl: ctrl,
+                        ),
+                      ),
                     ),
                   ),
                 );
@@ -97,14 +105,25 @@ class ClubView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.local_offer_outlined, size: 64, color: Colors.grey.shade300),
+          Icon(
+            Icons.local_offer_outlined,
+            size: 64,
+            color: Colors.grey.shade300,
+          ),
           const SizedBox(height: 12),
-          Text('Aucune promotion disponible',
-              style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey.shade500)),
+          Text(
+            'Aucune promotion disponible',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade500,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text('Revenez bientôt !',
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade400)),
+          Text(
+            'Revenez bientôt !',
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+          ),
         ],
       ),
     );
@@ -147,13 +166,18 @@ class _PromoCard extends StatelessWidget {
             children: [
               // Image ou gradient
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
                 child: SizedBox(
                   height: 120,
                   width: double.infinity,
                   child: promo.imageUrl != null
-                      ? Image.network(promo.imageUrl!, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _gradientPlaceholder())
+                      ? Image.network(
+                          promo.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _gradientPlaceholder(),
+                        )
                       : _gradientPlaceholder(),
                 ),
               ),
@@ -166,44 +190,84 @@ class _PromoCard extends StatelessWidget {
                     // Badges
                     Row(
                       children: [
-                        _Badge(label: _typeLabel(promo.type), color: _typeColor(promo.type)),
+                        _Badge(
+                          label: _typeLabel(promo.type),
+                          color: _typeColor(promo.type),
+                        ),
                         const SizedBox(width: 6),
-                        _Badge(label: _targetLabel(promo.target), color: Colors.grey.shade200),
+                        _Badge(
+                          label: _targetLabel(promo.target),
+                          color: Colors.grey.shade200,
+                        ),
                         if (promo.userPendingQr != null) ...[
                           const SizedBox(width: 6),
-                          _Badge(label: 'QR actif', color: Colors.green.shade50,
-                              textColor: Colors.green.shade700),
+                          _Badge(
+                            label: 'QR actif',
+                            color: Colors.green.shade50,
+                            textColor: Colors.green.shade700,
+                          ),
                         ],
                         if (promo.isExpired) ...[
                           const SizedBox(width: 6),
-                          _Badge(label: 'Expirée', color: Colors.grey.shade100,
-                              textColor: Colors.grey.shade500),
+                          _Badge(
+                            label: 'Expirée',
+                            color: Colors.grey.shade100,
+                            textColor: Colors.grey.shade500,
+                          ),
                         ],
                       ],
                     ),
                     const SizedBox(height: 8),
 
-                    Text(promo.title,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    Text(
+                      promo.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(promo.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                    Text(
+                      promo.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
                     const SizedBox(height: 10),
 
                     // Footer
                     Row(
                       children: [
-                        Icon(Icons.store_outlined, size: 14, color: Colors.grey.shade400),
+                        Icon(
+                          Icons.store_outlined,
+                          size: 14,
+                          color: Colors.grey.shade400,
+                        ),
                         const SizedBox(width: 4),
-                        Text(promo.partner?.name ?? '',
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                        Text(
+                          promo.partner?.name ?? '',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
                         const Spacer(),
-                        Icon(Icons.calendar_today_outlined, size: 13, color: Colors.grey.shade400),
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 13,
+                          color: Colors.grey.shade400,
+                        ),
                         const SizedBox(width: 4),
-                        Text(_formatDate(promo.endsAt),
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                        Text(
+                          _formatDate(promo.endsAt),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -239,7 +303,13 @@ class _PromoCard extends StatelessWidget {
   }
 
   String _typeLabel(String t) =>
-      {'discount': 'Réduction', 'gift': 'Cadeau', 'access': 'Accès', 'other': 'Offre'}[t] ?? t;
+      {
+        'discount': 'Réduction',
+        'gift': 'Cadeau',
+        'access': 'Accès',
+        'other': 'Offre',
+      }[t] ??
+      t;
 
   String _targetLabel(String t) =>
       {'all': 'Tous', 'active': 'Actifs', 'premium': 'Premium'}[t] ?? t;
@@ -247,18 +317,18 @@ class _PromoCard extends StatelessWidget {
   Color _typeColor(String t) {
     return switch (t) {
       'discount' => Colors.orange,
-      'gift'     => Colors.pink,
-      'access'   => Colors.purple,
-      _          => Colors.blue,
+      'gift' => Colors.pink,
+      'access' => Colors.purple,
+      _ => Colors.blue,
     };
   }
 
   IconData _typeIcon(String t) {
     return switch (t) {
       'discount' => Icons.percent_rounded,
-      'gift'     => Icons.card_giftcard_rounded,
-      'access'   => Icons.vpn_key_outlined,
-      _          => Icons.local_offer_outlined,
+      'gift' => Icons.card_giftcard_rounded,
+      'access' => Icons.vpn_key_outlined,
+      _ => Icons.local_offer_outlined,
     };
   }
 
@@ -286,11 +356,14 @@ class _Badge extends StatelessWidget {
         color: color,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(label,
-          style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: textColor ?? Colors.grey.shade700)),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: textColor ?? Colors.grey.shade700,
+        ),
+      ),
     );
   }
 }

@@ -144,7 +144,26 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
             ctrl.goToSection(0, showToast: false);
           }
         },
-        child: Image.asset(LOGO_PIXEL, width: 44, height: 44),
+        child: Container(
+          height: 44,
+          width: 44,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            image: DecorationImage(
+              image: AssetImage(LOGO_PIXEL),
+              fit: BoxFit.contain,
+            ),
+            borderRadius: BorderRadius.circular(60),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+          ),
+          // child: Image.asset(
+          //   LOGO_PIXEL,
+          //   height: 44,
+          //   width: 44,
+          //   cacheHeight: 44,
+          //   cacheWidth: 44,
+          // ),
+        ),
       ),
       centerTitle: true,
       actions: [
@@ -255,7 +274,9 @@ class _DynamicDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final ctrl = Get.find<HomeController>();
     final isDark = context.isDark;
-    final userRole = activeUser.value.role; // GetStorage().read<String>('userRole') ?? 'user';
+    final userRole = activeUser
+        .value
+        .role; // GetStorage().read<String>('userRole') ?? 'user';
     final section = sections[activeSectionIndex];
 
     final dynamicItems = section.drawerItems.where((item) {
