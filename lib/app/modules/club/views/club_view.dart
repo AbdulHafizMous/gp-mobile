@@ -7,6 +7,19 @@ import 'package:grand_public_v2/app/modules/club/views/promo_detail_view.dart';
 import 'package:grand_public_v2/app/modules/club/views/partner_detail_view.dart';
 import 'package:grand_public_v2/app/utils/share_helper.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// THEME HELPERS (mêmes conventions que Chat / Bizz)
+// ─────────────────────────────────────────────────────────────────────────────
+extension _Tx on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+  Color get bg => isDark ? const Color(0xFF0D0D0D) : Colors.white;
+  // Color get cardBg => isDark ? const Color(0xFF1E1E1E) : Colors.white;
+  Color get inputBg => isDark ? Colors.white10 : Colors.grey.shade100;
+  Color get primary => Theme.of(this).textTheme.bodyLarge!.color!;
+  Color get subtle => Theme.of(this).hintColor;
+  Color get divider => Theme.of(this).dividerColor;
+}
+
 class ClubView extends StatelessWidget {
   const ClubView({super.key});
 
@@ -15,7 +28,7 @@ class ClubView extends StatelessWidget {
     final ctrl = Get.put(ClubController());
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: context.bg,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,13 +99,14 @@ class ClubView extends StatelessWidget {
               child: TextField(
                 controller: ctrl.searchCtrl,
                 onChanged: ctrl.onSearchChanged,
+                style: TextStyle(color: context.primary, fontSize: 14),
                 decoration: InputDecoration(
                   hintText:
                       'Rechercher un partenaire, un mot-clé, une adresse…',
-                  hintStyle: const TextStyle(fontSize: 13),
-                  prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                  hintStyle: TextStyle(fontSize: 13, color: context.subtle),
+                  prefixIcon: Icon(Icons.search_rounded, size: 20, color: context.subtle),
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: context.inputBg,
                   contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -137,21 +151,21 @@ class _ClubTabChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? GPTheme.primaryColor : Colors.grey.shade100,
+          color: active ? GPTheme.primaryColor : context.inputBg,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon,
-                size: 15, color: active ? Colors.white : Colors.grey.shade600),
+                size: 15, color: active ? Colors.white : context.subtle),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: active ? Colors.white : Colors.grey.shade600,
+                color: active ? Colors.white : context.subtle,
               ),
             ),
           ],
@@ -257,6 +271,23 @@ class _PartenairesTab extends StatelessWidget {
   }
 }
 
+// ── Icônes neutres pour les partenaires sans logo/bannière ──────────────────
+// Choisies de façon stable (basée sur l'id) pour qu'un même partenaire garde
+// toujours la même icône entre deux rafraîchissements.
+const List<IconData> _kNeutralPartnerIcons = [
+  Icons.storefront_rounded,
+  Icons.restaurant_rounded,
+  Icons.local_cafe_rounded,
+  Icons.shopping_bag_rounded,
+  Icons.spa_rounded,
+  Icons.local_mall_rounded,
+  Icons.celebration_rounded,
+  Icons.icecream_rounded,
+];
+
+IconData neutralPartnerIcon(int id) =>
+    _kNeutralPartnerIcons[id % _kNeutralPartnerIcons.length];
+
 class _PartnerCard extends StatelessWidget {
   final PartnerFiche partner;
   final VoidCallback onTap;
@@ -270,7 +301,7 @@ class _PartnerCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: context.divider),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -283,8 +314,8 @@ class _PartnerCard extends StatelessWidget {
                 width: double.infinity,
                 child: partner.bannerUrl != null
                     ? Image.network(partner.bannerUrl!, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(color: GPTheme.primaryColor.withOpacity(0.1)))
-                    : Container(color: GPTheme.primaryColor.withOpacity(0.1)),
+                        errorBuilder: (_, __, ___) => _neutralBanner(partner.id))
+                    : _neutralBanner(partner.id),
               ),
             ),
             Padding(
@@ -301,7 +332,7 @@ class _PartnerCard extends StatelessWidget {
                             ? NetworkImage(partner.logoUrl!)
                             : null,
                         child: partner.logoUrl == null
-                            ? Icon(Icons.store_rounded, size: 14, color: GPTheme.primaryColor)
+                            ? Icon(neutralPartnerIcon(partner.id), size: 14, color: GPTheme.primaryColor)
                             : null,
                       ),
                       const SizedBox(width: 6),
@@ -340,6 +371,14 @@ class _PartnerCard extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget _neutralBanner(int id) {
+  return Container(
+    color: GPTheme.primaryColor.withOpacity(0.1),
+    alignment: Alignment.center,
+    child: Icon(neutralPartnerIcon(id), size: 28, color: GPTheme.primaryColor.withOpacity(0.4)),
+  );
 }
 
 Widget _emptyState({required IconData icon, required String title, required String subtitle}) {

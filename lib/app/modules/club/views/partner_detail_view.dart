@@ -1,9 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:grand_public_v2/app/data/models/promotion.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
+import 'package:grand_public_v2/app/modules/club/controllers/club_controller.dart';
+import 'package:grand_public_v2/app/modules/club/views/club_view.dart' show neutralPartnerIcon;
+import 'package:grand_public_v2/app/modules/club/views/promo_detail_view.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 import 'package:grand_public_v2/app/utils/share_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+extension _Tx on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+  Color get bg => isDark ? const Color(0xFF0D0D0D) : Colors.white;
+  Color get cardBg => isDark ? const Color(0xFF1E1E1E) : Colors.white;
+  Color get primary => Theme.of(this).textTheme.bodyLarge!.color!;
+  Color get subtle => Theme.of(this).hintColor;
+  Color get divider => Theme.of(this).dividerColor;
+}
 
 /// Fiche détaillée d'un partenaire — accessible depuis l'onglet
 /// "Partenaires" du Club (mapping des partenaires).
@@ -44,17 +58,23 @@ class _PartnerDetailViewState extends State<PartnerDetailView> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: context.bg,
+        body: Center(child: CircularProgressIndicator(color: GPTheme.primaryColor)),
+      );
     }
     final d = _data ?? {};
     final promotions = (d['promotions'] as List?) ?? [];
+    final id = widget.partnerId;
 
     return Scaffold(
+      backgroundColor: context.bg,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 180,
             pinned: true,
+            backgroundColor: context.cardBg,
             iconTheme: const IconThemeData(color: Colors.white),
             actions: [
               IconButton(
@@ -63,7 +83,7 @@ class _PartnerDetailViewState extends State<PartnerDetailView> {
                   context,
                   title: d['company_name']?.toString() ?? 'Partenaire',
                   subtitle: d['address']?.toString(),
-                  path: '/club/partenaire/${widget.partnerId}',
+                  path: '/club/partenaire/$id',
                   type: 'partner',
                 ),
               ),
@@ -71,8 +91,8 @@ class _PartnerDetailViewState extends State<PartnerDetailView> {
             flexibleSpace: FlexibleSpaceBar(
               background: d['banner_url'] != null
                   ? Image.network(d['banner_url'], fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(color: GPTheme.primaryColor))
-                  : Container(color: GPTheme.primaryColor),
+                      errorBuilder: (_, __, ___) => _neutralHero(id))
+                  : _neutralHero(id),
             ),
           ),
           SliverToBoxAdapter(
@@ -89,67 +109,135 @@ class _PartnerDetailViewState extends State<PartnerDetailView> {
                         backgroundImage:
                             d['logo_url'] != null ? NetworkImage(d['logo_url']) : null,
                         child: d['logo_url'] == null
-                            ? Icon(Icons.store_rounded, color: GPTheme.primaryColor)
+                            ? Icon(neutralPartnerIcon(id), color: GPTheme.primaryColor)
                             : null,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           d['company_name']?.toString() ?? '',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.primary),
                         ),
                       ),
                     ],
                   ),
-                  if (d['description'] != null) ...[
+                  if ((d['description'] ?? '').toString().isNotEmpty) ...[
                     const SizedBox(height: 12),
-                    Text(d['description'], style: TextStyle(color: Colors.grey.shade600)),
+                    Text(d['description'], style: TextStyle(color: context.subtle)),
                   ],
                   const SizedBox(height: 16),
-                  if (d['phone'] != null)
+                  if ((d['phone'] ?? '').toString().isNotEmpty)
                     _InfoRow(icon: Icons.call_outlined, text: d['phone']),
-                  if (d['address'] != null)
+                  if ((d['address'] ?? '').toString().isNotEmpty)
                     _InfoRow(icon: Icons.location_on_outlined, text: d['address']),
-                  if (d['google_maps_link'] != null) ...[
+                  if ((d['google_maps_link'] ?? '').toString().isNotEmpty) ...[
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
                       onPressed: () => launchUrl(Uri.parse(d['google_maps_link']),
                           mode: LaunchMode.externalApplication),
                       icon: const Icon(Icons.map_outlined, size: 18),
                       label: const Text('Voir sur la carte'),
+                      style: OutlinedButton.styleFrom(foregroundColor: GPTheme.primaryColor),
                     ),
                   ],
                   const SizedBox(height: 20),
-                  Text('Offres actives',
+                  Text('Offres',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: GPTheme.primaryColor)),
                   const SizedBox(height: 10),
                   if (promotions.isEmpty)
-                    Text('Aucune offre active pour le moment.',
-                        style: TextStyle(color: Colors.grey.shade500)),
-                  ...promotions.map((p) => Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade200),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(p['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.w700)),
-                            const SizedBox(height: 4),
-                            Text(p['description'] ?? '',
-                                maxLines: 2, overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                          ],
-                        ),
-                      )),
+                    Text('Aucune offre pour le moment.', style: TextStyle(color: context.subtle)),
+                  ...promotions.map((p) => _OfferTile(data: Map<String, dynamic>.from(p))),
                 ],
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+Widget _neutralHero(int id) {
+  return Container(
+    color: GPTheme.primaryColor,
+    alignment: Alignment.center,
+    child: Icon(neutralPartnerIcon(id), size: 56, color: Colors.white.withOpacity(0.35)),
+  );
+}
+
+class _OfferTile extends StatelessWidget {
+  final Map<String, dynamic> data;
+  const _OfferTile({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final isEligible = data['is_eligible'] == true;
+    final isAvailable = data['is_available'] == true;
+
+    return GestureDetector(
+      onTap: () {
+        final ctrl = Get.isRegistered<ClubController>() ? Get.find<ClubController>() : Get.put(ClubController());
+        Get.to(() => PromoDetailView(promo: Promotion.fromJson(data), ctrl: ctrl));
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: context.cardBg,
+          border: Border.all(color: context.divider),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(data['title'] ?? '',
+                      style: TextStyle(fontWeight: FontWeight.w700, color: context.primary)),
+                  if ((data['description'] ?? '').toString().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(data['description'],
+                        maxLines: 2, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 12, color: context.subtle)),
+                  ],
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _Badge(
+                        label: isEligible && isAvailable ? 'Éligible' : 'Non éligible',
+                        color: isEligible && isAvailable
+                            ? Colors.green.withOpacity(0.15)
+                            : Colors.grey.withOpacity(0.2),
+                        textColor: isEligible && isAvailable ? Colors.green.shade700 : context.subtle,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right_rounded, color: context.subtle),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  final String label;
+  final Color color;
+  final Color textColor;
+  const _Badge({required this.label, required this.color, required this.textColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
+      child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: textColor)),
     );
   }
 }
@@ -165,9 +253,9 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: Colors.grey.shade500),
+          Icon(icon, size: 16, color: context.subtle),
           const SizedBox(width: 8),
-          Expanded(child: Text(text, style: TextStyle(color: Colors.grey.shade700))),
+          Expanded(child: Text(text, style: TextStyle(color: context.primary))),
         ],
       ),
     );

@@ -144,26 +144,32 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
             ctrl.goToSection(0, showToast: false);
           }
         },
-        child: Container(
+        child: Image.asset(
+          LOGO_PIXEL,
           height: 44,
           width: 44,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            image: DecorationImage(
-              image: AssetImage(LOGO_PIXEL),
-              fit: BoxFit.contain,
-            ),
-            borderRadius: BorderRadius.circular(60),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-          ),
-          // child: Image.asset(
-          //   LOGO_PIXEL,
-          //   height: 44,
-          //   width: 44,
-          //   cacheHeight: 44,
-          //   cacheWidth: 44,
-          // ),
+          filterQuality: FilterQuality.high,
         ),
+        // Container(
+        //   height: 44,
+        //   width: 44,
+        //   decoration: BoxDecoration(
+        //     color: Colors.white,
+        //     image: DecorationImage(
+        //       image: AssetImage(LOGO_PIXEL),
+        //       fit: BoxFit.contain,
+        //     ),
+        //     borderRadius: BorderRadius.circular(60),
+        //     border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        //   ),
+        //   // child: Image.asset(
+        //   //   LOGO_PIXEL,
+        //   //   height: 44,
+        //   //   width: 44,
+        //   //   cacheHeight: 44,
+        //   //   cacheWidth: 44,
+        //   // ),
+        // ),
       ),
       centerTitle: true,
       actions: [
