@@ -1083,15 +1083,16 @@ class _LastMessagePreview extends StatelessWidget {
         preview = msg!.content;
     }
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: context.subtle),
-        const SizedBox(width: 4),
-        Text(
-          preview,
-          style: TextStyle(fontSize: 13, color: context.subtle),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        if (icon != null) Icon(icon, size: 14, color: context.subtle),
+        if (icon != null) const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            preview,
+            style: TextStyle(fontSize: 13, color: context.subtle),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );

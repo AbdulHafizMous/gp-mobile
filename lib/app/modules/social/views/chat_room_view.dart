@@ -2,12 +2,15 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
 import 'package:grand_public_v2/app/data/models/chat_models.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/social/controllers/chat_controller.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
+import 'package:grand_public_v2/app/utils/linkified_text.dart';
+import 'package:grand_public_v2/app/utils/toast_helper.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THEME HELPERS
@@ -1148,21 +1151,21 @@ class _ReplyQuote extends StatelessWidget {
     switch (message.replyToType) {
       case MessageType.image:
         return Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.image, size: 14, color: textColor.withOpacity(0.7)),
             const SizedBox(width: 4),
-            Text(
-              "Photo",
-              style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            Flexible(
+              child: Text(
+                "Photo",
+                style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         );
       case MessageType.audio:
         return Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.mic_rounded,
@@ -1170,31 +1173,33 @@ class _ReplyQuote extends StatelessWidget {
               color: textColor.withOpacity(0.7),
             ),
             const SizedBox(width: 4),
-            Text(
-              "Message vocal",
-              style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            Flexible(
+              child: Text(
+                "Message vocal",
+                style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         );
       case MessageType.video:
         return Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.videocam, size: 14, color: textColor.withOpacity(0.7)),
             const SizedBox(width: 4),
-            Text(
-              "Vidéo",
-              style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            Flexible(
+              child: Text(
+                "Vidéo",
+                style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         );
       case MessageType.file:
         return Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.insert_drive_file_rounded,
@@ -1202,25 +1207,28 @@ class _ReplyQuote extends StatelessWidget {
               color: textColor.withOpacity(0.7),
             ),
             const SizedBox(width: 4),
-            Text(
-              "Fichier",
-              style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            Flexible(
+              child: Text(
+                "Fichier",
+                style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         );
       default:
         return Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.message, size: 14, color: textColor.withOpacity(0.7)),
             const SizedBox(width: 4),
-            Text(
-              message.replyToContent ?? '',
-              style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            Flexible(
+              child: Text(
+                message.replyToContent ?? '',
+                style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         );
@@ -1280,6 +1288,12 @@ class _MessageContextMenu extends StatelessWidget {
               label: 'Copier',
               onTap: () {
                 Get.back();
+                Clipboard.setData(ClipboardData(text: message.content));
+                ToastHelper.showToast(
+                  'Message copié',
+                  backgroundColor: Colors.green,
+                  textColor: Colors.white,
+                );
               },
             ),
           const SizedBox(height: 8),
@@ -1382,13 +1396,14 @@ class _BubbleContent extends StatelessWidget {
       default:
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Text(
-            message.content,
+          child: LinkifiedText(
+            text: message.content,
             style: TextStyle(
               color: isMe ? Colors.white : context.primary,
               fontSize: 14,
               height: 1.45,
             ),
+            linkColor: isMe ? Colors.white : GPTheme.primaryColor,
           ),
         );
     }
