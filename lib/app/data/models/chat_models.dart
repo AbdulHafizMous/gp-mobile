@@ -170,6 +170,7 @@ class ChatChannel {
   final String? imageUrl;
   final int membersCount;
   final bool isJoined;
+  final bool isMine;
   final bool isOnline;
   final ChatMessage? lastMessage;
   final int unreadCount;
@@ -182,6 +183,7 @@ class ChatChannel {
     this.imageUrl,
     this.membersCount = 0,
     this.isJoined = false,
+    this.isMine = false,
     this.isOnline = false,
     this.lastMessage,
     this.unreadCount = 0,
@@ -196,6 +198,7 @@ class ChatChannel {
       imageUrl:     json['image_url']?.toString(),
       membersCount: _i(json['members_count']),
       isJoined:     _b(json['is_joined']),
+      isMine:       _b(json['is_mine']),
       isOnline:     _b(json['is_online']),
       lastMessage:  json['last_message'] != null ? ChatMessage.fromJson(json['last_message']) : null,
       unreadCount:  _i(json['unread_count']),
@@ -203,10 +206,10 @@ class ChatChannel {
     );
   }
 
-  ChatChannel copyWith({bool? isJoined, int? unreadCount, ChatMessage? lastMessage}) =>
+  ChatChannel copyWith({bool? isJoined, int? unreadCount, ChatMessage? lastMessage, String? name, String? description}) =>
       ChatChannel(
-        id: id, name: name, description: description, imageUrl: imageUrl,
-        membersCount: membersCount, isJoined: isJoined ?? this.isJoined,
+        id: id, name: name ?? this.name, description: description ?? this.description, imageUrl: imageUrl,
+        membersCount: membersCount, isJoined: isJoined ?? this.isJoined, isMine: isMine,
         isOnline: isOnline, lastMessage: lastMessage ?? this.lastMessage,
         unreadCount: unreadCount ?? this.unreadCount, tags: tags,
       );

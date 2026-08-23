@@ -3,10 +3,11 @@ import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:get/get.dart';
+// import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
+import 'package:grand_public_v2/app/utils/app_link_router.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _localNotifications =
@@ -158,10 +159,10 @@ class NotificationService {
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
+  // Délègue à AppLinkRouter (source unique de vérité pour la résolution des
+  // liens, partagée avec les deep links entrants — voir deep_link_service.dart).
   static void _navigateFromData(Map<String, dynamic> data) {
-    final String? route = data['route'];
-    if (route == null || route.isEmpty) return;
-    Get.toNamed(route, arguments: data);
+    AppLinkRouter.routeFromNotificationData(data);
   }
 
   static void _navigateFromPayload(String? payload) {
@@ -170,7 +171,8 @@ class NotificationService {
       final Map<String, dynamic> data = jsonDecode(payload);
       _navigateFromData(data);
     } catch (_) {
-      Get.toNamed(payload);
+      // Payload simple (ancien format "route" texte) : on ignore proprement.
+      debugPrint('Payload non-JSON ignoré: $payload');
     }
   }
 

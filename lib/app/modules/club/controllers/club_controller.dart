@@ -248,4 +248,63 @@ class ClubController extends GetxController {
       duration: const Duration(seconds: 4),
     );
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PARAMÈTRES CLUB — rappel d'offres activable/désactivable
+  // ══════════════════════════════════════════════════════════════════════════
+  final remindersEnabled = true.obs;
+  final isTogglingReminders = false.obs;
+
+  Future<void> toggleReminders(bool value) async {
+    isTogglingReminders.value = true;
+    final previous = remindersEnabled.value;
+    remindersEnabled.value = value; // optimiste
+    try {
+      if (!useMock) {
+        await RequestService().patch(
+          '/club/reminder-toggle',
+          data: {'enabled': value},
+        );
+      }
+    } catch (e) {
+      remindersEnabled.value = previous; // rollback si échec
+      debugPrint('toggleReminders error: $e');
+    } finally {
+      isTogglingReminders.value = false;
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ESPACE PARTENAIRE — stats (scan géré par PartnerScannerView)
+  // ══════════════════════════════════════════════════════════════════════════
+  final partnerStats = Rxn<Map<String, dynamic>>();
+  final isPartnerStatsLoading = false.obs;
+
+  bool get isPartner => activeUser.value.role == 'Partner';
+
+  Future<void> fetchPartnerStats() async {
+    if (!isPartner) return;
+    isPartnerStatsLoading.value = true;
+    try {
+      if (useMock) {
+        await Future.delayed(const Duration(milliseconds: 400));
+        partnerStats.value = {
+          'stats': {
+            'total_promotions': 3, 'active_promotions': 2,
+            'total_usages': 42, 'validated_usages': 30, 'pending_usages': 12,
+          },
+          'recent_usages': [],
+        };
+        return;
+      }
+      final res = await RequestService().get('/partner/stats');
+      if (res.statusCode == 200) {
+        partnerStats.value = Map<String, dynamic>.from(res.data['data']);
+      }
+    } catch (e) {
+      debugPrint('fetchPartnerStats error: $e');
+    } finally {
+      isPartnerStatsLoading.value = false;
+    }
+  }
 }

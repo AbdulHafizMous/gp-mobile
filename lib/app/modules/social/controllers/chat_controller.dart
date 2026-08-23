@@ -226,9 +226,46 @@ class ChatController extends GetxController {
     }
   }
 
-  Future<void> leaveChannel(ChatChannel channel) async {
+  /// Modification réservée au créateur du canal (ou à un admin, géré côté API).
+  final isUpdatingChannel = false.obs;
+
+  Future<bool> updateChannel(ChatChannel channel, {String? name, String? description}) async {
+    isUpdatingChannel.value = true;
     try {
-      if (!useMock) await RequestService().post('/social/channels/${channel.id}/leave');
+      if (useMock) {
+        await Future.delayed(const Duration(milliseconds: 400));
+        await loadChannels();
+        return true;
+      }
+      await RequestService().put('/social/channels/${channel.id}', data: {
+        if (name != null && name.isNotEmpty) 'name': name,
+        if (description != null) 'description': description,
+      });
+      await loadChannels();
+      ToastHelper.showToast('Canal mis à jour', backgroundColor: Colors.green, textColor: Colors.white);
+      return true;
+    } on DioException catch (e) {
+      _dioErr(e);
+      return false;
+    } finally {
+      isUpdatingChannel.value = false;
+    }
+  }
+
+  Future<bool> deleteChannel(ChatChannel channel) async {
+    try {
+      if (!useMock) await RequestService().delete('/social/channels/${channel.id}');
+      channels.removeWhere((c) => c.id == channel.id);
+      ToastHelper.showToast('Canal supprimé', backgroundColor: Colors.green, textColor: Colors.white);
+      return true;
+    } on DioException catch (e) {
+      _dioErr(e);
+      return false;
+    }
+  }
+
+  Future<void> leaveChannel(ChatChannel channel) async {
+    try {      if (!useMock) await RequestService().post('/social/channels/${channel.id}/leave');
       final i = channels.indexWhere((c) => c.id == channel.id);
       if (i != -1) channels[i] = channels[i].copyWith(isJoined: false);
       await loadChannels();
