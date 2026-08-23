@@ -8,6 +8,9 @@ import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 /// Domaine public utilisé pour générer des liens de partage cliquables
 /// (médias, offres du Club, annonces Bizz, canaux de discussion…).
+/// Format : https://grandpublic.bj/m/{type}/{id} — résolu côté serveur par
+/// ShareController (aperçu Open Graph + redirection intelligente vers l'app
+/// si installée, sinon fallback web/store).
 const String kShareHost = 'https://grandpublic.bj';
 
 extension _Tx on BuildContext {
@@ -27,19 +30,18 @@ extension _Tx on BuildContext {
 /// deux frames (ex: bouton dans une liste qui se reconstruit), ce qui
 /// provoquait un crash "Looking up a deactivated widget's ancestor".
 class ShareHelper {
-  static String buildLink(String path) => '$kShareHost$path';
+  static String buildLink(String type, String id) => '$kShareHost/m/$type/$id';
 
-  /// Ouvre la feuille de partage. [path] est le chemin relatif utilisé pour
-  /// construire un lien cliquable (ex: '/media/12', '/club/offre/3',
-  /// '/bizz/annonce/9', '/canal/5').
+  /// Ouvre la feuille de partage pour l'entité [type]/[id] (ex: 'media'/'12',
+  /// 'club/offre'/'3', 'partner'/'9', 'listing'/'4', 'channel'/'5').
   static void showShareSheet(
     BuildContext context, {
     required String title,
     String? subtitle,
-    required String path,
-    required String type, // media | offer | listing | channel | partner
+    required String type,
+    required String id,
   }) {
-    final link = buildLink(path);
+    final link = buildLink(type, id);
     Get.bottomSheet(
       _ShareSheet(title: title, subtitle: subtitle, link: link, type: type),
       isScrollControlled: true,

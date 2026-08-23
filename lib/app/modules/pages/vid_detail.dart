@@ -343,8 +343,8 @@ class _VidDetailState extends State<VidDetail> {
                 onTap: () => ShareHelper.showShareSheet(
                   context,
                   title: video.title,
-                  path: '/media/${video.id}',
                   type: 'media',
+                  id: '${video.id}',
                 ),
               ),
             ),

@@ -392,6 +392,8 @@ class _ChannelsTab extends StatelessWidget {
                   onTap: () => _openChannel(context, c),
                   onJoin: () => ctrl.joinChannel(c),
                   onLeave: () => _confirmLeave(context, c),
+                  onEdit: () => _showEditChannelDialog(context, ctrl, c),
+                  onDelete: () => _confirmDeleteChannel(context, ctrl, c),
                 ),
               ),
             ],
@@ -446,6 +448,93 @@ class _ChannelsTab extends StatelessWidget {
     );
     if (ok == true) ctrl.leaveChannel(channel);
   }
+
+  Future<void> _confirmDeleteChannel(BuildContext context, ChatController ctrl, ChatChannel channel) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Supprimer ce canal ?'),
+        content: Text('"${channel.name}" sera définitivement supprimé pour tous les membres.'),
+        actions: [
+          TextButton(onPressed: () => Get.back(result: false), child: const Text('Annuler')),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await ctrl.deleteChannel(channel);
+  }
+
+  Future<void> _showEditChannelDialog(BuildContext context, ChatController ctrl, ChatChannel channel) async {
+    final nameCtrl = TextEditingController(text: channel.name);
+    final descCtrl = TextEditingController(text: channel.description ?? '');
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.bg,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => Padding(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Modifier le canal', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: context.primary)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: nameCtrl,
+              style: TextStyle(color: context.primary),
+              decoration: InputDecoration(
+                labelText: 'Nom du canal',
+                labelStyle: TextStyle(color: context.subtle),
+                filled: true,
+                fillColor: context.isDark ? Colors.white10 : Colors.grey.shade100,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: descCtrl,
+              maxLines: 3,
+              style: TextStyle(color: context.primary),
+              decoration: InputDecoration(
+                labelText: 'Description (optionnel)',
+                labelStyle: TextStyle(color: context.subtle),
+                filled: true,
+                fillColor: context.isDark ? Colors.white10 : Colors.grey.shade100,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: Obx(
+                () => ElevatedButton(
+                  onPressed: ctrl.isUpdatingChannel.value
+                      ? null
+                      : () async {
+                          if (nameCtrl.text.trim().isEmpty) return;
+                          final ok = await ctrl.updateChannel(
+                            channel,
+                            name: nameCtrl.text.trim(),
+                            description: descCtrl.text.trim(),
+                          );
+                          if (ok) Get.back();
+                        },
+                  style: ElevatedButton.styleFrom(backgroundColor: GPTheme.primaryColor, padding: const EdgeInsets.symmetric(vertical: 14)),
+                  child: ctrl.isUpdatingChannel.value
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Enregistrer', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _SectionHeader extends StatelessWidget {
@@ -474,12 +563,16 @@ class _ChannelTile extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback onJoin;
   final VoidCallback? onLeave;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const _ChannelTile({
     required this.channel,
     required this.onTap,
     required this.onJoin,
     this.onLeave,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -666,12 +759,29 @@ class _ChannelTile extends StatelessWidget {
                           context,
                           title: 'Rejoins le canal "${channel.name}"',
                           subtitle: channel.description,
-                          path: '/canal/${channel.id}',
                           type: 'channel',
+                          id: '${channel.id}',
                         ),
                         child: Icon(Icons.share_outlined, size: 16, color: context.subtle),
                       ),
                       const SizedBox(width: 8),
+
+                      // Menu créateur — renommer / supprimer le canal
+                      if (channel.isMine)
+                        PopupMenuButton<String>(
+                          icon: Icon(Icons.more_vert_rounded, size: 18, color: context.subtle),
+                          padding: EdgeInsets.zero,
+                          onSelected: (v) => v == 'edit' ? onEdit?.call() : onDelete?.call(),
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(value: 'edit', child: Row(children: [
+                              Icon(Icons.edit_outlined, size: 16), SizedBox(width: 8), Text('Modifier'),
+                            ])),
+                            PopupMenuItem(value: 'delete', child: Row(children: [
+                              Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red), SizedBox(width: 8),
+                              Text('Supprimer', style: TextStyle(color: Colors.red)),
+                            ])),
+                          ],
+                        ),
 
                       // 2. Zone de droite : Bouton FIXE (Ne défile jamais)
                       if (!channel.isJoined)

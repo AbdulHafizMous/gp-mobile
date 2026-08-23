@@ -5,6 +5,7 @@ import 'package:grand_public_v2/app/modules/club/controllers/club_controller.dar
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 import 'package:grand_public_v2/app/modules/club/views/promo_detail_view.dart';
 import 'package:grand_public_v2/app/modules/club/views/partner_detail_view.dart';
+import 'package:grand_public_v2/app/modules/club/views/partner_dashboard_view.dart';
 import 'package:grand_public_v2/app/utils/share_helper.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -22,6 +23,47 @@ extension _Tx on BuildContext {
 
 class ClubView extends StatelessWidget {
   const ClubView({super.key});
+
+  void _showClubSettings(BuildContext context, ClubController ctrl) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        decoration: BoxDecoration(
+          color: context.bg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            Text('Paramètres du Club',
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: context.primary)),
+            const SizedBox(height: 16),
+            Obx(() => SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: GPTheme.primaryColor,
+                  title: Text('Rappels d\'offres', style: TextStyle(color: context.primary, fontWeight: FontWeight.w600)),
+                  subtitle: Text(
+                    'Recevoir une notification à l\'ouverture de l\'app s\'il y a des offres disponibles pour vous.',
+                    style: TextStyle(color: context.subtle, fontSize: 12),
+                  ),
+                  value: ctrl.remindersEnabled.value,
+                  onChanged: ctrl.isTogglingReminders.value ? null : ctrl.toggleReminders,
+                )),
+          ],
+        ),
+      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,11 +93,24 @@ class ClubView extends StatelessWidget {
                             color: GPTheme.primaryColor, size: 22),
                       ),
                       const SizedBox(width: 10),
-                      Text(
-                        'Club',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                      Expanded(
+                        child: Text(
+                          'Club',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                      ),
+                      if (ctrl.isPartner)
+                        IconButton(
+                          tooltip: 'Mon espace partenaire',
+                          icon: Icon(Icons.qr_code_scanner_rounded, color: context.subtle),
+                          onPressed: () => Get.to(() => const PartnerDashboardView()),
+                        ),
+                      IconButton(
+                        tooltip: 'Paramètres du Club',
+                        icon: Icon(Icons.tune_rounded, color: context.subtle),
+                        onPressed: () => _showClubSettings(context, ctrl),
                       ),
                     ],
                   ),
@@ -214,8 +269,8 @@ class _OffresTab extends StatelessWidget {
               context,
               title: ctrl.promotions[i].title,
               subtitle: ctrl.promotions[i].partner?.name,
-              path: '/club/offre/${ctrl.promotions[i].id}',
-              type: 'offer',
+              type: 'promotion',
+              id: '${ctrl.promotions[i].id}',
             ),
           ),
         ),

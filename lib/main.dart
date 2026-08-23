@@ -65,17 +65,8 @@ Future<void> main() async {
   // 5. Notifications (Done in Main Page Ctrl)
   // await NotificationService.init();
 
-  // Tests Notification
-
-  // Depuis le front (dev uniquement)
-  // await FCMService.sendFCMNotifFromFront(
-  //   fcmToken: 'TOKEN_DESTINATAIRE',
-  //   title: 'Nouvelle commande',
-  //   body: 'Votre commande #123 est confirmée',
-  //   data: {'route': '/orders/123', 'order_id': '123'},
-  // );
-
-  // // Depuis le back (recommandé en prod)
+  // Tests Notification (envoi via le backend uniquement — voir note
+  // sécurité dans fcm_service.dart)
   // await FCMService.sendFCMNotifFromBack(
   //   fcmToken: 'TOKEN_DESTINATAIRE',
   //   title: 'Nouvelle commande',
@@ -87,7 +78,6 @@ Future<void> main() async {
   // await FCMService.sendToCurrentUser(
   //   title: 'Bienvenue !',
   //   body: 'Connexion réussie',
-  //   useBackend: true,
   // );
 
   runApp(const MainApp());
