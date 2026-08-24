@@ -49,6 +49,28 @@ class MainPageController extends GetxController {
     debugPrint("Fetching User");
     activeUser.value = await getUser();
     await loadSpaces();
+    _checkClubReminder();
+  }
+
+  /// Rappel Club (activable/désactivable dans Club > Paramètres) : à chaque
+  /// ouverture/reprise de l'app, vérifie côté serveur s'il existe des offres
+  /// éligibles non signalées récemment, et déclenche une notif locale.
+  /// Le serveur gère lui-même le respect du toggle et le throttling (1x/24h).
+  Future<void> _checkClubReminder() async {
+    try {
+      if (useMock || activeUser.value.id == 0) return;
+      final res = await RequestService().get('/club/reminder-check');
+      final data = res.data['data'];
+      if (data != null && data['should_notify'] == true) {
+        await NotificationService.showLocalNotification(
+          title: data['title'] ?? 'Des offres vous attendent au Club 🎁',
+          body: data['body'] ?? '',
+          route: '/home/club',
+        );
+      }
+    } catch (e) {
+      debugPrint('checkClubReminder error: $e');
+    }
   }
 
   Future<void> initPusherClient() async {
