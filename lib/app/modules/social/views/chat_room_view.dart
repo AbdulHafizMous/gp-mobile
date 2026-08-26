@@ -20,7 +20,7 @@ extension _Tx on BuildContext {
   Color get bg => isDark ? const Color(0xFF0D0D0D) : const Color(0xFFF2F2F7);
   Color get appBarBg => isDark ? const Color(0xFF141414) : Colors.black;
   // Color get inputBg => isDark ? const Color(0xFF1E1E1E) : Colors.white;
-  Color get bubbleMe => GPTheme.primaryColor;
+  Color get bubbleMe => GPTheme.socialColor;
   Color get bubbleOther => isDark ? const Color(0xFF2A2A2A) : Colors.white;
   Color get primary => Theme.of(this).textTheme.bodyLarge!.color!;
   Color get subtle => Theme.of(this).hintColor;
@@ -132,7 +132,7 @@ class _ChatRoomViewState extends State<ChatRoomView> {
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor: GPTheme.primaryColor.withOpacity(0.2),
+                  backgroundColor: GPTheme.socialColor.withOpacity(0.2),
                   backgroundImage: widget.privateConv?.otherUserAvatar != null
                       ? NetworkImage(widget.privateConv!.otherUserAvatar!)
                       : null,
@@ -168,7 +168,7 @@ class _ChatRoomViewState extends State<ChatRoomView> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: GPTheme.primaryColor.withOpacity(0.2),
+                color: GPTheme.socialColor.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(10),
                 image: widget.channel?.imageUrl != null
                     ? DecorationImage(
@@ -366,7 +366,7 @@ class _ChatRoomViewState extends State<ChatRoomView> {
             onPressed: () => Get.back(result: true),
             child: Text(
               'Quitter',
-              style: TextStyle(color: GPTheme.primaryColor),
+              style: TextStyle(color: GPTheme.socialColor),
             ),
           ),
         ],
@@ -542,7 +542,7 @@ class _SharedMediaSheetState extends State<_SharedMediaSheet> {
                   if (widget.ctrl.isMediaLoading.value) {
                     return Center(
                       child: CircularProgressIndicator(
-                        color: GPTheme.primaryColor,
+                        color: GPTheme.socialColor,
                       ),
                     );
                   }
@@ -659,7 +659,7 @@ class _ChannelMembersSheetState extends State<_ChannelMembersSheet> {
                 if (widget.ctrl.isMembersLoading.value) {
                   return Center(
                     child: CircularProgressIndicator(
-                      color: GPTheme.primaryColor,
+                      color: GPTheme.socialColor,
                     ),
                   );
                 }
@@ -684,7 +684,7 @@ class _ChannelMembersSheetState extends State<_ChannelMembersSheet> {
                             'super admin';
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: GPTheme.primaryColor.withOpacity(0.15),
+                        backgroundColor: GPTheme.socialColor.withOpacity(0.15),
                         backgroundImage: m['avatar_url'] != null
                             ? NetworkImage(m['avatar_url'])
                             : null,
@@ -692,7 +692,7 @@ class _ChannelMembersSheetState extends State<_ChannelMembersSheet> {
                             ? Text(
                                 (m['name'] ?? '?')[0].toString().toUpperCase(),
                                 style: TextStyle(
-                                  color: GPTheme.primaryColor,
+                                  color: GPTheme.socialColor,
                                   fontWeight: FontWeight.w800,
                                 ),
                               )
@@ -763,7 +763,7 @@ class _MessagesList extends StatelessWidget {
       final msgs = isPrivate ? ctrl.privateMessages : ctrl.messages;
       if (ctrl.isMessagesLoading.value && msgs.isEmpty) {
         return Center(
-          child: CircularProgressIndicator(color: GPTheme.primaryColor),
+          child: CircularProgressIndicator(color: GPTheme.socialColor),
         );
       }
       if (msgs.isEmpty) {
@@ -958,7 +958,7 @@ class _MessageBubble extends StatelessWidget {
           padding: const EdgeInsets.only(left: 16),
           child: Icon(
             Icons.reply_rounded,
-            color: GPTheme.primaryColor.withOpacity(0.6),
+            color: GPTheme.socialColor.withOpacity(0.6),
             size: 22,
           ),
         ),
@@ -976,7 +976,7 @@ class _MessageBubble extends StatelessWidget {
                   child: showAvatar
                       ? CircleAvatar(
                           radius: 14,
-                          backgroundColor: GPTheme.primaryColor.withOpacity(
+                          backgroundColor: GPTheme.socialColor.withOpacity(
                             0.2,
                           ),
                           backgroundImage: message.senderAvatar != null
@@ -986,7 +986,7 @@ class _MessageBubble extends StatelessWidget {
                               ? Text(
                                   message.senderName[0].toUpperCase(),
                                   style: TextStyle(
-                                    color: GPTheme.primaryColor,
+                                    color: GPTheme.socialColor,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w800,
                                   ),
@@ -1014,7 +1014,7 @@ class _MessageBubble extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
-                                color: GPTheme.primaryColor,
+                                color: GPTheme.socialColor,
                               ),
                             ),
                             if (message.isAdminSender) ...[
@@ -1125,9 +1125,9 @@ class _ReplyQuote extends StatelessWidget {
       decoration: BoxDecoration(
         color: isMe
             ? Colors.white.withOpacity(0.15)
-            : GPTheme.primaryColor.withOpacity(0.08),
+            : GPTheme.socialColor.withOpacity(0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border(left: BorderSide(color: GPTheme.primaryColor, width: 3)),
+        border: Border(left: BorderSide(color: GPTheme.socialColor, width: 3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1359,7 +1359,7 @@ class _StatusIcon extends StatelessWidget {
         return Icon(
           Icons.done_all_rounded,
           size: 13,
-          color: GPTheme.primaryColor,
+          color: GPTheme.socialColor,
         );
       case MessageStatus.delivered:
         return Icon(Icons.done_all_rounded, size: 13, color: context.subtle);
@@ -1403,7 +1403,7 @@ class _BubbleContent extends StatelessWidget {
               fontSize: 14,
               height: 1.45,
             ),
-            linkColor: isMe ? Colors.white : GPTheme.primaryColor,
+            linkColor: isMe ? Colors.white : GPTheme.socialColor,
           ),
         );
     }
@@ -1510,12 +1510,12 @@ class _AudioBubble extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isMe
                       ? Colors.white24
-                      : GPTheme.primaryColor.withOpacity(0.1),
+                      : GPTheme.socialColor.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   isThisPlay ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  color: isMe ? Colors.white : GPTheme.primaryColor,
+                  color: isMe ? Colors.white : GPTheme.socialColor,
                   size: 22,
                 ),
               ),
@@ -1547,10 +1547,10 @@ class _AudioBubble extends StatelessWidget {
                           margin: const EdgeInsets.symmetric(horizontal: 1),
                           decoration: BoxDecoration(
                             color: active
-                                ? (isMe ? Colors.white : GPTheme.primaryColor)
+                                ? (isMe ? Colors.white : GPTheme.socialColor)
                                 : (isMe
                                       ? Colors.white.withOpacity(0.35)
-                                      : GPTheme.primaryColor.withOpacity(0.25)),
+                                      : GPTheme.socialColor.withOpacity(0.25)),
                             borderRadius: BorderRadius.circular(2),
                           ),
                         );
@@ -1717,7 +1717,7 @@ class _FileBubble extends StatelessWidget {
           children: [
             Icon(
               Icons.insert_drive_file_rounded,
-              color: isMe ? Colors.white70 : GPTheme.primaryColor,
+              color: isMe ? Colors.white70 : GPTheme.socialColor,
               size: 28,
             ),
             const SizedBox(width: 10),
@@ -1756,7 +1756,7 @@ class _FileBubble extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isMe
                         ? Colors.white.withOpacity(0.2)
-                        : GPTheme.primaryColor.withOpacity(0.12),
+                        : GPTheme.socialColor.withOpacity(0.12),
                     shape: BoxShape.circle,
                   ),
                   child: isDownloading
@@ -1764,13 +1764,13 @@ class _FileBubble extends StatelessWidget {
                           padding: const EdgeInsets.all(8),
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: isMe ? Colors.white : GPTheme.primaryColor,
+                            color: isMe ? Colors.white : GPTheme.socialColor,
                           ),
                         )
                       : Icon(
                           Icons.download_rounded,
                           size: 18,
-                          color: isMe ? Colors.white : GPTheme.primaryColor,
+                          color: isMe ? Colors.white : GPTheme.socialColor,
                         ),
                 ),
               ),
@@ -1859,7 +1859,7 @@ class _DotsAnimState extends State<_DotsAnim>
               height: 6,
               margin: const EdgeInsets.symmetric(horizontal: 2),
               decoration: BoxDecoration(
-                color: GPTheme.primaryColor.withOpacity(0.6),
+                color: GPTheme.socialColor.withOpacity(0.6),
                 shape: BoxShape.circle,
               ),
             ),
@@ -1890,7 +1890,7 @@ class _ReplyPreview extends StatelessWidget {
             Container(
               width: 3,
               height: 36,
-              color: GPTheme.primaryColor,
+              color: GPTheme.socialColor,
               margin: const EdgeInsets.only(right: 10),
             ),
             Expanded(
@@ -1902,7 +1902,7 @@ class _ReplyPreview extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: GPTheme.primaryColor,
+                      color: GPTheme.socialColor,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -2033,7 +2033,7 @@ class _PendingFilePreview extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: GPTheme.primaryColor.withOpacity(0.1),
+                  color: GPTheme.socialColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -2042,7 +2042,7 @@ class _PendingFilePreview extends StatelessWidget {
                       : ctrl.pendingFileType.value == MessageType.audio
                       ? Icons.mic_rounded
                       : Icons.insert_drive_file_rounded,
-                  color: GPTheme.primaryColor,
+                  color: GPTheme.socialColor,
                   size: 28,
                 ),
               ),
@@ -2063,7 +2063,7 @@ class _PendingFilePreview extends StatelessWidget {
                   ),
                   Text(
                     ctrl.pendingFileType.value?.label ?? '',
-                    style: TextStyle(fontSize: 12, color: GPTheme.primaryColor),
+                    style: TextStyle(fontSize: 12, color: GPTheme.socialColor),
                   ),
                 ],
               ),
@@ -2242,7 +2242,7 @@ class _InputBarState extends State<_InputBar> {
                 height: 38,
                 decoration: BoxDecoration(
                   color: widget.showAttach
-                      ? GPTheme.primaryColor
+                      ? GPTheme.socialColor
                       : (context.isDark
                             ? Colors.white10
                             : Colors.grey.shade100),
@@ -2299,7 +2299,7 @@ class _InputBarState extends State<_InputBar> {
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: GPTheme.primaryColor,
+                          color: GPTheme.socialColor,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(

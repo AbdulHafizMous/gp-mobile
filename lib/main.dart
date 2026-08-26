@@ -11,6 +11,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 // import 'package:grand_public_v2/app/services/notification_service.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
+import 'package:grand_public_v2/app/services/iap_debug_logger.dart';
 import 'package:grand_public_v2/firebase_options.dart';
 
 import 'app/routes/app_pages.dart';
@@ -29,13 +30,40 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 /// Initialise RevenueCat (StoreKit) — nécessaire uniquement sur iOS pour
 /// rester conforme à la Guideline 3.1.1 d'Apple (contenu payant = IAP).
 Future<void> _initRevenueCat() async {
-  await Purchases.setLogLevel(LogLevel.warn);
-  final configuration = PurchasesConfiguration(REVENUECAT_IOS_API_KEY);
-  final userId = GetStorage().read<String>('user_id');
-  if (userId != null && userId.isNotEmpty) {
-    configuration.appUserID = userId;
+  IapDebugLogger.log('_initRevenueCat: démarrage');
+  try {
+    await Purchases.setLogLevel(LogLevel.debug);
+    IapDebugLogger.log('Purchases.setLogLevel(debug) OK');
+
+    final keyPreview = REVENUECAT_IOS_API_KEY.length > 12
+        ? '${REVENUECAT_IOS_API_KEY.substring(0, 8)}...${REVENUECAT_IOS_API_KEY.substring(REVENUECAT_IOS_API_KEY.length - 4)}'
+        : REVENUECAT_IOS_API_KEY;
+    IapDebugLogger.log('Clé API utilisée : $keyPreview');
+    if (REVENUECAT_IOS_API_KEY.isEmpty ||
+        REVENUECAT_IOS_API_KEY.contains('REPLACE_WITH')) {
+      IapDebugLogger.log(
+        '⚠️ ALERTE : REVENUECAT_IOS_API_KEY est vide ou est encore le placeholder !',
+      );
+    }
+
+    final configuration = PurchasesConfiguration(REVENUECAT_IOS_API_KEY);
+    final userId = GetStorage().read<String>('user_id');
+    if (userId != null && userId.isNotEmpty) {
+      configuration.appUserID = userId;
+      IapDebugLogger.log('appUserID configuré : $userId');
+    } else {
+      IapDebugLogger.log('appUserID non défini (utilisateur anonyme RevenueCat)');
+    }
+
+    await Purchases.configure(configuration);
+    IapDebugLogger.log('✅ Purchases.configure() terminé sans erreur');
+
+    final isConfigured = await Purchases.isConfigured;
+    IapDebugLogger.log('Purchases.isConfigured = $isConfigured');
+  } catch (e, st) {
+    IapDebugLogger.log('❌ ERREUR _initRevenueCat : $e');
+    debugPrint('_initRevenueCat error: $e\n$st');
   }
-  await Purchases.configure(configuration);
 }
 
 Future<void> main() async {
@@ -58,8 +86,13 @@ Future<void> main() async {
 
   // 4bis. RevenueCat (Apple IAP — Guideline 3.1.1). iOS uniquement :
   // Android/le reste continuent d'utiliser Kkiapay / le paiement web.
+  IapDebugLogger.log(
+    'Platform check : kIsWeb=$kIsWeb, Platform.isIOS=${kIsWeb ? "n/a" : Platform.isIOS}',
+  );
   if (!kIsWeb && Platform.isIOS) {
     await _initRevenueCat();
+  } else {
+    IapDebugLogger.log('RevenueCat NON initialisé (pas iOS) — normal sur Android.');
   }
 
   // 5. Notifications (Done in Main Page Ctrl)

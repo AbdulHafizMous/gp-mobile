@@ -60,7 +60,7 @@ class _PartnerDetailViewState extends State<PartnerDetailView> {
     if (_loading) {
       return Scaffold(
         backgroundColor: context.bg,
-        body: Center(child: CircularProgressIndicator(color: GPTheme.primaryColor)),
+        body: Center(child: CircularProgressIndicator(color: GPTheme.clubColor)),
       );
     }
     final d = _data ?? {};
@@ -105,11 +105,11 @@ class _PartnerDetailViewState extends State<PartnerDetailView> {
                     children: [
                       CircleAvatar(
                         radius: 28,
-                        backgroundColor: GPTheme.primaryColor.withOpacity(0.15),
+                        backgroundColor: GPTheme.clubColor.withOpacity(0.15),
                         backgroundImage:
                             d['logo_url'] != null ? NetworkImage(d['logo_url']) : null,
                         child: d['logo_url'] == null
-                            ? Icon(neutralPartnerIcon(id), color: GPTheme.primaryColor)
+                            ? Icon(neutralPartnerIcon(id), color: GPTheme.clubColor)
                             : null,
                       ),
                       const SizedBox(width: 12),
@@ -137,12 +137,13 @@ class _PartnerDetailViewState extends State<PartnerDetailView> {
                           mode: LaunchMode.externalApplication),
                       icon: const Icon(Icons.map_outlined, size: 18),
                       label: const Text('Voir sur la carte'),
-                      style: OutlinedButton.styleFrom(foregroundColor: GPTheme.primaryColor),
+                      style: OutlinedButton.styleFrom(
+                          foregroundColor: context.isDark ? GPTheme.clubColor : GPTheme.clubOnColor),
                     ),
                   ],
                   const SizedBox(height: 20),
                   Text('Offres',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: GPTheme.primaryColor)),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: context.isDark ? GPTheme.clubColor : GPTheme.clubOnColor)),
                   const SizedBox(height: 10),
                   if (promotions.isEmpty)
                     Text('Aucune offre pour le moment.', style: TextStyle(color: context.subtle)),
@@ -159,7 +160,7 @@ class _PartnerDetailViewState extends State<PartnerDetailView> {
 
 Widget _neutralHero(int id) {
   return Container(
-    color: GPTheme.primaryColor,
+    color: GPTheme.clubColor,
     alignment: Alignment.center,
     child: Icon(neutralPartnerIcon(id), size: 56, color: Colors.white.withOpacity(0.35)),
   );

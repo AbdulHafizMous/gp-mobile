@@ -3,9 +3,10 @@ import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-// import 'package:get/get.dart';
+import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
+import 'package:grand_public_v2/app/modules/notifs/controllers/notifs_controller.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/utils/app_link_router.dart';
 
@@ -111,6 +112,10 @@ class NotificationService {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       debugPrint('Foreground: ${message.notification?.title}');
       final RemoteNotification? notification = message.notification;
+      // Un push correspond en principe à une notif déjà écrite en base
+      // par le backend : on rafraîchit la liste + le badge tout de suite,
+      // sinon l'utilisateur ne la voit qu'en rouvrant l'écran Notifs.
+      _refreshNotifsList();
       if (notification == null) return;
 
       // ← paramètres nommés pour show()
@@ -143,8 +148,20 @@ class NotificationService {
   static void _listenNotificationTap() {
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint('Notification tapped: ${message.data}');
+      _refreshNotifsList();
       _navigateFromData(message.data);
     });
+  }
+
+  // ── Rafraîchit la liste de l'écran Notifs (si déjà chargée en mémoire) ────
+  static void _refreshNotifsList() {
+    try {
+      if (Get.isRegistered<NotifsPageController>()) {
+        Get.find<NotifsPageController>().fetchNotifications(refresh: true);
+      }
+    } catch (e) {
+      debugPrint('Erreur refresh notifs list: $e');
+    }
   }
 
   // ── App ouverte depuis notification (terminée) ────────────────────────────

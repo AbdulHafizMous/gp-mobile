@@ -1,6 +1,7 @@
 // lib/app/data/models/section_model.dart
 
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/club/views/club_view.dart';
 import 'package:grand_public_v2/app/modules/space/views/spaces_list_view.dart';
@@ -108,12 +109,12 @@ final sections = [
     page: SocialView(),
     drawerItems: [
       DrawerItem(
-        title: "Chat",
+        title: "Tchat",
         icon: Icons.forum_outlined,
         route: "/social/chat",
       ),
       DrawerItem(
-        title: "Date",
+        title: "Crush",
         icon: Icons.local_fire_department_outlined,
         route: "/social/dating",
       ),
@@ -138,8 +139,7 @@ final sections = [
   ),
   SectionModel(
     title: "Club",
-    description:
-        "Profitez d'offres exclusives, promotions et avantages uniques.",
+    description: "Les meilleurs plans !",
     icon: Icons.card_giftcard_outlined,
     hasSub: true,
     isLive: true,
@@ -183,7 +183,7 @@ final sections = [
 ];
 
 var fixedDrawerItems = [
-  if (!activeUser.value.role.contains("Super Admin"))
+  if (!activeUser.value.role.contains("Super Admin") && !skipMediaOnIos)
     DrawerItem(
       title: "Premium",
       icon: Icons.workspace_premium_outlined,

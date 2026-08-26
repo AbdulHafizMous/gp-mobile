@@ -43,9 +43,9 @@ class _PartnerDashboardViewState extends State<PartnerDashboardView> with Single
         iconTheme: IconThemeData(color: context.primary),
         bottom: TabBar(
           controller: _tab,
-          labelColor: GPTheme.primaryColor,
+          labelColor: context.isDark ? GPTheme.clubColor : GPTheme.clubOnColor,
           unselectedLabelColor: context.subtle,
-          indicatorColor: GPTheme.primaryColor,
+          indicatorColor: GPTheme.clubColor,
           tabs: const [
             Tab(icon: Icon(Icons.qr_code_scanner_rounded), text: 'Scanner'),
             Tab(icon: Icon(Icons.bar_chart_rounded), text: 'Statistiques'),
@@ -71,7 +71,7 @@ class _StatsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       if (ctrl.isPartnerStatsLoading.value && ctrl.partnerStats.value == null) {
-        return Center(child: CircularProgressIndicator(color: GPTheme.primaryColor));
+        return Center(child: CircularProgressIndicator(color: GPTheme.clubColor));
       }
       final data = ctrl.partnerStats.value;
       if (data == null) {
@@ -82,7 +82,7 @@ class _StatsTab extends StatelessWidget {
 
       return RefreshIndicator(
         onRefresh: ctrl.fetchPartnerStats,
-        color: GPTheme.primaryColor,
+        color: GPTheme.clubColor,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -122,9 +122,9 @@ class _StatsTab extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 18,
-                      backgroundColor: GPTheme.primaryColor.withOpacity(0.12),
+                      backgroundColor: GPTheme.clubColor.withOpacity(0.12),
                       backgroundImage: u['user_avatar'] != null ? NetworkImage(u['user_avatar']) : null,
-                      child: u['user_avatar'] == null ? Icon(Icons.person, size: 16, color: GPTheme.primaryColor) : null,
+                      child: u['user_avatar'] == null ? Icon(Icons.person, size: 16, color: GPTheme.clubColor) : null,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -165,7 +165,7 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? GPTheme.primaryColor;
+    final c = color ?? GPTheme.clubColor;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(

@@ -18,6 +18,7 @@ import 'package:grand_public_v2/app/data/models/subscription.dart';
 import 'package:grand_public_v2/app/data/models/user.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
+import 'package:grand_public_v2/app/services/iap_debug_logger.dart';
 import 'package:grand_public_v2/app/services/web_account_link_service.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
@@ -144,7 +145,13 @@ class SocialPremiumController extends GetxController {
     }
 
     final appleProductId = plan.appleProductId;
+    IapDebugLogger.log(
+      'handleSubscribe(RevenueCat) → plan="${plan.name}" apple_product_id="$appleProductId"',
+    );
     if (appleProductId == null || appleProductId.isEmpty) {
+      IapDebugLogger.log(
+        '❌ apple_product_id vide pour ce plan — rempli côté admin ?',
+      );
       _showPaymentFailedDialog(
         context,
         'Ce forfait n\'est pas encore configuré pour l\'App Store. '
@@ -156,18 +163,35 @@ class SocialPremiumController extends GetxController {
     selectedPlan.value = plan;
     isSubscribing.value = true;
     try {
+      IapDebugLogger.log('Appel Purchases.getProducts(["$appleProductId"])...');
       final products = await Purchases.getProducts([appleProductId]);
+      IapDebugLogger.log(
+        'Purchases.getProducts a retourné ${products.length} produit(s).',
+      );
+      for (final p in products) {
+        IapDebugLogger.log(
+          '  → produit trouvé : ${p.identifier} | ${p.title} | ${p.priceString}',
+        );
+      }
       if (products.isEmpty) {
+        IapDebugLogger.log(
+          '❌ AUCUN PRODUIT TROUVÉ pour "$appleProductId". Causes possibles : '
+          'Paid Applications Agreement non actif, produit pas en review/approuvé, '
+          'Product ID différent entre ASC/RevenueCat/admin, clé API RevenueCat invalide.',
+        );
         _showPaymentFailedDialog(context, 'Forfait introuvable sur l\'App Store.');
         return;
       }
 
+      IapDebugLogger.log('Appel Purchases.purchase() — ouverture du popup StoreKit...');
       final result = await Purchases.purchase(
         PurchaseParams.storeProduct(products.first),
       );
+      IapDebugLogger.log('✅ Achat StoreKit réussi côté client.');
 
       final transactionId =
           result.storeTransaction.transactionIdentifier;
+      IapDebugLogger.log('transactionId reçu : $transactionId');
 
       await _doSubscribeBackend(
         context: context,
@@ -180,6 +204,7 @@ class SocialPremiumController extends GetxController {
       );
     } on PlatformException catch (e) {
       final code = PurchasesErrorHelper.getErrorCode(e);
+      IapDebugLogger.log('❌ PlatformException : code=$code message=${e.message}');
       if (code != PurchasesErrorCode.purchaseCancelledError) {
         _showPaymentFailedDialog(
           context,
@@ -187,6 +212,7 @@ class SocialPremiumController extends GetxController {
         );
       }
     } catch (e) {
+      IapDebugLogger.log('❌ Erreur inattendue RevenueCat : $e');
       debugPrint('RevenueCat subscribe error: $e');
       _showPaymentFailedDialog(context, 'Une erreur inattendue est survenue.');
     } finally {

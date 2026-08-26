@@ -66,7 +66,7 @@ class _PartnerScannerViewState extends State<PartnerScannerView> {
               width: 250,
               height: 250,
               decoration: BoxDecoration(
-                border: Border.all(color: GPTheme.primaryColor, width: 3),
+                border: Border.all(color: GPTheme.clubColor, width: 3),
                 borderRadius: BorderRadius.circular(16),
               ),
             ),

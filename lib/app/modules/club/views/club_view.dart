@@ -48,7 +48,7 @@ class ClubView extends StatelessWidget {
             const SizedBox(height: 16),
             Obx(() => SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  activeColor: GPTheme.primaryColor,
+                  activeColor: GPTheme.clubColor,
                   title: Text('Rappels d\'offres', style: TextStyle(color: context.primary, fontWeight: FontWeight.w600)),
                   subtitle: Text(
                     'Recevoir une notification à l\'ouverture de l\'app s\'il y a des offres disponibles pour vous.',
@@ -86,11 +86,11 @@ class ClubView extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: GPTheme.primaryColor.withOpacity(0.1),
+                          color: GPTheme.clubColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(Icons.card_giftcard_outlined,
-                            color: GPTheme.primaryColor, size: 22),
+                            color: GPTheme.clubColor, size: 22),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -206,21 +206,21 @@ class _ClubTabChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? GPTheme.primaryColor : context.inputBg,
+          color: active ? GPTheme.clubColor : context.inputBg,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon,
-                size: 15, color: active ? Colors.white : context.subtle),
+                size: 15, color: active ? GPTheme.clubOnColor : context.subtle),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: active ? Colors.white : context.subtle,
+                color: active ? GPTheme.clubOnColor : context.subtle,
               ),
             ),
           ],
@@ -240,7 +240,7 @@ class _OffresTab extends StatelessWidget {
     return Obx(() {
       if (ctrl.isLoading.value && ctrl.promotions.isEmpty) {
         return Center(
-          child: CircularProgressIndicator(color: GPTheme.primaryColor),
+          child: CircularProgressIndicator(color: GPTheme.clubColor),
         );
       }
 
@@ -254,7 +254,7 @@ class _OffresTab extends StatelessWidget {
 
       return RefreshIndicator(
         onRefresh: () => ctrl.fetchPromotions(refresh: true),
-        color: GPTheme.primaryColor,
+        color: GPTheme.clubColor,
         child: ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           itemCount: ctrl.promotions.length,
@@ -289,7 +289,7 @@ class _PartenairesTab extends StatelessWidget {
     return Obx(() {
       if (ctrl.isPartnersLoading.value && ctrl.partners.isEmpty) {
         return Center(
-          child: CircularProgressIndicator(color: GPTheme.primaryColor),
+          child: CircularProgressIndicator(color: GPTheme.clubColor),
         );
       }
 
@@ -303,7 +303,7 @@ class _PartenairesTab extends StatelessWidget {
 
       return RefreshIndicator(
         onRefresh: ctrl.fetchPartners,
-        color: GPTheme.primaryColor,
+        color: GPTheme.clubColor,
         child: GridView.builder(
           padding: const EdgeInsets.all(12),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -382,12 +382,12 @@ class _PartnerCard extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 14,
-                        backgroundColor: GPTheme.primaryColor.withOpacity(0.15),
+                        backgroundColor: GPTheme.clubColor.withOpacity(0.15),
                         backgroundImage: partner.logoUrl != null
                             ? NetworkImage(partner.logoUrl!)
                             : null,
                         child: partner.logoUrl == null
-                            ? Icon(neutralPartnerIcon(partner.id), size: 14, color: GPTheme.primaryColor)
+                            ? Icon(neutralPartnerIcon(partner.id), size: 14, color: GPTheme.clubColor)
                             : null,
                       ),
                       const SizedBox(width: 6),
@@ -430,9 +430,9 @@ class _PartnerCard extends StatelessWidget {
 
 Widget _neutralBanner(int id) {
   return Container(
-    color: GPTheme.primaryColor.withOpacity(0.1),
+    color: GPTheme.clubColor.withOpacity(0.1),
     alignment: Alignment.center,
-    child: Icon(neutralPartnerIcon(id), size: 28, color: GPTheme.primaryColor.withOpacity(0.4)),
+    child: Icon(neutralPartnerIcon(id), size: 28, color: GPTheme.clubColor.withOpacity(0.4)),
   );
 }
 
@@ -475,7 +475,7 @@ class _PromoCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: promo.userPendingQr != null
-                  ? GPTheme.primaryColor.withOpacity(0.3)
+                  ? GPTheme.clubColor.withOpacity(0.3)
                   : Colors.grey.shade200,
             ),
             boxShadow: [

@@ -53,7 +53,7 @@ class _DatingViewState extends State<DatingView>
         return Scaffold(
           backgroundColor: context.bg,
           body: Center(
-            child: CircularProgressIndicator(color: GPTheme.primaryColor),
+            child: CircularProgressIndicator(color: GPTheme.socialColor),
           ),
         );
       }
@@ -62,7 +62,7 @@ class _DatingViewState extends State<DatingView>
         return Scaffold(
           backgroundColor: context.bg,
           body: Center(
-            child: CircularProgressIndicator(color: GPTheme.primaryColor),
+            child: CircularProgressIndicator(color: GPTheme.socialColor),
           ),
         );
       }
@@ -99,7 +99,7 @@ class _DatingAppBar extends StatelessWidget implements PreferredSizeWidget {
     return Container(
       color: context.isDark
           ? const Color(0xFF111111)
-          : GPTheme.primaryColor.withOpacity(0.9),
+          : GPTheme.socialColor.withOpacity(0.9),
       child: SafeArea(
         bottom: false,
         child: Column(
@@ -296,13 +296,13 @@ class _EmptySuggestions extends StatelessWidget {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: GPTheme.primaryColor.withOpacity(0.1),
+                color: GPTheme.socialColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.explore_rounded,
                 size: 48,
-                color: GPTheme.primaryColor,
+                color: GPTheme.socialColor,
               ),
             ),
             const SizedBox(height: 24),
@@ -328,7 +328,7 @@ class _EmptySuggestions extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: ctrl.loadSuggestions,
               style: ElevatedButton.styleFrom(
-                backgroundColor: GPTheme.primaryColor,
+                backgroundColor: GPTheme.socialColor,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 28,
                   vertical: 14,
@@ -709,7 +709,7 @@ class _ProfileCard extends StatelessWidget {
                               const SizedBox(width: 32),
                               _ActionBtn(
                                 icon: Icons.favorite_rounded,
-                                color: GPTheme.primaryColor,
+                                color: GPTheme.socialColor,
                                 size: 64,
                                 onTap: () {
                                   final p = Get.find<DatingController>()
@@ -825,7 +825,7 @@ class _ProfileDetailSheet extends StatelessWidget {
                         Icon(
                           Icons.location_on_rounded,
                           size: 14,
-                          color: GPTheme.primaryColor,
+                          color: GPTheme.socialColor,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -887,16 +887,16 @@ class _ProfileDetailSheet extends StatelessWidget {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: GPTheme.primaryColor.withOpacity(0.1),
+                                color: GPTheme.socialColor.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: GPTheme.primaryColor.withOpacity(0.3),
+                                  color: GPTheme.socialColor.withOpacity(0.3),
                                 ),
                               ),
                               child: Text(
                                 i,
                                 style: TextStyle(
-                                  color: GPTheme.primaryColor,
+                                  color: GPTheme.socialColor,
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,
                                 ),
@@ -935,7 +935,7 @@ class _ProfileDetailSheet extends StatelessWidget {
                             ctrl.likeProfile(profile);
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: GPTheme.primaryColor,
+                            backgroundColor: GPTheme.socialColor,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
@@ -981,16 +981,16 @@ class _ProfileDetailSheet extends StatelessWidget {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: GPTheme.primaryColor.withOpacity(
+                          backgroundColor: GPTheme.socialColor.withOpacity(
                             0.12,
                           ),
-                          foregroundColor: GPTheme.primaryColor,
+                          foregroundColor: GPTheme.socialColor,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                             side: BorderSide(
-                              color: GPTheme.primaryColor.withOpacity(0.3),
+                              color: GPTheme.socialColor.withOpacity(0.3),
                             ),
                           ),
                         ),
@@ -1101,13 +1101,13 @@ class _MatchOverlay extends StatelessWidget {
               Icon(
                 Icons.favorite_rounded,
                 size: 60,
-                color: GPTheme.primaryColor,
+                color: GPTheme.socialColor,
               ),
               const SizedBox(height: 12),
               Text(
                 'C\'est un Match !',
                 style: TextStyle(
-                  color: GPTheme.primaryColor,
+                  color: GPTheme.socialColor,
                   fontSize: 32,
                   fontWeight: FontWeight.w900,
                 ),
@@ -1157,7 +1157,7 @@ class _MatchOverlay extends StatelessWidget {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: GPTheme.primaryColor,
+                    backgroundColor: GPTheme.socialColor,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -1204,9 +1204,9 @@ class _MatchAvatar extends StatelessWidget {
     height: 90,
     decoration: BoxDecoration(
       shape: BoxShape.circle,
-      border: Border.all(color: GPTheme.primaryColor, width: 3),
+      border: Border.all(color: GPTheme.socialColor, width: 3),
       color: isMe
-          ? GPTheme.primaryColor.withOpacity(0.2)
+          ? GPTheme.socialColor.withOpacity(0.2)
           : Colors.grey.shade800,
       image: url != null && url!.isNotEmpty
           ? DecorationImage(image: NetworkImage(url!), fit: BoxFit.cover)
@@ -1216,7 +1216,7 @@ class _MatchAvatar extends StatelessWidget {
         ? Icon(
             Icons.person_rounded,
             size: 40,
-            color: isMe ? GPTheme.primaryColor : Colors.white38,
+            color: isMe ? GPTheme.socialColor : Colors.white38,
           )
         : null,
   );
@@ -1330,7 +1330,7 @@ class _MatchTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: context.isDark
-                ? GPTheme.primaryColor.withOpacity(0.15)
+                ? GPTheme.socialColor.withOpacity(0.15)
                 : Colors.grey.shade100,
           ),
           boxShadow: [
@@ -1353,12 +1353,12 @@ class _MatchTile extends StatelessWidget {
                 backgroundImage: match.profile.displayPhoto.isNotEmpty
                     ? NetworkImage(match.profile.displayPhoto)
                     : null,
-                backgroundColor: GPTheme.primaryColor.withOpacity(0.15),
+                backgroundColor: GPTheme.socialColor.withOpacity(0.15),
                 child: match.profile.displayPhoto.isEmpty
                     ? Text(
                         match.profile.name[0].toUpperCase(),
                         style: TextStyle(
-                          color: GPTheme.primaryColor,
+                          color: GPTheme.socialColor,
                           fontWeight: FontWeight.w800,
                           fontSize: 18,
                         ),
@@ -1372,7 +1372,7 @@ class _MatchTile extends StatelessWidget {
                   width: 16,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: GPTheme.primaryColor,
+                    color: GPTheme.socialColor,
                     shape: BoxShape.circle,
                     border: Border.all(color: context.surface, width: 2),
                   ),
@@ -1401,7 +1401,7 @@ class _MatchTile extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: GPTheme.primaryColor,
+                color: GPTheme.socialColor,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Text(
@@ -1466,7 +1466,7 @@ class _UsersTabState extends State<_UsersTab> {
           child: Obx(() {
             if (ctrl.isDirectoryLoading.value && ctrl.directoryUsers.isEmpty) {
               return Center(
-                child: CircularProgressIndicator(color: GPTheme.primaryColor),
+                child: CircularProgressIndicator(color: GPTheme.socialColor),
               );
             }
             if (ctrl.directoryUsers.isEmpty) {
@@ -1492,12 +1492,12 @@ class _UsersTabState extends State<_UsersTab> {
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
                     radius: 24,
-                    backgroundColor: GPTheme.primaryColor.withOpacity(0.12),
+                    backgroundColor: GPTheme.socialColor.withOpacity(0.12),
                     backgroundImage:
                         u['avatar_url'] != null ? NetworkImage(u['avatar_url']) : null,
                     child: u['avatar_url'] == null
                         ? Text((u['name'] ?? '?').toString()[0].toUpperCase(),
-                            style: TextStyle(color: GPTheme.primaryColor, fontWeight: FontWeight.bold))
+                            style: TextStyle(color: GPTheme.socialColor, fontWeight: FontWeight.bold))
                         : null,
                   ),
                   title: Text(u['name']?.toString() ?? '',
@@ -1506,7 +1506,7 @@ class _UsersTabState extends State<_UsersTab> {
                       ? Text(u['city'].toString(), style: TextStyle(color: context.subtle, fontSize: 12))
                       : null,
                   trailing: IconButton(
-                    icon: Icon(Icons.chat_bubble_rounded, color: GPTheme.primaryColor),
+                    icon: Icon(Icons.chat_bubble_rounded, color: GPTheme.socialColor),
                     onPressed: () => _quickMessageUser(context, u['id'] as int),
                   ),
                   onTap: () => _quickMessageUser(context, u['id'] as int),
@@ -1554,12 +1554,12 @@ class _PreferencesSetup extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: GPTheme.primaryColor.withOpacity(0.1),
+                  color: GPTheme.socialColor.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.favorite_rounded,
-                  color: GPTheme.primaryColor,
+                  color: GPTheme.socialColor,
                   size: 40,
                 ),
               ),
@@ -1648,8 +1648,8 @@ class _PreferencesSetup extends StatelessWidget {
                       min: 18,
                       max: 60,
                       divisions: 42,
-                      activeColor: GPTheme.primaryColor,
-                      inactiveColor: GPTheme.primaryColor.withOpacity(0.15),
+                      activeColor: GPTheme.socialColor,
+                      inactiveColor: GPTheme.socialColor.withOpacity(0.15),
                       labels: RangeLabels(
                         '${ctrl.minAge.value} ans',
                         '${ctrl.maxAge.value} ans',
@@ -1675,7 +1675,7 @@ class _PreferencesSetup extends StatelessWidget {
                         ? null
                         : ctrl.savePreferences,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: GPTheme.primaryColor,
+                      backgroundColor: GPTheme.socialColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
@@ -1810,8 +1810,8 @@ class _PreferencesSheet extends StatelessWidget {
               min: 18,
               max: 60,
               divisions: 42,
-              activeColor: GPTheme.primaryColor,
-              inactiveColor: GPTheme.primaryColor.withOpacity(0.15),
+              activeColor: GPTheme.socialColor,
+              inactiveColor: GPTheme.socialColor.withOpacity(0.15),
               labels: RangeLabels(
                 '${ctrl.minAge.value} ans',
                 '${ctrl.maxAge.value} ans',
@@ -1834,7 +1834,7 @@ class _PreferencesSheet extends StatelessWidget {
                         Get.back();
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: GPTheme.primaryColor,
+                  backgroundColor: GPTheme.socialColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1881,13 +1881,13 @@ class _GenderChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: selected
-              ? GPTheme.primaryColor
-              : GPTheme.primaryColor.withOpacity(context.isDark ? 0.12 : 0.08),
+              ? GPTheme.socialColor
+              : GPTheme.socialColor.withOpacity(context.isDark ? 0.12 : 0.08),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: selected
-                ? GPTheme.primaryColor
-                : GPTheme.primaryColor.withOpacity(0.25),
+                ? GPTheme.socialColor
+                : GPTheme.socialColor.withOpacity(0.25),
             width: 1.5,
           ),
         ),
@@ -1896,14 +1896,14 @@ class _GenderChip extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: selected ? Colors.white : GPTheme.primaryColor,
+              color: selected ? Colors.white : GPTheme.socialColor,
               size: 16,
             ),
             const SizedBox(width: 5),
             Text(
               label,
               style: TextStyle(
-                color: selected ? Colors.white : GPTheme.primaryColor,
+                color: selected ? Colors.white : GPTheme.socialColor,
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
               ),
