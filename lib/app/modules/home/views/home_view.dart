@@ -28,11 +28,12 @@ class HomeView extends GetView<HomeController> {
         key: controller.scaffoldKey,
         backgroundColor: context.isDark
             ? const Color(0xFF0A0A0A)
-            : GPTheme.primaryColor,
+            : GPTheme.colorForSection(sectionIdx),
         appBar: _HomeAppBar(
           ctrl: controller,
           canPop: canPop,
           currentRoute: controller.currentRoute,
+          sectionIndex: sectionIdx,
         ),
         drawer: _DynamicDrawer(activeSectionIndex: sectionIdx),
         body: _AnimatedBody(
@@ -41,7 +42,7 @@ class HomeView extends GetView<HomeController> {
         ),
         bottomNavigationBar: _SectionsBottomBar(
           activeIndex: sectionIdx,
-          notificationCount: notifsController.notifications.length,
+          notificationCount: notifsController.unreadCount.value,
           onTap: (i) => controller.goToSection(i),
         ),
       );
@@ -100,11 +101,13 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final HomeController ctrl;
   final bool canPop;
   final String currentRoute;
+  final int sectionIndex;
 
   const _HomeAppBar({
     required this.ctrl,
     required this.canPop,
     required this.currentRoute,
+    required this.sectionIndex,
   });
 
   @override
@@ -115,7 +118,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: context.isDark
           ? const Color(0xFF0A0A0A)
-          : GPTheme.primaryColor,
+          : GPTheme.colorForSection(sectionIndex),
       elevation: 0,
       // Si sous-page → bouton retour ; sinon → bouton hamburger
       leading: canPop
@@ -145,7 +148,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
           }
         },
         child: Image.asset(
-          LOGO_PIXEL,
+          GPTheme.logoForSection(sectionIndex),
           height: 44,
           width: 44,
           filterQuality: FilterQuality.high,
@@ -206,7 +209,9 @@ class _SectionsBottomBar extends StatelessWidget {
     return Container(
       height: 85,
       decoration: BoxDecoration(
-        color: context.isDark ? const Color(0xFF0A0A0A) : GPTheme.primaryColor,
+        color: context.isDark
+            ? const Color(0xFF0A0A0A)
+            : GPTheme.colorForSection(activeIndex),
         border: Border(
           top: BorderSide(
             color: Colors.white.withValues(alpha: 0.08),
@@ -216,7 +221,15 @@ class _SectionsBottomBar extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(sections.length, (i) {
+        children: [
+          for (final i in sections.asMap().keys)
+            if (!(skipMediaOnIos && i == 0)) _buildItem(context, i),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItem(BuildContext context, int i) {
           final isSelected = activeIndex == i;
           return GestureDetector(
             onTap: () => onTap(i),
@@ -239,7 +252,7 @@ class _SectionsBottomBar extends StatelessWidget {
                       sections[i].icon,
                       size: 24,
                       color: isSelected
-                          ? GPTheme.primaryColor
+                          ? GPTheme.colorForSection(i)
                           : Colors.white.withValues(alpha: 0.4),
                     ),
                   ),
@@ -262,9 +275,6 @@ class _SectionsBottomBar extends StatelessWidget {
               ],
             ),
           );
-        }),
-      ),
-    );
   }
 }
 
@@ -290,15 +300,23 @@ class _DynamicDrawer extends StatelessWidget {
       return item.requiredRoles.contains(userRole);
     }).toList();
 
+    final sectionColor = GPTheme.colorForSection(activeSectionIndex);
+    // Couleur lisible sur la pill blanche des liens (voir DrawerBtn) —
+    // différente de sectionColor pour Club (jaune trop clair pour du texte).
+    final linkColor = GPTheme.contentColorForSection(activeSectionIndex);
+
     return Drawer(
-      // En Light: Rouge GPTheme.primaryColor / En Dark: Noir profond
-      backgroundColor: isDark ? const Color(0xFF0A0A0A) : GPTheme.primaryColor,
+      // En Light: couleur de la section active / En Dark: Noir profond
+      backgroundColor: isDark ? const Color(0xFF0A0A0A) : sectionColor,
       width: MediaQuery.of(context).size.width * 0.72,
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
           // ── Profile header ─────────────────────────────────────────────
-          _DrawerProfileHeader(onTap: () => ctrl.navigateTo('/profile')),
+          _DrawerProfileHeader(
+            onTap: () => ctrl.navigateTo('/profile'),
+            accentColor: sectionColor,
+          ),
 
           const SizedBox(height: 20),
 
@@ -331,6 +349,7 @@ class _DynamicDrawer extends StatelessWidget {
                   icon: _dynamicIcon(item),
                   flutterIcon: item.icon,
                   callback: () => ctrl.navigateTo(item.route ?? ''),
+                  accentColor: linkColor,
                 ),
               ),
             ),
@@ -353,6 +372,7 @@ class _DynamicDrawer extends StatelessWidget {
                 title: item.title,
                 icon: _fixedIcon(item.route),
                 callback: () => ctrl.navigateTo(item.route ?? ''),
+                accentColor: linkColor,
               ),
             ),
           ),
@@ -373,6 +393,7 @@ class _DynamicDrawer extends StatelessWidget {
               title: 'Déconnexion',
               flutterIcon: Icons.logout_rounded,
               callback: () => Get.find<HomeController>().logout(),
+              accentColor: linkColor,
             ),
           ),
 
@@ -383,7 +404,11 @@ class _DynamicDrawer extends StatelessWidget {
             child: Container(
               height: 100,
               decoration: BoxDecoration(
-                image: DecorationImage(image: AssetImage(LOGO)),
+                image: DecorationImage(
+                  image: AssetImage(
+                    GPTheme.logoForSection(activeSectionIndex),
+                  ),
+                ),
               ),
             ),
           ),
@@ -415,8 +440,9 @@ class _DynamicDrawer extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 class _DrawerProfileHeader extends StatelessWidget {
   final VoidCallback onTap;
+  final Color accentColor;
 
-  const _DrawerProfileHeader({required this.onTap});
+  const _DrawerProfileHeader({required this.onTap, required this.accentColor});
 
   @override
   Widget build(BuildContext context) {
@@ -463,7 +489,7 @@ class _DrawerProfileHeader extends StatelessWidget {
                                           progress.expectedTotalBytes!
                                     : null,
                                 valueColor: AlwaysStoppedAnimation(
-                                  GPTheme.primaryColor,
+                                  accentColor,
                                 ),
                               ),
                             ),
@@ -486,8 +512,8 @@ class _DrawerProfileHeader extends StatelessWidget {
                 fontSize: 18,
                 fontFamily: "gotham_book",
                 fontWeight: FontWeight.bold,
-                // Rouge GPTheme en light, Blanc en dark pour lisibilité sur fond sombre
-                color: isDark ? Colors.white : GPTheme.primaryColor,
+                // Couleur de section en light, Blanc en dark pour lisibilité sur fond sombre
+                color: isDark ? Colors.white : accentColor,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -495,9 +521,7 @@ class _DrawerProfileHeader extends StatelessWidget {
               email,
               style: TextStyle(
                 fontSize: 13,
-                color: isDark
-                    ? context.subtleText
-                    : GPTheme.primaryColor.withOpacity(0.7),
+                color: isDark ? context.subtleText : accentColor.withOpacity(0.7),
               ),
               overflow: TextOverflow.ellipsis,
             ),

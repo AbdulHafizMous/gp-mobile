@@ -1,10 +1,64 @@
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/constants/index.dart';
 
 class GPTheme {
   static TextTheme lightTextTheme = const TextTheme();
 
   static Color primaryColor = const Color(0xFFEF193B);
   static Color secondaryColor = const Color.fromARGB(85, 239, 25, 61);
+
+  // ── Couleurs par section (Espaces / Social / Club) ──────────────────────
+  // Espaces garde le rouge "main" (primaryColor). Social passe au bleu,
+  // Club au jaune. Utilisé pour l'appbar, la bottom bar et le sidebar sur le
+  // Home ; la cohérence dark/light reste gérée par les appelants
+  // (en dark on garde le fond noir, ces couleurs ne s'appliquent qu'en light).
+  static Color socialColor = const Color(0xFF1565C0);
+  static Color clubColor = const Color(0xFFF5B301);
+  // Couleur de contenu (texte/icône) à utiliser PAR-DESSUS un fond plein
+  // clubColor : le jaune est trop clair pour du texte blanc (contraste
+  // insuffisant), on utilise donc une couleur sombre. Le bleu Social a un
+  // contraste suffisant avec du blanc, pas besoin d'équivalent pour lui.
+  static Color clubOnColor = const Color(0xFF241900);
+
+  /// Couleur d'accent (fond appbar/bottombar/drawer) pour l'index de section
+  /// donné (0 = Espaces, 1 = Social, 2 = Club).
+  static Color colorForSection(int index) {
+    switch (index) {
+      case 1:
+        return socialColor;
+      case 2:
+        return clubColor;
+      default:
+        return primaryColor;
+    }
+  }
+
+  /// Couleur à utiliser pour du texte/icône POSÉ SUR une surface claire
+  /// (ex : pill blanche d'un item de sidebar) selon la section active.
+  /// Contrairement à [colorForSection], celle-ci reste lisible sur blanc
+  /// (clubColor/jaune ne l'est pas, on retombe donc sur clubOnColor).
+  static Color contentColorForSection(int index) {
+    switch (index) {
+      case 1:
+        return socialColor;
+      case 2:
+        return clubOnColor;
+      default:
+        return primaryColor;
+    }
+  }
+
+  /// Logo (appbar + sidebar) pour l'index de section donné.
+  static String logoForSection(int index) {
+    switch (index) {
+      case 1:
+        return LOGO_SOCIAL;
+      case 2:
+        return LOGO_CLUB;
+      default:
+        return LOGO_MEDIA;
+    }
+  }
 
   static TextTheme darkTextTheme = const TextTheme();
 

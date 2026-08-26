@@ -199,7 +199,7 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _stack.add(_sectionDest(0));
+    _stack.add(_sectionDest(skipMediaOnIos ? 1 : 0));
 
     final pending = _box.read<int>('_pendingSection');
     if (pending != null && pending >= 0 && pending < sections.length) {
@@ -221,6 +221,7 @@ class HomeController extends GetxController {
   // SECTION (bottom bar)
   // ─────────────────────────────────────────────────────────────────────────
   void goToSection(int index, {bool showToast = true}) {
+    if (skipMediaOnIos && index == 0) return; // Espaces masqué
     if (index == activeSectionIndex && !canPop) return;
     _closeDrawer();
     _stack.assignAll([_sectionDest(index)]);
@@ -238,6 +239,13 @@ class HomeController extends GetxController {
   // ─────────────────────────────────────────────────────────────────────────
   void navigateTo(String route, {Map<String, dynamic> params = const {}}) {
     _closeDrawer();
+
+    // Soumission App Store sans médias : on bloque tout accès direct
+    // (deep link, notif...) aux Espaces et au Premium tant que c'est masqué.
+    if (skipMediaOnIos &&
+        (route.startsWith('/home/spaces') || route == '/social-premium')) {
+      return;
+    }
 
     if (_isExternalRoute(route)) {
       Get.toNamed(route, parameters: params.map((k, v) => MapEntry(k, '$v')));

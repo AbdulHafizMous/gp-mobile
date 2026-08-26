@@ -63,14 +63,14 @@ class _SocialTopTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // color: GPTheme.primaryColor,
+      // color: GPTheme.socialColor,
       padding: const EdgeInsets.fromLTRB(0, 5, 0, 5),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
             child: _TopTab(
-              label: 'Chat',
+              label: 'Tchat',
               icon: Icons.forum_outlined,
               active: activeTab == 0,
               onTap: () => onTap(0),
@@ -78,7 +78,7 @@ class _SocialTopTabBar extends StatelessWidget {
           ),
           Expanded(
             child: _TopTab(
-              label: 'Date',
+              label: 'Crush',
               icon: Icons.local_fire_department_outlined,
               active: activeTab == 1,
               onTap: () => onTap(1),
@@ -129,13 +129,13 @@ class _TopTab extends StatelessWidget {
             Icon(
               icon,
               size: 15,
-              color: active ? GPTheme.primaryColor : Colors.white70,
+              color: active ? GPTheme.socialColor : Colors.white70,
             ),
             const SizedBox(width: 3),
             Text(
               label,
               style: TextStyle(
-                color: active ? GPTheme.primaryColor : Colors.white70,
+                color: active ? GPTheme.socialColor : Colors.white70,
                 fontWeight: active ? FontWeight.w800 : FontWeight.w400,
                 fontSize: 14,
               ),

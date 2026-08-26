@@ -18,6 +18,7 @@ class DrawerBtn extends StatelessWidget {
     this.icon = 'assets/images/profile.png',
     this.flutterIcon,
     this.callback,
+    this.accentColor,
   });
 
   final String title;
@@ -30,9 +31,15 @@ class DrawerBtn extends StatelessWidget {
 
   final dynamic callback;
 
+  /// Couleur du texte/icône en light mode (pill blanche). Doit rester
+  /// lisible sur fond blanc — pour Club, passer GPTheme.clubOnColor (pas
+  /// clubColor, trop clair). Défaut : rouge "main" (Espaces / items fixes).
+  final Color? accentColor;
+
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
+    final lightColor = accentColor ?? GPTheme.primaryColor;
 
     return InkWell(
       onTap: () => callback != null ? callback() : Navigator.pop(context),
@@ -53,14 +60,14 @@ class DrawerBtn extends StatelessWidget {
               child: flutterIcon != null
                   ? Icon(
                       flutterIcon,
-                      color: !isDark ? GPTheme.primaryColor : Colors.white,
+                      color: !isDark ? lightColor : Colors.white,
                       size: 20,
                     )
                   : Image.asset(
                       icon,
                       width: 20,
                       height: 20,
-                      color: !isDark ? GPTheme.primaryColor : Colors.white,
+                      color: !isDark ? lightColor : Colors.white,
                     ),
             ),
 
@@ -71,7 +78,7 @@ class DrawerBtn extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
-                color: !isDark ? GPTheme.primaryColor : Colors.white,
+                color: !isDark ? lightColor : Colors.white,
               ),
             ),
 
@@ -79,7 +86,7 @@ class DrawerBtn extends StatelessWidget {
 
             Icon(
               Icons.arrow_forward_ios,
-              color: !isDark ? GPTheme.primaryColor : Colors.white,
+              color: !isDark ? lightColor : Colors.white,
               size: 16,
             ),
           ],

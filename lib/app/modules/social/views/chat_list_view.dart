@@ -56,7 +56,7 @@ class _ChatListViewState extends State<ChatListView>
     final isDark = context.isDark;
     final headerBg = isDark
         ? const Color(0xFF111111)
-        : GPTheme.primaryColor.withOpacity(0.9);
+        : GPTheme.socialColor.withOpacity(0.9);
 
     return Scaffold(
       backgroundColor: context.bg,
@@ -122,7 +122,7 @@ class _ChatListViewState extends State<ChatListView>
                     isScrollable: true,
                     tabAlignment: TabAlignment.center,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    indicatorColor: GPTheme.primaryColor,
+                    indicatorColor: GPTheme.socialColor,
                     indicatorWeight: 3,
                     indicatorSize: TabBarIndicatorSize.label,
                     labelColor: Colors.white,
@@ -171,7 +171,7 @@ class _ChatListViewState extends State<ChatListView>
         animation: _tab,
         builder: (context, _) => _tab.index == 0
             ? FloatingActionButton(
-                backgroundColor: GPTheme.primaryColor,
+                backgroundColor: GPTheme.socialColor,
                 onPressed: () => _showCreateChannelDialog(context),
                 child: const Icon(Icons.add_rounded, color: Colors.white),
               )
@@ -224,7 +224,7 @@ class _ChatListViewState extends State<ChatListView>
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: GPTheme.primaryColor),
+                  borderSide: BorderSide(color: GPTheme.socialColor),
                 ),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
@@ -245,7 +245,7 @@ class _ChatListViewState extends State<ChatListView>
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: GPTheme.primaryColor),
+                  borderSide: BorderSide(color: GPTheme.socialColor),
                 ),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
@@ -266,7 +266,7 @@ class _ChatListViewState extends State<ChatListView>
                           if (ok) Get.back();
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: GPTheme.primaryColor,
+                    backgroundColor: GPTheme.socialColor,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: _ctrl.isCreatingChannel.value
@@ -354,7 +354,7 @@ class _ChannelsTab extends StatelessWidget {
     return Obx(() {
       if (ctrl.isChannelsLoading.value && ctrl.channels.isEmpty) {
         return Center(
-          child: CircularProgressIndicator(color: GPTheme.primaryColor),
+          child: CircularProgressIndicator(color: GPTheme.socialColor),
         );
       }
       final list = ctrl.filteredChannels;
@@ -379,7 +379,7 @@ class _ChannelsTab extends StatelessWidget {
       final others = list.where((c) => !c.isJoined).toList();
 
       return RefreshIndicator(
-        color: GPTheme.primaryColor,
+        color: GPTheme.socialColor,
         onRefresh: ctrl.loadChannels,
         child: ListView(
           padding: const EdgeInsets.only(bottom: 24),
@@ -440,7 +440,7 @@ class _ChannelsTab extends StatelessWidget {
             onPressed: () => Get.back(result: true),
             child: Text(
               'Quitter',
-              style: TextStyle(color: GPTheme.primaryColor),
+              style: TextStyle(color: GPTheme.socialColor),
             ),
           ),
         ],
@@ -523,7 +523,7 @@ class _ChannelsTab extends StatelessWidget {
                           );
                           if (ok) Get.back();
                         },
-                  style: ElevatedButton.styleFrom(backgroundColor: GPTheme.primaryColor, padding: const EdgeInsets.symmetric(vertical: 14)),
+                  style: ElevatedButton.styleFrom(backgroundColor: GPTheme.socialColor, padding: const EdgeInsets.symmetric(vertical: 14)),
                   child: ctrl.isUpdatingChannel.value
                       ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : const Text('Enregistrer', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
@@ -580,7 +580,7 @@ class _ChannelTile extends StatelessWidget {
     final isDark = context.isDark;
     return InkWell(
       onTap: onTap,
-      splashColor: GPTheme.primaryColor.withOpacity(0.06),
+      splashColor: GPTheme.socialColor.withOpacity(0.06),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         child: Row(
@@ -594,8 +594,8 @@ class _ChannelTile extends StatelessWidget {
                   height: 52,
                   decoration: BoxDecoration(
                     color: isDark
-                        ? GPTheme.primaryColor.withOpacity(0.15)
-                        : GPTheme.primaryColor.withOpacity(0.1),
+                        ? GPTheme.socialColor.withOpacity(0.15)
+                        : GPTheme.socialColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(14),
                     image: channel.imageUrl != null
                         ? DecorationImage(
@@ -609,7 +609,7 @@ class _ChannelTile extends StatelessWidget {
                           child: Text(
                             channel.name[0].toUpperCase(),
                             style: TextStyle(
-                              color: GPTheme.primaryColor,
+                              color: GPTheme.socialColor,
                               fontWeight: FontWeight.w900,
                               fontSize: 20,
                             ),
@@ -693,7 +693,7 @@ class _ChannelTile extends StatelessWidget {
                                     vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: GPTheme.primaryColor.withOpacity(
+                                    color: GPTheme.socialColor.withOpacity(
                                       isDark ? 0.15 : 0.08,
                                     ),
                                     borderRadius: BorderRadius.circular(20),
@@ -702,7 +702,7 @@ class _ChannelTile extends StatelessWidget {
                                     '#$t',
                                     style: TextStyle(
                                       fontSize: 10,
-                                      color: GPTheme.primaryColor,
+                                      color: GPTheme.socialColor,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -732,7 +732,7 @@ class _ChannelTile extends StatelessWidget {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: GPTheme.primaryColor,
+                                    color: GPTheme.socialColor,
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
@@ -793,7 +793,7 @@ class _ChannelTile extends StatelessWidget {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: GPTheme.primaryColor,
+                              color: GPTheme.socialColor,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: const Text(
@@ -815,18 +815,18 @@ class _ChannelTile extends StatelessWidget {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: GPTheme.primaryColor.withOpacity(
+                              color: GPTheme.socialColor.withOpacity(
                                 isDark ? 0.15 : 0.08,
                               ),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: GPTheme.primaryColor.withOpacity(0.3),
+                                color: GPTheme.socialColor.withOpacity(0.3),
                               ),
                             ),
                             child: Text(
                               'Rejoint',
                               style: TextStyle(
-                                color: GPTheme.primaryColor,
+                                color: GPTheme.socialColor,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -857,7 +857,7 @@ class _MessagesTab extends StatelessWidget {
     return Obx(() {
       if (ctrl.isConvsLoading.value && ctrl.privateConversations.isEmpty) {
         return Center(
-          child: CircularProgressIndicator(color: GPTheme.primaryColor),
+          child: CircularProgressIndicator(color: GPTheme.socialColor),
         );
       }
       final convs = ctrl.privateConversations;
@@ -900,7 +900,7 @@ class _MessagesTab extends StatelessWidget {
       }
 
       return RefreshIndicator(
-        color: GPTheme.primaryColor,
+        color: GPTheme.socialColor,
         onRefresh: ctrl.loadPrivateConversations,
         child: ListView.separated(
           padding: const EdgeInsets.only(bottom: 24),
@@ -936,7 +936,7 @@ class _ConvTile extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      splashColor: GPTheme.primaryColor.withOpacity(0.05),
+      splashColor: GPTheme.socialColor.withOpacity(0.05),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         child: Row(
@@ -947,8 +947,8 @@ class _ConvTile extends StatelessWidget {
                 CircleAvatar(
                   radius: 26,
                   backgroundColor: isDark
-                      ? GPTheme.primaryColor.withOpacity(0.15)
-                      : GPTheme.primaryColor.withOpacity(0.1),
+                      ? GPTheme.socialColor.withOpacity(0.15)
+                      : GPTheme.socialColor.withOpacity(0.1),
                   backgroundImage: conv.otherUserAvatar != null
                       ? NetworkImage(conv.otherUserAvatar!)
                       : null,
@@ -958,7 +958,7 @@ class _ConvTile extends StatelessWidget {
                               ? conv.otherUserName[0].toUpperCase()
                               : '?',
                           style: TextStyle(
-                            color: GPTheme.primaryColor,
+                            color: GPTheme.socialColor,
                             fontWeight: FontWeight.w800,
                             fontSize: 18,
                           ),
@@ -1006,7 +1006,7 @@ class _ConvTile extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 11,
                           color: hasUnread
-                              ? GPTheme.primaryColor
+                              ? GPTheme.socialColor
                               : context.subtle,
                           fontWeight: hasUnread
                               ? FontWeight.w700
@@ -1027,7 +1027,7 @@ class _ConvTile extends StatelessWidget {
                           width: 20,
                           height: 20,
                           decoration: BoxDecoration(
-                            color: GPTheme.primaryColor,
+                            color: GPTheme.socialColor,
                             shape: BoxShape.circle,
                           ),
                           child: Center(

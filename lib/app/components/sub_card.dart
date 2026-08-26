@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/data/models/subscription.dart';
+import 'package:grand_public_v2/app/modules/diagnostics/iap_diagnostics_view.dart';
 import 'package:grand_public_v2/app/modules/social_premium/controllers/social_premium_controller.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
@@ -60,7 +61,14 @@ class SubCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 20),
-                Image.asset(LOGO_PIXEL, width: 70),
+                GestureDetector(
+                  // Accès discret à l'écran de diagnostic IAP — actif
+                  // uniquement si isDebuggingIap = true (constants/index.dart).
+                  onLongPress: isDebuggingIap
+                      ? () => Get.to(() => const IapDiagnosticsView())
+                      : null,
+                  child: Image.asset(LOGO_PIXEL, width: 70),
+                ),
                 const SizedBox(height: 8),
                 Text(
                   subscription.duration,

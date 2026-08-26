@@ -120,8 +120,8 @@ class PromoDetailView extends StatelessWidget {
                             ? null
                             : () => _onClaim(context, current),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: GPTheme.primaryColor,
-                          foregroundColor: Colors.white,
+                          backgroundColor: GPTheme.clubColor,
+                          foregroundColor: GPTheme.clubOnColor,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -264,8 +264,8 @@ class PromoDetailView extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: GPTheme.primaryColor,
-                    foregroundColor: Colors.white,
+                    backgroundColor: GPTheme.clubColor,
+                    foregroundColor: GPTheme.clubOnColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -310,12 +310,12 @@ class _QrSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: isUsed
             ? Colors.green.shade50
-            : GPTheme.primaryColor.withOpacity(0.04),
+            : GPTheme.clubColor.withOpacity(0.04),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isUsed
               ? Colors.green.shade200
-              : GPTheme.primaryColor.withOpacity(0.2),
+              : GPTheme.clubColor.withOpacity(0.2),
         ),
       ),
       child: Column(
@@ -324,7 +324,11 @@ class _QrSection extends StatelessWidget {
             children: [
               Icon(
                 isUsed ? Icons.check_circle_rounded : Icons.qr_code_2_rounded,
-                color: isUsed ? Colors.green : GPTheme.primaryColor,
+                color: isUsed
+                    ? Colors.green
+                    : (Theme.of(context).brightness == Brightness.dark
+                        ? GPTheme.clubColor
+                        : GPTheme.clubOnColor),
                 size: 20,
               ),
               const SizedBox(width: 8),
@@ -332,7 +336,11 @@ class _QrSection extends StatelessWidget {
                 isUsed ? 'Code déjà utilisé' : 'Votre code QR actif',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: isUsed ? Colors.green.shade700 : GPTheme.primaryColor,
+                  color: isUsed
+                      ? Colors.green.shade700
+                      : (Theme.of(context).brightness == Brightness.dark
+                          ? GPTheme.clubColor
+                          : GPTheme.clubOnColor),
                 ),
               ),
             ],

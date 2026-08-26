@@ -1,11 +1,15 @@
-const LOGO_PIXEL = 'assets/images/logo_gpbt.png';
-const LOGO = 'assets/images/logo_gpbt.png';
+const LOGO_PIXEL = 'assets/images/logo_gpb.png';
+const LOGO = 'assets/images/logo_gpb.png';
+// Logos par section (appbar + sidebar) — voir GPTheme.logoForSection
+const LOGO_SOCIAL = 'assets/images/logo_gp_social.png';
+const LOGO_MEDIA = 'assets/images/logo_gp_media.png';
+const LOGO_CLUB = 'assets/images/logo_gp_club.png';
 const GOOGLE_LOGO = 'assets/icons/google.png';
 const FACEBOOK_LOGO = 'assets/icons/facebook.png';
-// const API_IP = "localhost";
-// const API_URL = "http://$API_IP:8000/api";
-const API_IP = "grandpublic.bj";
-const API_URL = "https://grandpublic.bj/api";
+const API_IP = "localhost";
+const API_URL = "http://$API_IP:8000/api";
+// const API_IP = "grandpublic.bj";
+// const API_URL = "https://grandpublic.bj/api";
 const PUSHER_API_KEY = "0fe44ac921bf1cf4b22e";
 const PUSHER_API_CLUSTER = "eu";
 const FEEX_SHOP_ID = "68499e0e4e10d69c0dbfd22d";
@@ -28,3 +32,20 @@ const bool useExternalPaywall = false;
 // Remplace par ta vraie clé publique API iOS depuis le dashboard RevenueCat.
 // ══════════════════════════════════════════════════════════════════════════
 const String REVENUECAT_IOS_API_KEY = "appl_PWZcuaTWEDfdfWQSLjWXOpPqTCy";
+
+// ══════════════════════════════════════════════════════════════════════════
+// SOUMISSION APP STORE SANS MÉDIAS (Espaces)
+// true  -> masque l'onglet "Espaces" (bottom nav / drawer) et le menu
+//          "Premium" (abonnement), démarre l'app sur "Social".
+// false -> affichage normal, tout est visible.
+// À repasser à false une fois la review Apple validée.
+// ══════════════════════════════════════════════════════════════════════════
+const bool skipMediaOnIos = false;
+
+// ══════════════════════════════════════════════════════════════════════════
+// DEBUG IAP (RevenueCat) — écran de diagnostic accessible par appui long sur
+// le logo de l'écran Premium.
+// true  -> écran de diagnostic actif (à utiliser uniquement pour déboguer).
+// false -> désactivé complètement (à repasser avant la mise en prod finale).
+// ══════════════════════════════════════════════════════════════════════════
+const bool isDebuggingIap = true;
