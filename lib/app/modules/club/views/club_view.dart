@@ -211,13 +211,12 @@ class _ClubNotifsChip extends StatelessWidget {
         : Get.put(NotifsPageController());
 
     return GestureDetector(
-      onTap: () => Get.find<HomeController>().navigateTo(
-        '/notifs',
-        params: {
-          'types': kClubNotificationTypes,
-          'title': 'Notifications Club',
-        },
-      ),
+      onTap: () {
+        // Même destination que la cloche de l'appbar (pas de doublon dans
+        // la pile) — on pré-sélectionne juste la catégorie "Club".
+        notifsCtrl.selectedCategory.value = 'club';
+        Get.find<HomeController>().navigateTo('/notifs');
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
