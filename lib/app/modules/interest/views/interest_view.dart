@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/interest_item.dart';
 import 'package:grand_public_v2/app/components/primary_button.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
-import 'package:grand_public_v2/app/themes/app_theme.dart';
+import 'package:grand_public_v2/app/utils/section_helper.dart';
 import '../controllers/interest_controller.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -19,7 +19,7 @@ class InterestView extends GetView<InterestController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: context.isDark ? null : GPTheme.primaryColor,
+      backgroundColor: context.isDark ? null : SectionHelper.color,
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(

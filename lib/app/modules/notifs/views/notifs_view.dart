@@ -6,15 +6,9 @@ import 'package:grand_public_v2/app/modules/pages/notification_page.dart';
 import '../controllers/notifs_controller.dart';
 
 class NotifsView extends GetView<NotifsPageController> {
-  const NotifsView({super.key, this.typeFilter, this.title});
-
-  final List<String>? typeFilter;
-  final String? title;
-
+  const NotifsView({super.key});
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: NotificationPage(typeFilter: typeFilter, title: title),
-    );
+    return const Scaffold(body: NotificationPage());
   }
 }

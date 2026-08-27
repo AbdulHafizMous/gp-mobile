@@ -6,11 +6,53 @@ import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 
+// ── Catégories de filtre (mappées sur les `type` réellement émis par le
+// backend — voir NotificationService / Jobs côté Laravel) ──────────────────
+class NotifCategory {
+  final String id;
+  final String label;
+  final List<String> types; // vide = "Toutes"
+  const NotifCategory(this.id, this.label, this.types);
+}
+
+const List<NotifCategory> kNotifCategories = [
+  NotifCategory('all', 'Toutes', []),
+  NotifCategory('club', 'Club', ['promo', 'promotion', 'promotion_reminder', 'partner']),
+  NotifCategory('social', 'Social', ['chat_channel', 'chat_private', 'dating_match']),
+  NotifCategory('media', 'Media', ['media']),
+  NotifCategory('account', 'Compte', ['subscription', 'campaign']),
+];
+
 class NotifsPageController extends GetxController {
   final notifications = <AppNotification>[].obs;
   final isLoading = false.obs;
   final unreadCount = 0.obs;
   final hasMore = false.obs;
+
+  // ── Filtre + tri (pilotés depuis la page elle-même, ou pré-sélectionnés
+  // avant navigation — ex: le bouton "Notifs" du Club) ───────────────────
+  final selectedCategory = 'all'.obs;
+  final sortMostRecentFirst = true.obs; // false = non-lues d'abord
+
+  List<AppNotification> get visibleNotifications {
+    final cat = kNotifCategories.firstWhere(
+      (c) => c.id == selectedCategory.value,
+      orElse: () => kNotifCategories.first,
+    );
+    var list = cat.types.isEmpty
+        ? notifications.toList()
+        : notifications.where((n) => cat.types.contains(n.type)).toList();
+
+    if (!sortMostRecentFirst.value) {
+      list.sort((a, b) {
+        if (a.isRead == b.isRead) return 0;
+        return a.isRead ? 1 : -1; // non-lues d'abord
+      });
+    }
+    // Par défaut la liste arrive déjà triée du plus récent au plus ancien
+    // (ordre backend), donc "Plus récentes" ne nécessite pas de re-tri.
+    return list;
+  }
 
   int _currentPage = 1;
 
