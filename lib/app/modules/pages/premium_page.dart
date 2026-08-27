@@ -146,7 +146,7 @@ class _PremiumPageState extends State<PremiumPage> {
                   "Act Use : ${activeUser.value.toJson()} ---  ${activeUser.value.activeSubscription?.plan?.name}  --- ok",
                 );
                 return Container(
-                  height: 400,
+                  height: 415,
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   width: MediaQuery.of(context).size.width,
                   child: ListView.separated(

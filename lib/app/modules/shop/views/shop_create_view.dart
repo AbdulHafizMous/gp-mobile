@@ -18,7 +18,7 @@ extension _Tx on BuildContext {
   Color get borderColor =>
       isDark ? Colors.white24 : Colors.grey.shade400;
   Color get appBarBg =>
-      isDark ? const Color(0xFF111111) : GPTheme.primaryColor;
+      isDark ? const Color(0xFF111111) : GPTheme.socialColor;
 }
 
 class ShopCreateView extends GetView<ShopController> {
@@ -288,7 +288,7 @@ class ShopCreateView extends GetView<ShopController> {
               child: ElevatedButton(
                 onPressed: controller.isSubmitting.value ? null : submit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: GPTheme.primaryColor,
+                  backgroundColor: GPTheme.socialColor,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(

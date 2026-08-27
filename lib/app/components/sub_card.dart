@@ -54,7 +54,7 @@ class SubCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             width: 280,
-            height: 380,
+            height: 420,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -114,6 +114,7 @@ class SubCard extends StatelessWidget {
 
                 const SizedBox(height: 10),
                 const _LegalLinksRow(),
+                const SizedBox(height: 5),
               ],
             ),
           ),
@@ -160,20 +161,30 @@ class _LegalLinksRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = TextStyle(fontSize: 11, color: context.subtleText);
-    return Wrap(
-      alignment: WrapAlignment.center,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        GestureDetector(
-          onTap: () => _open('https://grandpublic.bj/cgu'),
-          child: Text("Conditions d'utilisation", style: style.copyWith(decoration: TextDecoration.underline)),
-        ),
-        Text('  ·  ', style: style),
-        GestureDetector(
-          onTap: () => _open('https://grandpublic.bj/politique-de-confidentialite'),
-          child: Text('Confidentialité', style: style.copyWith(decoration: TextDecoration.underline)),
-        ),
-      ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          GestureDetector(
+            onTap: () => _open('https://grandpublic.bj/cgu'),
+            child: Text(
+              "Conditions d'utilisation",
+              style: style.copyWith(decoration: TextDecoration.underline),
+            ),
+          ),
+          Text('  ·  ', style: style),
+          GestureDetector(
+            onTap: () =>
+                _open('https://grandpublic.bj/politique-de-confidentialite'),
+            child: Text(
+              'Confidentialité',
+              style: style.copyWith(decoration: TextDecoration.underline),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -235,10 +246,7 @@ class _SubscribeButton extends StatelessWidget {
       () => ElevatedButton(
         onPressed: ctrl.isSubscribing.value
             ? null
-            : () => ctrl.handleSubscribe(
-                context: context,
-                plan: subscription,
-              ),
+            : () => ctrl.handleSubscribe(context: context, plan: subscription),
         style: ElevatedButton.styleFrom(
           backgroundColor: accentColor,
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),

@@ -10,6 +10,13 @@ import 'package:grand_public_v2/app/modules/social/views/chat_list_view.dart';
 import 'package:grand_public_v2/app/modules/social/views/dating_view.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// THEME HELPERS (mêmes conventions que Chat / Bizz)
+// ─────────────────────────────────────────────────────────────────────────────
+extension _Tx on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+}
+
 class SocialView extends StatelessWidget {
   const SocialView({super.key});
 
@@ -63,7 +70,7 @@ class _SocialTopTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // color: GPTheme.socialColor,
+      color: !context.isDark ? GPTheme.socialColor : Colors.transparent,
       padding: const EdgeInsets.fromLTRB(0, 5, 0, 5),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

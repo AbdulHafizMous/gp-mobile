@@ -15,7 +15,7 @@ extension _Tx on BuildContext {
   Color get primary => Theme.of(this).textTheme.bodyLarge!.color!;
   Color get subtle => Theme.of(this).hintColor;
   Color get appBarBg =>
-      isDark ? const Color(0xFF111111) : GPTheme.primaryColor;
+      isDark ? const Color(0xFF111111) : GPTheme.socialColor;
 }
 
 class ShopMyListingsView extends GetView<ShopController> {
@@ -36,7 +36,7 @@ class ShopMyListingsView extends GetView<ShopController> {
       body: Obx(() {
         if (controller.isLoadingMyListings.value) {
           return Center(
-            child: CircularProgressIndicator(color: GPTheme.primaryColor),
+            child: CircularProgressIndicator(color: GPTheme.socialColor),
           );
         }
         if (controller.myListings.isEmpty) {

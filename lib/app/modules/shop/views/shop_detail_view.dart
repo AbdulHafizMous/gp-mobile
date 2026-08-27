@@ -16,7 +16,7 @@ extension _Tx on BuildContext {
   Color get primary => Theme.of(this).textTheme.bodyLarge!.color!;
   Color get subtle => Theme.of(this).hintColor;
   Color get divider => Theme.of(this).dividerColor;
-  Color get appBarBg => isDark ? const Color(0xFF111111) : GPTheme.primaryColor;
+  Color get appBarBg => isDark ? const Color(0xFF111111) : GPTheme.socialColor;
 }
 
 class ShopDetailView extends GetView<ShopController> {
@@ -33,7 +33,7 @@ class ShopDetailView extends GetView<ShopController> {
         if (controller.isLoadingDetail.value ||
             controller.currentListing.value == null) {
           return Center(
-            child: CircularProgressIndicator(color: GPTheme.primaryColor),
+            child: CircularProgressIndicator(color: GPTheme.socialColor),
           );
         }
         final listing = controller.currentListing.value!;
@@ -137,7 +137,7 @@ class ShopDetailView extends GetView<ShopController> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: GPTheme.primaryColor,
+                        color: GPTheme.socialColor,
                       ),
                     ),
                     if (listing.city != null) ...[
@@ -230,7 +230,7 @@ class ShopDetailView extends GetView<ShopController> {
                                   : 'Contacter le vendeur',
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: GPTheme.primaryColor,
+                              backgroundColor: GPTheme.socialColor,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
@@ -319,10 +319,10 @@ class ShopDetailView extends GetView<ShopController> {
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: GPTheme.primaryColor,
+                      color: GPTheme.socialColor,
                     ),
                   )
-                : Icon(Icons.send, color: GPTheme.primaryColor),
+                : Icon(Icons.send, color: GPTheme.socialColor),
             onPressed: controller.isPostingComment.value
                 ? null
                 : () => controller.postComment(listingId),

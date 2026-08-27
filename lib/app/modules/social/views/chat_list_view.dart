@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/data/models/chat_models.dart';
 import 'package:grand_public_v2/app/modules/social/controllers/chat_controller.dart';
+import 'package:grand_public_v2/app/modules/social/controllers/dating_controller.dart';
 import 'package:grand_public_v2/app/modules/social/views/chat_room_view.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 import 'package:grand_public_v2/app/utils/share_helper.dart';
@@ -14,7 +15,7 @@ import 'package:grand_public_v2/app/utils/share_helper.dart';
 extension _Tx on BuildContext {
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
   Color get bg => isDark ? const Color(0xFF0D0D0D) : Colors.white;
-  // Color get surface => isDark ? const Color(0xFF1A1A1A) : Colors.grey.shade50;
+  Color get surface => isDark ? const Color(0xFF1A1A1A) : Colors.grey.shade50;
   // Color get cardBg => isDark ? const Color(0xFF1E1E1E) : Colors.white;
   Color get primary => Theme.of(this).textTheme.bodyLarge!.color!;
   Color get subtle => Theme.of(this).hintColor;
@@ -39,7 +40,7 @@ class _ChatListViewState extends State<ChatListView>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 2, vsync: this);
+    _tab = TabController(length: 3, vsync: this);
     _tab.addListener(() {
       if (_tab.indexIsChanging) _ctrl.chatTab.value = _tab.index;
     });
@@ -147,7 +148,8 @@ class _ChatListViewState extends State<ChatListView>
                           ],
                         ),
                       ),
-                      Tab(text: 'Messages privés'),
+                      Tab(text: 'Inbox'),
+                      Tab(text: 'Utilisateurs'),
                     ],
                   ),
                 ],
@@ -162,6 +164,7 @@ class _ChatListViewState extends State<ChatListView>
               children: [
                 _ChannelsTab(ctrl: _ctrl),
                 _MessagesTab(ctrl: _ctrl),
+                _UsersTab(),
               ],
             ),
           ),
@@ -1096,5 +1099,117 @@ class _LastMessagePreview extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// ONGLET LIKÉS — sans doublons, cliquable pour voir le profil
+// ─────────────────────────────────────────────────────────────────────────────
+class _UsersTab extends StatefulWidget {
+  const _UsersTab();
+
+  @override
+  State<_UsersTab> createState() => _UsersTabState();
+}
+
+class _UsersTabState extends State<_UsersTab> {
+  final DatingController ctrl = Get.find<DatingController>();
+
+  @override
+  void initState() {
+    super.initState();
+    ctrl.loadDirectoryUsers();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: TextField(
+            controller: ctrl.directorySearchCtrl,
+            onChanged: (v) => ctrl.loadDirectoryUsers(search: v),
+            style: TextStyle(color: context.primary),
+            decoration: InputDecoration(
+              hintText: 'Rechercher quelqu\'un…',
+              prefixIcon: Icon(Icons.search_rounded, color: context.subtle),
+              filled: true,
+              fillColor: context.surface,
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Obx(() {
+            if (ctrl.isDirectoryLoading.value && ctrl.directoryUsers.isEmpty) {
+              return Center(
+                child: CircularProgressIndicator(color: GPTheme.socialColor),
+              );
+            }
+            if (ctrl.directoryUsers.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.people_outline_rounded, size: 48, color: context.subtle),
+                    const SizedBox(height: 14),
+                    Text('Aucun utilisateur trouvé',
+                        style: TextStyle(color: context.subtle, fontSize: 14)),
+                  ],
+                ),
+              );
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              itemCount: ctrl.directoryUsers.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 4),
+              itemBuilder: (_, i) {
+                final u = ctrl.directoryUsers[i];
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    radius: 24,
+                    backgroundColor: GPTheme.socialColor.withOpacity(0.12),
+                    backgroundImage:
+                        u['avatar_url'] != null ? NetworkImage(u['avatar_url']) : null,
+                    child: u['avatar_url'] == null
+                        ? Text((u['name'] ?? '?').toString()[0].toUpperCase(),
+                            style: TextStyle(color: GPTheme.socialColor, fontWeight: FontWeight.bold))
+                        : null,
+                  ),
+                  title: Text(u['name']?.toString() ?? '',
+                      style: TextStyle(color: context.primary, fontWeight: FontWeight.w700)),
+                  subtitle: u['city'] != null
+                      ? Text(u['city'].toString(), style: TextStyle(color: context.subtle, fontSize: 12))
+                      : null,
+                  trailing: IconButton(
+                    icon: Icon(Icons.chat_bubble_rounded, color: GPTheme.socialColor),
+                    onPressed: () => _quickMessageUser(context, u['id'] as int),
+                  ),
+                  onTap: () => _quickMessageUser(context, u['id'] as int),
+                );
+              },
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _quickMessageUser(BuildContext context, int userId) async {
+    final chatCtrl = Get.find<ChatController>();
+    final convId = await chatCtrl.startConversationWithUser(userId);
+    if (convId != null) {
+      await chatCtrl.loadPrivateConversations();
+      final conv = chatCtrl.privateConversations.firstWhereOrNull((c) => c.id == convId);
+      if (conv != null) {
+        await chatCtrl.openPrivateConversation(conv);
+        Get.to(() => ChatRoomView(privateConv: conv), transition: Transition.rightToLeft);
+      }
+    }
   }
 }

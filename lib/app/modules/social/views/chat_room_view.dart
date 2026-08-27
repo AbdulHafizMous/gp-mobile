@@ -26,7 +26,6 @@ extension _Tx on BuildContext {
   Color get subtle => Theme.of(this).hintColor;
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // CHAT ROOM VIEW
 // ─────────────────────────────────────────────────────────────────────────────
@@ -976,9 +975,7 @@ class _MessageBubble extends StatelessWidget {
                   child: showAvatar
                       ? CircleAvatar(
                           radius: 14,
-                          backgroundColor: GPTheme.socialColor.withOpacity(
-                            0.2,
-                          ),
+                          backgroundColor: GPTheme.socialColor.withOpacity(0.2),
                           backgroundImage: message.senderAvatar != null
                               ? NetworkImage(message.senderAvatar!)
                               : null,
@@ -1157,7 +1154,10 @@ class _ReplyQuote extends StatelessWidget {
             Flexible(
               child: Text(
                 "Photo",
-                style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: textColor.withOpacity(0.7),
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -1176,7 +1176,10 @@ class _ReplyQuote extends StatelessWidget {
             Flexible(
               child: Text(
                 "Message vocal",
-                style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: textColor.withOpacity(0.7),
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -1191,7 +1194,10 @@ class _ReplyQuote extends StatelessWidget {
             Flexible(
               child: Text(
                 "Vidéo",
-                style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: textColor.withOpacity(0.7),
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -1210,7 +1216,10 @@ class _ReplyQuote extends StatelessWidget {
             Flexible(
               child: Text(
                 "Fichier",
-                style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: textColor.withOpacity(0.7),
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -1225,7 +1234,10 @@ class _ReplyQuote extends StatelessWidget {
             Flexible(
               child: Text(
                 message.replyToContent ?? '',
-                style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: textColor.withOpacity(0.7),
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -2095,7 +2107,7 @@ class _RecordingBar extends StatelessWidget {
       final m = (secs ~/ 60).toString().padLeft(2, '0');
       final s = (secs % 60).toString().padLeft(2, '0');
       return Container(
-        color: Colors.red.shade600,
+        color: GPTheme.socialColor,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
@@ -2140,7 +2152,7 @@ class _RecordingBar extends StatelessWidget {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Icon(Icons.send, size: 16, color: Colors.red.shade600),
+                child: Icon(Icons.send, size: 16, color: GPTheme.socialColor),
               ),
             ),
           ],

@@ -11,7 +11,6 @@ import 'package:grand_public_v2/app/data/models/space_model.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/videos/views/videos_view.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
-import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THEME HELPERS (même pattern que le reste de l'app)
@@ -114,7 +113,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
-                    color: GPTheme.primaryColor,
+                    color: context.primaryText,
                     letterSpacing: -0.4,
                   ),
                 ),
@@ -143,7 +142,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                   _isSingleColumn
                       ? Icons.grid_view_rounded
                       : Icons.view_agenda_rounded,
-                  color: GPTheme.primaryColor,
+                  color: context.primaryText,
                   size: 22,
                 ),
               ),
@@ -171,9 +170,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
             const SizedBox(height: 16),
             TextButton.icon(
               onPressed: _load,
-              icon: Icon(Icons.refresh_rounded, color: GPTheme.primaryColor),
+              icon: Icon(Icons.refresh_rounded, color: context.primaryText),
               label: Text('Réessayer',
-                  style: TextStyle(color: GPTheme.primaryColor)),
+                  style: TextStyle(color: context.primaryText)),
             ),
           ],
         ),
@@ -207,7 +206,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
     }
 
     return RefreshIndicator(
-      color: GPTheme.primaryColor,
+      color: context.primaryText,
       onRefresh: _load,
       child: _isSingleColumn
           ? _buildListView(context)
@@ -227,7 +226,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
       itemCount: _videos.length,
       itemBuilder: (_, i) => _VideoCardGrid(
         video: _videos[i],
-        accent: GPTheme.primaryColor,
+        accent: context.primaryText,
         onUnsaved: () => _removeVideo(_videos[i].id),
       ),
     );
@@ -240,7 +239,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (_, i) => _VideoCardList(
         video: _videos[i],
-        accent: GPTheme.primaryColor,
+        accent: context.primaryText,
         onUnsaved: () => _removeVideo(_videos[i].id),
       ),
     );
@@ -552,7 +551,7 @@ class _VideoCardGrid extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: GPTheme.primaryColor.withOpacity(0.85),
+                        color: context.primaryText.withOpacity(0.85),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.bookmark_rounded,
@@ -679,7 +678,7 @@ class _VideoCardGrid extends StatelessWidget {
             const SizedBox(height: 10),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: GPTheme.primaryColor,
+                backgroundColor: context.primaryText,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
@@ -808,7 +807,7 @@ class _VideoCardList extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: GPTheme.primaryColor.withOpacity(0.85),
+                          color: context.primaryText.withOpacity(0.85),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.bookmark_rounded,
@@ -867,7 +866,7 @@ class _VideoCardList extends StatelessWidget {
                           if ((video.spaceName ?? '').isNotEmpty)
                             _MiniTag(
                                 label: video.spaceName!,
-                                color: GPTheme.primaryColor),
+                                color: context.primaryText),
                           if ((video.categoryName ?? '').isNotEmpty)
                             _MiniTag(
                                 label: video.categoryName!,
@@ -897,7 +896,7 @@ class _VideoCardList extends StatelessWidget {
                           _StatPill(
                               icon: Icons.thumb_up_outlined,
                               label: _fmtCount(video.likesCount),
-                              color: GPTheme.primaryColor),
+                              color: context.primaryText),
                       ],
                     ),
                   ],
@@ -962,7 +961,7 @@ class _VideoCardList extends StatelessWidget {
             const SizedBox(height: 10),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: GPTheme.primaryColor,
+                backgroundColor: context.primaryText,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
