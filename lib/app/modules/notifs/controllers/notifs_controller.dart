@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/data/models/notification.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
+import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 
 class NotifsPageController extends GetxController {
@@ -162,8 +163,21 @@ class NotifsPageController extends GetxController {
   void onTapNotification(AppNotification notif) {
     markAsRead(notif);
 
-    if (notif.route != null && notif.route!.isNotEmpty) {
-      Get.toNamed(notif.route!, arguments: notif.data);
+    final route = notif.route;
+    if (route == null || route.isEmpty) return;
+
+    // Les routes internes au shell Home (Espaces/Social/Club, drawer fixe...)
+    // sont gérées par la pile interne de HomeController, PAS par le routeur
+    // nommé de GetX — sinon on pousse une 2e HomeView par-dessus l'existante
+    // (même GlobalKey de Scaffold utilisé deux fois → crash). Voir aussi
+    // AppLinkRouter, qui centralise déjà cette règle pour les deep links.
+    if (route.startsWith('/home') || route.startsWith('/social')) {
+      if (Get.isRegistered<HomeController>()) {
+        Get.find<HomeController>().navigateTo(route, params: notif.data ?? {});
+        return;
+      }
     }
+
+    Get.toNamed(route, arguments: notif.data);
   }
 }

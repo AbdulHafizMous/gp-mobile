@@ -46,7 +46,13 @@ class HomeBinding extends Bindings {
       );
 
       // ── Notifications ──────────────────────────────────────────────────
-      ctrl.registerPage('/notifs', (_) => const NotifsView());
+      ctrl.registerPage(
+        '/notifs',
+        (params) => NotifsView(
+          typeFilter: params['types'] as List<String>?,
+          title: params['title'] as String?,
+        ),
+      );
 
       // ── Social : Chat (ouvre SocialView sur l'onglet Chat) ─────────────
       ctrl.registerPage('/social/chat', (_) {
