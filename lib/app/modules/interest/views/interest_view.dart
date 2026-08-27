@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:grand_public_v2/app/components/interest_item.dart';
+import 'package:grand_public_v2/app/components/interest_item_off.dart';
 import 'package:grand_public_v2/app/components/primary_button.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
-import 'package:grand_public_v2/app/utils/section_helper.dart';
+import 'package:grand_public_v2/app/themes/app_theme.dart';
 import '../controllers/interest_controller.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -19,7 +19,7 @@ class InterestView extends GetView<InterestController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: context.isDark ? null : SectionHelper.color,
+      backgroundColor: context.isDark ? null : GPTheme.primaryColor,
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -27,12 +27,12 @@ class InterestView extends GetView<InterestController> {
             const SizedBox(height: 20),
 
             Image.asset(
-                  LOGO_PIXEL,
-                  height: 150,
-                  width: 150,
-                  cacheHeight: 150,
-                  cacheWidth: 150,
-                ),
+              LOGO_PIXEL,
+              height: 150,
+              width: 150,
+              cacheHeight: 150,
+              cacheWidth: 150,
+            ),
 
             // Container(
             //   padding: const EdgeInsets.all(2),
@@ -56,7 +56,6 @@ class InterestView extends GetView<InterestController> {
             //   //   cacheWidth: 120,
             //   // ),
             // ),
-
             const SizedBox(height: 20),
 
             const Text(
