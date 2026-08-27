@@ -90,10 +90,10 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/icons/logo.png"  # ← mettez le bon chemin de votre logo
+  image_path: "assets/images/icon.png"  # ← mettez le bon chemin de votre logo
   min_sdk_android: 21
   adaptive_icon_background: "#FFFFFF"  # ← couleur de fond pour Android 8+
-  adaptive_icon_foreground: "assets/icons/logo.png"
+  adaptive_icon_foreground: "assets/images/icon.png"
 
 dependency_overrides:
   record_linux: ^1.0.0

@@ -83,13 +83,16 @@
             </intent-filter>
         </service>
 
-        <!-- Icône et couleur des notifications -->
+
+        <!-- Icône par défaut pour les notifications -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@mipmap/ic_launcher"/>
+            android:resource="@drawable/ic_notification" />
+
+        <!-- Couleur d'accentuation par défaut (fait référence à votre colors.xml) -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
-            android:resource="@color/notification_color"/>
+            android:resource="@color/notification_color" />
 
     </application>
     <!-- Required to query activities that can process text, see:

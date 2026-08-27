@@ -5,7 +5,14 @@ import 'package:grand_public_v2/app/modules/notifs/controllers/notifs_controller
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 class NotificationPage extends StatelessWidget {
-  const NotificationPage({super.key});
+  const NotificationPage({super.key, this.typeFilter, this.title});
+
+  /// Si fourni, n'affiche que les notifs dont `type` est dans cette liste
+  /// (ex: notifs Club → ['promotion', 'promotion_reminder', 'promo']).
+  final List<String>? typeFilter;
+
+  /// Titre affiché dans l'en-tête (par défaut "Notifications").
+  final String? title;
 
   @override
   Widget build(BuildContext context) {
@@ -19,14 +26,16 @@ class NotificationPage extends StatelessWidget {
             child: Row(
               children: [
                 Text(
-                  'Notifications',
+                  title ?? 'Notifications',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                 ),
                 const Spacer(),
                 // Badge non lus
-                Obx(() => ctrl.unreadCount.value > 0
+                Obx(() {
+                  final count = _filtered(ctrl).where((n) => !n.isRead).length;
+                  return count > 0
                     ? Container(
                         margin: const EdgeInsets.only(right: 8),
                         padding: const EdgeInsets.symmetric(
@@ -36,14 +45,15 @@ class NotificationPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          '${ctrl.unreadCount.value}',
+                          '$count',
                           style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.bold),
                         ),
                       )
-                    : const SizedBox.shrink()),
+                    : const SizedBox.shrink();
+                }),
                 // Tout marquer comme lu
                 Obx(() => ctrl.unreadCount.value > 0
                     ? TextButton(
@@ -68,8 +78,10 @@ class NotificationPage extends StatelessWidget {
                       color: GPTheme.primaryColor),
                 );
               }
-      
-              if (ctrl.notifications.isEmpty) {
+
+              final list = _filtered(ctrl);
+
+              if (list.isEmpty) {
                 return _emptyState(context);
               }
       
@@ -79,13 +91,13 @@ class NotificationPage extends StatelessWidget {
                 child: ListView.separated(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 8),
-                  itemCount: ctrl.notifications.length +
-                      (ctrl.hasMore.value ? 1 : 0),
+                  itemCount: list.length +
+                      (typeFilter == null && ctrl.hasMore.value ? 1 : 0),
                   separatorBuilder: (_, __) =>
                       const SizedBox(height: 4),
                   itemBuilder: (ctx, i) {
-                    if (i == ctrl.notifications.length) {
-                      // Loader de pagination
+                    if (i == list.length) {
+                      // Loader de pagination (uniquement liste non filtrée)
                       ctrl.fetchNotifications();
                       return const Padding(
                         padding: EdgeInsets.all(16),
@@ -94,11 +106,9 @@ class NotificationPage extends StatelessWidget {
                       );
                     }
                     return _NotifTile(
-                      notif: ctrl.notifications[i],
-                      onTap: () =>
-                          ctrl.onTapNotification(ctrl.notifications[i]),
-                      onDelete: () =>
-                          ctrl.deleteNotification(ctrl.notifications[i]),
+                      notif: list[i],
+                      onTap: () => ctrl.onTapNotification(list[i]),
+                      onDelete: () => ctrl.deleteNotification(list[i]),
                     );
                   },
                 ),
@@ -107,6 +117,13 @@ class NotificationPage extends StatelessWidget {
           ),
         ],
       );
+  }
+
+  List<AppNotification> _filtered(NotifsPageController ctrl) {
+    if (typeFilter == null) return ctrl.notifications;
+    return ctrl.notifications
+        .where((n) => typeFilter!.contains(n.type))
+        .toList();
   }
 
   Widget _emptyState(BuildContext context) {
@@ -126,7 +143,7 @@ class NotificationPage extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Vous êtes à jour !',
+            typeFilter == null ? 'Vous êtes à jour !' : 'Rien de nouveau ici pour le moment.',
             style:
                 TextStyle(fontSize: 13, color: Colors.grey.shade400),
           ),
@@ -189,12 +206,12 @@ class _NotifTile extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: _typeColor(notif.type).withOpacity(0.12),
+                  color: _typeColor(notif.type, context).withOpacity(0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   _typeIcon(notif.type),
-                  color: _typeColor(notif.type),
+                  color: _typeColor(notif.type, context),
                   size: 20,
                 ),
               ),
@@ -264,19 +281,28 @@ class _NotifTile extends StatelessWidget {
 
   IconData _typeIcon(String type) {
     return switch (type) {
-      'media'    => Icons.play_circle_outline_rounded,
-      'promo'    => Icons.local_offer_outlined,
-      'campaign' => Icons.campaign_outlined,
-      _          => Icons.notifications_outlined,
+      'media'                                       => Icons.play_circle_outline_rounded,
+      'promo' || 'promotion' || 'promotion_reminder' => Icons.local_offer_outlined,
+      'partner'                                      => Icons.storefront_outlined,
+      'campaign'                                      => Icons.campaign_outlined,
+      'dating_match'                                  => Icons.favorite_rounded,
+      'subscription'                                  => Icons.workspace_premium_rounded,
+      _                                                => Icons.notifications_outlined,
     };
   }
 
-  Color _typeColor(String type) {
+  Color _typeColor(String type, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return switch (type) {
-      'media'    => Colors.blue,
-      'promo'    => Colors.orange,
-      'campaign' => Colors.purple,
-      _          => GPTheme.primaryColor,
+      'media'                                       => Colors.blue,
+      'promo' || 'promotion' || 'promotion_reminder' =>
+        isDark ? GPTheme.clubColor : GPTheme.clubOnColor,
+      'partner'                                      =>
+        isDark ? GPTheme.clubColor : GPTheme.clubOnColor,
+      'campaign'                                      => Colors.purple,
+      'dating_match'                                  => Colors.pinkAccent,
+      'subscription'                                  => Colors.amber.shade700,
+      _                                                => GPTheme.primaryColor,
     };
   }
 }
