@@ -50,52 +50,153 @@ class _AboutPageState extends State<AboutPage> {
                   "Bienvenue à tous,",
                   style: TextStyle(color: Colors.white, fontSize: 20),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 30),
+
+                // ── GRAND PUBLIC BÉNIN ──────────────────────────────────
                 Text(
-                  "Grand Public fait son retour avec une plateforme entièrement repensée, conçue pour vous offrir une expérience plus simple, plus riche et plus connectée.",
+                  "GRAND PUBLIC BÉNIN",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  "100% Vidéo, 100% Bénin !",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  "Vous recherchez du contenu 100% Vidéo, 100% Bénin ! Bienvenue dans l'univers de GRAND PUBLIC BÉNIN : Media, Social, Club.",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 30),
+
+                // ── GRAND PUBLIC MEDIA ───────────────────────────────────
                 Text(
-                  "Retrouvez désormais 3 grands espaces :",
+                  "GRAND PUBLIC MEDIA",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  "100% Emotion !",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  "Envie de sortir, de découvrir des personnalités ou même de vous informer ? Bienvenue dans l'univers de GRAND PUBLIC MEDIA : People, Events, News.",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 12),
                 Text(
-                  "MEDIA : Découvrez des vidéos autour de 3 rubriques — PEOPLE, EVENTS et NEWS — pour rester connecté à l'actualité et aux grands moments du Bénin.",
+                  "› PEOPLE est dédiée aux personnes, anonymes ou non, considérées comme des modèles à suivre ;",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 10),
                 Text(
-                  "SOCIAL : Échangez, rencontrez et développez votre réseau grâce à nos différents espaces communautaires.",
+                  "› EVENTS est consacrée aux événements passés ou à venir. Vous aurez envie d'y aller et même ratés, vous les revivrez ;",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 10),
                 Text(
-                  "CLUB : Profitez des promotions et offres exclusives de nos partenaires, et retrouvez leur annuaire complet (onglets Offres & Partenaires).",
+                  "› NEWS, c'est l'information expliquée de façon simple, directe et sans parti pris. Ici, le grand public s'exprime.",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 30),
+
+                // ── GRAND PUBLIC SOCIAL ──────────────────────────────────
                 Text(
-                  "Dans SOCIAL, retrouvez 3 rubriques :",
+                  "GRAND PUBLIC SOCIAL",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  "On est Ensemble !",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  "Envie de t'exprimer, de faire des rencontres ou même de faire des affaires ? Bienvenue dans l'univers de GRAND PUBLIC SOCIAL : Tchat, Crush, Bizz.",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 12),
                 Text(
-                  "CHAT : des canaux de discussion thématiques (créez le vôtre !) pour échanger avec la communauté.",
+                  "› TCHAT vous permet de donner votre point de vue sur les sujets qui vous préoccupent ;",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 10),
                 Text(
-                  "DATE : faites de nouvelles rencontres, retrouvez vos matchs ♥ et écrivez à qui vous voulez depuis la liste des membres.",
+                  "› CRUSH vous fait mieux connaitre et rencontrer l'âme sœur ;",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 10),
                 Text(
-                  "BIZZ : publiez et consultez des annonces pour proposer ou découvrir des produits, services et opportunités.",
+                  "› BIZZ est consacrée aux annonces de particulier à particulier pour rechercher, offrir un produit ou un service.",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 30),
+
+                // ── GRAND PUBLIC CLUB ────────────────────────────────────
+                Text(
+                  "GRAND PUBLIC CLUB",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  "Les meilleurs plans !",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  "Vous faites partie de la communauté de GRAND PUBLIC BÉNIN, vous bénéficiez de tous les meilleurs plans ! Bienvenue dans l'univers de GRAND PUBLIC CLUB : Offres, Partenaires, Notifications.",
+                  style: TextStyle(color: Colors.white, fontSize: 15),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  "› OFFRES vous permet d'être informés des meilleurs plans de nos partenaires en temps réel ;",
+                  style: TextStyle(color: Colors.white, fontSize: 15),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  "› PARTENAIRES vous permet de découvrir les commerces et services classés par activité avec le détail de tous les avantages qu'ils offrent ;",
+                  style: TextStyle(color: Colors.white, fontSize: 15),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  "› NOTIFICATIONS vous rappelle les opportunités selon vos centres d'intérêt.",
+                  style: TextStyle(color: Colors.white, fontSize: 15),
+                ),
+                SizedBox(height: 30),
+
                 Text(
                   "Contactez-nous pour partager vos suggestions et vos expériences.",
                   style: TextStyle(color: Colors.white, fontSize: 15),

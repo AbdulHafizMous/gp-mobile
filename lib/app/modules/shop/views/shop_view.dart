@@ -18,7 +18,7 @@ extension _Tx on BuildContext {
   Color get primary => Theme.of(this).textTheme.bodyLarge!.color!;
   Color get subtle => Theme.of(this).hintColor;
   // Color get divider => Theme.of(this).dividerColor;
-  // Color get appBarBg => isDark ? const Color(0xFF111111) : GPTheme.primaryColor;
+  // Color get appBarBg => isDark ? const Color(0xFF111111) : GPTheme.socialColor;
 }
 
 class ShopView extends StatelessWidget {
@@ -51,14 +51,14 @@ class ShopView extends StatelessWidget {
       //   ],
       // ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: GPTheme.primaryColor,
+        backgroundColor: GPTheme.socialColor,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('Déposer'),
         onPressed: () => Get.to(() => const ShopCreateView()),
       ),
       body: RefreshIndicator(
-        color: GPTheme.primaryColor,
+        color: GPTheme.socialColor,
         onRefresh: () => controller.fetchFeed(reset: true),
         child: CustomScrollView(
           controller: scrollController,
@@ -68,7 +68,7 @@ class ShopView extends StatelessWidget {
             Obx(() {
               if (controller.isLoadingFeed.value) {
                 return Center(
-                  child: CircularProgressIndicator(color: GPTheme.primaryColor),
+                  child: CircularProgressIndicator(color: GPTheme.socialColor),
                 ).let((w) => SliverFillRemaining(child: w));
               }
               if (controller.listings.isEmpty) {
@@ -115,7 +115,7 @@ class ShopView extends StatelessWidget {
                         padding: const EdgeInsets.all(16),
                         child: Center(
                           child: CircularProgressIndicator(
-                            color: GPTheme.primaryColor,
+                            color: GPTheme.socialColor,
                           ),
                         ),
                       ),
@@ -220,7 +220,7 @@ class ShopView extends StatelessWidget {
         backgroundColor: context.inputBg,
         iconTheme: IconThemeData(color: Colors.white),
         showCheckmark: false,
-        selectedColor: GPTheme.primaryColor,
+        selectedColor: GPTheme.socialColor,
         labelStyle: TextStyle(
           color: selected ? Colors.white : context.primary,
           fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
@@ -292,7 +292,7 @@ class _ListingCard extends StatelessWidget {
                         ? '${listing.price!.toStringAsFixed(0)} FCFA'
                         : 'À discuter',
                     style: TextStyle(
-                      color: GPTheme.primaryColor,
+                      color: GPTheme.socialColor,
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),

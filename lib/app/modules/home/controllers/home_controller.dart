@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:grand_public_v2/app/data/models/section_model.dart';
+import 'package:grand_public_v2/app/themes/app_theme.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 
 import 'package:dio/dio.dart';
@@ -47,6 +48,9 @@ class HomeController extends GetxController {
   int get activeSectionIndex => _current.sectionIndex;
   Widget get currentPage => _current.builder();
   bool get canPop => _stack.length > 1;
+  Color get activeSectionColor {
+    return GPTheme.colorForSection(activeSectionIndex);
+  }
 
   // ── Page registry ─────────────────────────────────────────────────────────
   final Map<String, Widget Function(Map<String, dynamic>)> _registry = {};
@@ -199,7 +203,7 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _stack.add(_sectionDest(skipMediaOnIos ? 1 : 0));
+    _stack.add(_sectionDest(shouldSkipMedia ? 1 : 0));
 
     final pending = _box.read<int>('_pendingSection');
     if (pending != null && pending >= 0 && pending < sections.length) {
@@ -221,7 +225,7 @@ class HomeController extends GetxController {
   // SECTION (bottom bar)
   // ─────────────────────────────────────────────────────────────────────────
   void goToSection(int index, {bool showToast = true}) {
-    if (skipMediaOnIos && index == 0) return; // Espaces masqué
+    if (shouldSkipMedia && index == 0) return; // Espaces masqué
     if (index == activeSectionIndex && !canPop) return;
     _closeDrawer();
     _stack.assignAll([_sectionDest(index)]);
@@ -242,7 +246,7 @@ class HomeController extends GetxController {
 
     // Soumission App Store sans médias : on bloque tout accès direct
     // (deep link, notif...) aux Espaces et au Premium tant que c'est masqué.
-    if (skipMediaOnIos &&
+    if (shouldSkipMedia &&
         (route.startsWith('/home/spaces') || route == '/social-premium')) {
       return;
     }

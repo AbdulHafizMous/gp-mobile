@@ -11,7 +11,7 @@ import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dar
 import 'package:grand_public_v2/app/modules/pages/favorites_page.dart';
 import 'package:grand_public_v2/app/modules/profile/controllers/profile_controller.dart';
 import 'package:grand_public_v2/app/modules/social_premium/controllers/social_premium_controller.dart';
-import 'package:grand_public_v2/app/themes/app_theme.dart';
+import 'package:grand_public_v2/app/utils/section_helper.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PROFILE VIEW — StatefulWidget pour gérer le back interceptor
@@ -108,20 +108,18 @@ class _ProfileViewState extends State<ProfileView> {
 // ─────────────────────────────────────────────────────────────────────────────
 extension _ThemeX on BuildContext {
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
-  Color get primaryText =>
-      Theme.of(this).textTheme.bodyLarge?.color ??
-      (isDark ? Colors.white : Colors.black);
+  // Color get primaryText =>
+  //     Theme.of(this).textTheme.bodyLarge?.color ??
+  //     (isDark ? Colors.white : Colors.black);
   Color get subtleText => Theme.of(this).hintColor;
   Color get dividerColor => Theme.of(this).dividerColor;
   Color get cardColor => Theme.of(this).cardColor;
 
   BoxDecoration get cardDecoration => BoxDecoration(
-    color: isDark ? GPTheme.primaryColor.withOpacity(0.05) : cardColor,
+    color: isDark ? const Color(0xFF1A1A1A) : cardColor,
     borderRadius: BorderRadius.circular(16),
     border: Border.all(
-      color: isDark
-          ? GPTheme.primaryColor.withOpacity(0.5)
-          : Colors.transparent,
+      color: isDark ? Colors.white12 : Colors.transparent,
       width: 2,
     ),
     boxShadow: isDark
@@ -168,7 +166,7 @@ class _ProfileSubBar extends StatelessWidget {
                 child: Text(
                   'Annuler',
                   style: TextStyle(
-                    color: GPTheme.primaryColor,
+                    color: SectionHelper.color,
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -183,13 +181,13 @@ class _ProfileSubBar extends StatelessWidget {
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: GPTheme.primaryColor,
+                            color: SectionHelper.color,
                           ),
                         )
                       : Text(
                           'Enregistrer',
                           style: TextStyle(
-                            color: GPTheme.primaryColor,
+                            color: SectionHelper.color,
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                           ),
@@ -207,7 +205,7 @@ class _ProfileSubBar extends StatelessWidget {
               child: Text(
                 title,
                 style: TextStyle(
-                  color: GPTheme.primaryColor,
+                  color: SectionHelper.color,
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0.5,
@@ -257,7 +255,7 @@ class _GpField extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: readOnly ? context.subtleText : GPTheme.primaryColor,
+            color: readOnly ? context.subtleText : SectionHelper.color,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -274,7 +272,7 @@ class _GpField extends StatelessWidget {
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w500,
-            color: readOnly ? context.subtleText : context.primaryText,
+            color: readOnly ? context.subtleText : SectionHelper.color,
           ),
           decoration: InputDecoration(
             hintText: hint,
@@ -293,14 +291,14 @@ class _GpField extends StatelessWidget {
                       obscure
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
-                      color: GPTheme.primaryColor,
+                      color: SectionHelper.color,
                       size: 20,
                     ),
                   )
                 : maxLines == 1
                 ? Icon(
                     Icons.edit_outlined,
-                    color: GPTheme.primaryColor,
+                    color: SectionHelper.color,
                     size: 18,
                   )
                 : null,
@@ -317,17 +315,17 @@ class _GpField extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(
-                color: readOnly ? Colors.grey.shade400 : GPTheme.primaryColor,
+                color: readOnly ? Colors.grey.shade400 : SectionHelper.color,
                 width: 1.5,
               ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Colors.red),
+              borderSide: BorderSide(color: SectionHelper.color),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+              borderSide: BorderSide(color: SectionHelper.color, width: 1.5),
             ),
           ),
         ),
@@ -358,7 +356,7 @@ class _GpDropdown extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: GPTheme.primaryColor,
+            color: SectionHelper.color,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -369,7 +367,7 @@ class _GpDropdown extends StatelessWidget {
           onChanged: onChanged,
           dropdownColor: isDark ? Colors.grey.shade900 : Colors.white,
           style: TextStyle(
-            color: context.primaryText,
+            color: SectionHelper.color,
             fontSize: 15,
             fontWeight: FontWeight.w500,
           ),
@@ -388,7 +386,7 @@ class _GpDropdown extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: GPTheme.primaryColor, width: 1.5),
+              borderSide: BorderSide(color: SectionHelper.color, width: 1.5),
             ),
           ),
           items: options
@@ -434,8 +432,13 @@ class _AvatarWidget extends StatelessWidget {
     }
     return CircleAvatar(
       radius: radius,
-      backgroundImage: const AssetImage('assets/images/profile.png'),
       backgroundColor: Colors.grey.shade200,
+      // backgroundImage: const AssetImage('assets/images/profile.png'),
+      child: Icon(
+        Icons.person_outline_rounded,
+        size: radius,
+        color: Colors.grey.shade400,
+      ),
     );
   }
 }
@@ -461,13 +464,13 @@ class _ActionTile extends StatelessWidget {
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w500,
-          color: context.primaryText,
+          color: SectionHelper.color,
         ),
       ),
       trailing: Icon(
         Icons.arrow_forward_ios,
         size: 16,
-        color: context.subtleText,
+        color: SectionHelper.color,
       ),
     );
   }
@@ -491,7 +494,7 @@ class _MainProfilePage extends GetView<ProfileController> {
     return Obx(() {
       if (controller.isLoading.value) {
         return Center(
-          child: CircularProgressIndicator(color: GPTheme.primaryColor),
+          child: CircularProgressIndicator(color: SectionHelper.color),
         );
       }
       return SingleChildScrollView(
@@ -505,7 +508,7 @@ class _MainProfilePage extends GetView<ProfileController> {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w900,
-                color: GPTheme.primaryColor,
+                color: SectionHelper.color,
               ),
             ),
             const SizedBox(height: 20),
@@ -539,10 +542,10 @@ class _MainProfilePage extends GetView<ProfileController> {
                                   width: 22,
                                   height: 22,
                                   decoration: BoxDecoration(
-                                    color: GPTheme.primaryColor,
+                                    color: Colors.black,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: context.cardColor,
+                                      color: Colors.white,
                                       width: 2,
                                     ),
                                   ),
@@ -566,7 +569,7 @@ class _MainProfilePage extends GetView<ProfileController> {
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: context.primaryText,
+                                  color: SectionHelper.color,
                                 ),
                               ),
                               Text(
@@ -650,7 +653,7 @@ class _MainProfilePage extends GetView<ProfileController> {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
-                              color: context.primaryText,
+                              color: SectionHelper.color,
                             ),
                           ),
                         ),
@@ -658,7 +661,7 @@ class _MainProfilePage extends GetView<ProfileController> {
                           () => Switch(
                             value: controller.isDark.value,
                             onChanged: (_) => controller.toggleTheme(),
-                            activeThumbColor: GPTheme.primaryColor,
+                            activeThumbColor: SectionHelper.color,
                           ),
                         ),
                       ],
@@ -677,7 +680,7 @@ class _MainProfilePage extends GetView<ProfileController> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: GPTheme.primaryColor,
+                  color: SectionHelper.color,
                 ),
               ),
             ),
@@ -685,7 +688,7 @@ class _MainProfilePage extends GetView<ProfileController> {
             Container(
               decoration: context.cardDecoration,
               child: _ActionTile(
-                title: 'Modifier mon mot de passe',
+                title: 'Mot de passe',
                 icon: Icons.lock_outline_rounded,
                 onTap: () => controller.goTo(ProfileSubPage.changePassword),
               ),
@@ -698,7 +701,7 @@ class _MainProfilePage extends GetView<ProfileController> {
               child: OutlinedButton(
                 onPressed: controller.logout,
                 style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: GPTheme.primaryColor),
+                  side: BorderSide(color: SectionHelper.color),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -707,7 +710,7 @@ class _MainProfilePage extends GetView<ProfileController> {
                 child: Text(
                   'Se déconnecter',
                   style: TextStyle(
-                    color: GPTheme.primaryColor,
+                    color: SectionHelper.color,
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
                   ),
@@ -726,25 +729,25 @@ class _MainProfilePage extends GetView<ProfileController> {
                       ? null
                       : () => _confirmDeleteAccount(context),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.red),
+                    side: BorderSide(color: SectionHelper.color),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: controller.isDeletingAccount.value
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 18,
                           width: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.red,
+                            color: SectionHelper.color,
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'Supprimer mon compte',
                           style: TextStyle(
-                            color: Colors.red,
+                            color: SectionHelper.color,
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
                           ),
@@ -782,9 +785,12 @@ class _MainProfilePage extends GetView<ProfileController> {
               Navigator.of(dialogContext).pop();
               controller.deleteAccount();
             },
-            child: const Text(
+            child: Text(
               'Supprimer définitivement',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: SectionHelper.color,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -836,7 +842,8 @@ class _EditInfoPage extends GetView<ProfileController> {
                             ElevatedButton.icon(
                               onPressed: controller.pickAvatarFromGallery,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: GPTheme.primaryColor,
+                                side: BorderSide(color: Colors.white),
+                                backgroundColor: Colors.black,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -865,7 +872,7 @@ class _EditInfoPage extends GetView<ProfileController> {
                               child: Text(
                                 'choisissez votre avatar...',
                                 style: TextStyle(
-                                  color: GPTheme.primaryColor,
+                                  color: SectionHelper.color,
                                   fontSize: 12,
                                   fontStyle: FontStyle.italic,
                                 ),
@@ -915,7 +922,7 @@ class _EditInfoPage extends GetView<ProfileController> {
                           builder: (ctx, child) => Theme(
                             data: Theme.of(ctx).copyWith(
                               colorScheme: ColorScheme.light(
-                                primary: GPTheme.primaryColor,
+                                primary: SectionHelper.color,
                                 onPrimary: Colors.white,
                               ),
                             ),
@@ -935,7 +942,7 @@ class _EditInfoPage extends GetView<ProfileController> {
                           prefixIcon: Icon(
                             Icons.calendar_today_outlined,
                             size: 18,
-                            color: GPTheme.primaryColor,
+                            color: SectionHelper.color,
                           ),
                         ),
                       ),
@@ -967,7 +974,7 @@ class _EditInfoPage extends GetView<ProfileController> {
                       prefixIcon: Icon(
                         Icons.location_on_outlined,
                         size: 18,
-                        color: GPTheme.primaryColor,
+                        color: SectionHelper.color,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -1080,7 +1087,7 @@ class _AvatarPickerPage extends GetView<ProfileController> {
           child: OutlinedButton.icon(
             onPressed: controller.pickAvatarFromGallery,
             style: OutlinedButton.styleFrom(
-              side: BorderSide(color: GPTheme.primaryColor),
+              side: BorderSide(color: SectionHelper.color),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -1088,12 +1095,12 @@ class _AvatarPickerPage extends GetView<ProfileController> {
             ),
             icon: Icon(
               Icons.photo_library_outlined,
-              color: GPTheme.primaryColor,
+              color: SectionHelper.color,
             ),
             label: Text(
               'Choisir depuis la galerie',
               style: TextStyle(
-                color: GPTheme.primaryColor,
+                color: SectionHelper.color,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1131,16 +1138,14 @@ class _AvatarPickerPage extends GetView<ProfileController> {
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: isSelected
-                          ? GPTheme.primaryColor
+                          ? SectionHelper.color
                           : Colors.grey.shade300,
                       width: isSelected ? 3 : 1.5,
                     ),
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: GPTheme.primaryColor.withValues(
-                                alpha: 0.3,
-                              ),
+                              color: SectionHelper.color.withValues(alpha: 0.3),
                               blurRadius: 8,
                             ),
                           ]
@@ -1153,7 +1158,7 @@ class _AvatarPickerPage extends GetView<ProfileController> {
                             child: Center(
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: GPTheme.primaryColor,
+                                color: SectionHelper.color,
                               ),
                             ),
                           )
@@ -1173,7 +1178,7 @@ class _AvatarPickerPage extends GetView<ProfileController> {
                                     height: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 1.5,
-                                      color: GPTheme.primaryColor,
+                                      color: SectionHelper.color,
                                       value: p.expectedTotalBytes != null
                                           ? p.cumulativeBytesLoaded /
                                                 p.expectedTotalBytes!
@@ -1231,7 +1236,7 @@ class _InterestsPage extends GetView<ProfileController> {
           child: Obx(() {
             if (controller.isInterestsLoading.value) {
               return Center(
-                child: CircularProgressIndicator(color: GPTheme.primaryColor),
+                child: CircularProgressIndicator(color: SectionHelper.color),
               );
             }
             return SingleChildScrollView(
@@ -1316,7 +1321,7 @@ class _ManageSubscriptionsPageState extends State<_ManageSubscriptionsPage> {
           child: Obx(() {
             if (_premCtrl.isLoadingHistory.value) {
               return Center(
-                child: CircularProgressIndicator(color: GPTheme.primaryColor),
+                child: CircularProgressIndicator(color: SectionHelper.color),
               );
             }
             final history = _premCtrl.subscriptionHistory;
@@ -1345,7 +1350,7 @@ class _ManageSubscriptionsPageState extends State<_ManageSubscriptionsPage> {
                       child: Text(
                         'Voir les plans disponibles',
                         style: TextStyle(
-                          color: GPTheme.primaryColor,
+                          color: SectionHelper.color,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1402,7 +1407,7 @@ class _ManageSubscriptionsPageState extends State<_ManageSubscriptionsPage> {
         icon: Icons.calendar_today_rounded,
         label: 'Total jours',
         value: '${_totalDays(history)} j',
-        color: GPTheme.primaryColor,
+        color: SectionHelper.color,
       ),
       _StatItem(
         icon: Icons.star_rounded,
@@ -1463,7 +1468,7 @@ class _SectionLabel extends StatelessWidget {
     style: TextStyle(
       fontSize: 15,
       fontWeight: FontWeight.w700,
-      color: GPTheme.primaryColor,
+      color: SectionHelper.color,
       letterSpacing: 0.4,
     ),
   );
@@ -1480,17 +1485,14 @@ class _ActiveSubCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            GPTheme.primaryColor,
-            GPTheme.primaryColor.withOpacity(0.75),
-          ],
+          colors: [SectionHelper.color, SectionHelper.color.withOpacity(0.75)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: GPTheme.primaryColor.withOpacity(0.35),
+            color: SectionHelper.color.withOpacity(0.35),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -1599,14 +1601,10 @@ class _NoActiveSubBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark
-            ? GPTheme.primaryColor.withOpacity(0.07)
-            : Colors.grey.shade50,
+        color: isDark ? const Color(0xFF1A1A1A) : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark
-              ? GPTheme.primaryColor.withOpacity(0.3)
-              : Colors.grey.shade200,
+          color: isDark ? Colors.white12 : Colors.grey.shade200,
         ),
       ),
       child: Row(
@@ -1669,16 +1667,12 @@ class _SubscriptionHistoryTile extends StatelessWidget {
       margin: EdgeInsets.only(bottom: isLast ? 0 : 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark
-            ? GPTheme.primaryColor.withOpacity(0.05)
-            : context.cardColor,
+        color: isDark ? const Color(0xFF1A1A1A) : context.cardColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: _isActive
-              ? GPTheme.primaryColor.withOpacity(isDark ? 0.5 : 0.25)
-              : (isDark
-                    ? GPTheme.primaryColor.withOpacity(0.15)
-                    : Colors.grey.shade200),
+              ? SectionHelper.color.withOpacity(isDark ? 0.6 : 0.25)
+              : (isDark ? Colors.white12 : Colors.grey.shade200),
           width: _isActive ? 1.5 : 1,
         ),
         boxShadow: isDark
@@ -1715,7 +1709,7 @@ class _SubscriptionHistoryTile extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
-                          color: context.primaryText,
+                          color: SectionHelper.color,
                         ),
                       ),
                     ),
@@ -1745,7 +1739,7 @@ class _SubscriptionHistoryTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: GPTheme.primaryColor,
+                    color: SectionHelper.color,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -1904,7 +1898,7 @@ class _StatCard extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 13,
-                    color: context.primaryText,
+                    color: SectionHelper.color,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),

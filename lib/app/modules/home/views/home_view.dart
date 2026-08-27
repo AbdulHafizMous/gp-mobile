@@ -20,33 +20,42 @@ class HomeView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final canPop = controller.canPop;
-      final sectionIdx = controller.activeSectionIndex;
+    return Scaffold(
+  key: controller.scaffoldKey,
 
-      return Scaffold(
-        key: controller.scaffoldKey,
-        backgroundColor: context.isDark
-            ? const Color(0xFF0A0A0A)
-            : GPTheme.colorForSection(sectionIdx),
-        appBar: _HomeAppBar(
-          ctrl: controller,
-          canPop: canPop,
-          currentRoute: controller.currentRoute,
-          sectionIndex: sectionIdx,
-        ),
-        drawer: _DynamicDrawer(activeSectionIndex: sectionIdx),
-        body: _AnimatedBody(
-          routeKey: controller.currentRoute,
-          child: controller.currentPage,
-        ),
-        bottomNavigationBar: _SectionsBottomBar(
-          activeIndex: sectionIdx,
-          notificationCount: notifsController.unreadCount.value,
-          onTap: (i) => controller.goToSection(i),
-        ),
-      );
-    });
+  appBar: PreferredSize(
+    preferredSize: const Size.fromHeight(kToolbarHeight),
+    child: Obx(
+      () => _HomeAppBar(
+        ctrl: controller,
+        canPop: controller.canPop,
+        currentRoute: controller.currentRoute,
+        sectionIndex: controller.activeSectionIndex,
+        notificationCount: notifsController.unreadCount.value,
+      ),
+    ),
+  ),
+
+  drawer: Obx(
+    () => _DynamicDrawer(
+      activeSectionIndex: controller.activeSectionIndex,
+    ),
+  ),
+
+  body: Obx(
+    () => _AnimatedBody(
+      routeKey: controller.currentRoute,
+      child: controller.currentPage,
+    ),
+  ),
+
+  bottomNavigationBar: Obx(
+    () => _SectionsBottomBar(
+      activeIndex: controller.activeSectionIndex,
+      onTap: controller.goToSection,
+    ),
+  ),
+);
   }
 }
 
@@ -102,12 +111,14 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool canPop;
   final String currentRoute;
   final int sectionIndex;
+  final int notificationCount;
 
   const _HomeAppBar({
     required this.ctrl,
     required this.canPop,
     required this.currentRoute,
     required this.sectionIndex,
+    required this.notificationCount,
   });
 
   @override
@@ -176,9 +187,50 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       centerTitle: true,
       actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications, color: Colors.white),
-          onPressed: () => ctrl.navigateTo('/notifs'),
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            IconButton(
+              icon: const Icon(
+                Icons.notifications_outlined,
+                color: Colors.white,
+              ),
+              onPressed: () => ctrl.navigateTo('/notifs'),
+            ),
+
+            if (notificationCount > 0)
+              Positioned(
+                right: 4,
+                top: 2,
+                child: Container(
+                  constraints: const BoxConstraints(
+                    minWidth: 18,
+                    minHeight: 18,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white, width: 1.5),
+                  ),
+                  child: Text(
+                    notificationCount > 99
+                        ? '99+'
+                        : notificationCount.toString(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
         IconButton(
           icon: const Icon(Icons.person_outline_rounded, color: Colors.white),
@@ -195,14 +247,9 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 class _SectionsBottomBar extends StatelessWidget {
   final int activeIndex;
-  final int notificationCount;
   final ValueChanged<int> onTap;
 
-  const _SectionsBottomBar({
-    required this.activeIndex,
-    required this.notificationCount,
-    required this.onTap,
-  });
+  const _SectionsBottomBar({required this.activeIndex, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -223,58 +270,53 @@ class _SectionsBottomBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           for (final i in sections.asMap().keys)
-            if (!(skipMediaOnIos && i == 0)) _buildItem(context, i),
+            if (!(shouldSkipMedia && i == 0)) _buildItem(context, i),
         ],
       ),
     );
   }
 
   Widget _buildItem(BuildContext context, int i) {
-          final isSelected = activeIndex == i;
-          return GestureDetector(
-            onTap: () => onTap(i),
-            behavior: HitTestBehavior.opaque,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOutCubic,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.white : Colors.transparent,
-                    shape: BoxShape.circle,
-                  ),
-                  child: AnimatedScale(
-                    scale: isSelected ? 1.2 : 1.0,
-                    duration: const Duration(milliseconds: 300),
-                    child: Icon(
-                      sections[i].icon,
-                      size: 24,
-                      color: isSelected
-                          ? GPTheme.colorForSection(i)
-                          : Colors.white.withValues(alpha: 0.4),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 300),
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                    color: isSelected ? Colors.white : Colors.white38,
-                  ),
-                  child: Text(
-                    sections[i].title,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+    final isSelected = activeIndex == i;
+    return GestureDetector(
+      onTap: () => onTap(i),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubic,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.white : Colors.transparent,
+              shape: BoxShape.circle,
             ),
-          );
+            child: AnimatedScale(
+              scale: isSelected ? 1.2 : 1.0,
+              duration: const Duration(milliseconds: 300),
+              child: Icon(
+                sections[i].icon,
+                size: 24,
+                color: isSelected
+                    ? GPTheme.colorForSection(i)
+                    : Colors.white.withValues(alpha: 0.4),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 300),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected ? Colors.white : Colors.white38,
+            ),
+            child: Text(sections[i].title, overflow: TextOverflow.ellipsis),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -315,7 +357,7 @@ class _DynamicDrawer extends StatelessWidget {
           // ── Profile header ─────────────────────────────────────────────
           _DrawerProfileHeader(
             onTap: () => ctrl.navigateTo('/profile'),
-            accentColor: sectionColor,
+            accentColor: linkColor,
           ),
 
           const SizedBox(height: 20),
@@ -405,9 +447,7 @@ class _DynamicDrawer extends StatelessWidget {
               height: 100,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage(
-                    GPTheme.logoForSection(activeSectionIndex),
-                  ),
+                  image: AssetImage(GPTheme.logoForSection(activeSectionIndex)),
                 ),
               ),
             ),
@@ -488,21 +528,31 @@ class _DrawerProfileHeader extends StatelessWidget {
                                     ? progress.cumulativeBytesLoaded /
                                           progress.expectedTotalBytes!
                                     : null,
-                                valueColor: AlwaysStoppedAnimation(
-                                  accentColor,
-                                ),
+                                valueColor: AlwaysStoppedAnimation(accentColor),
                               ),
                             ),
                           );
                         },
-                        errorBuilder: (_, _, _) => Image.asset(
+                        errorBuilder: (_, _, _) => ColorFiltered(
+                          colorFilter: ColorFilter.mode(
+                            accentColor,
+                            BlendMode.srcIn,
+                          ),
+                          child: Image.asset(
+                            'assets/images/profile.png',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      )
+                    : ColorFiltered(
+                        colorFilter: ColorFilter.mode(
+                          accentColor,
+                          BlendMode.srcIn,
+                        ),
+                        child: Image.asset(
                           'assets/images/profile.png',
                           fit: BoxFit.cover,
                         ),
-                      )
-                    : Image.asset(
-                        'assets/images/profile.png',
-                        fit: BoxFit.cover,
                       ),
               ),
             ),
@@ -521,7 +571,9 @@ class _DrawerProfileHeader extends StatelessWidget {
               email,
               style: TextStyle(
                 fontSize: 13,
-                color: isDark ? context.subtleText : accentColor.withOpacity(0.7),
+                color: isDark
+                    ? context.subtleText
+                    : accentColor.withOpacity(0.7),
               ),
               overflow: TextOverflow.ellipsis,
             ),

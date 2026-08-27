@@ -183,7 +183,7 @@ final sections = [
 ];
 
 var fixedDrawerItems = [
-  if (!activeUser.value.role.contains("Super Admin") && !skipMediaOnIos)
+  if (!activeUser.value.role.contains("Super Admin") && !shouldSkipMedia)
     DrawerItem(
       title: "Premium",
       icon: Icons.workspace_premium_outlined,

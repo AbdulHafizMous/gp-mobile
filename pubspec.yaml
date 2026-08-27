@@ -52,6 +52,7 @@ dependencies:
   just_the_tooltip: ^0.0.12    # (optionnel – tooltips)
   open_filex: ^4.7.0
   flutter_svg: ^2.3.0
+  font_awesome_flutter: ^11.0.0
 
 dev_dependencies:
   flutter_test:

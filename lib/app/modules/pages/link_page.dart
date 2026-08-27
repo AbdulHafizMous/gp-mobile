@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:grand_public_v2/app/themes/app_theme.dart';
+import 'package:grand_public_v2/app/utils/section_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LinkPage extends StatefulWidget {
   const LinkPage({super.key});
@@ -11,53 +12,61 @@ class LinkPage extends StatefulWidget {
 }
 
 class _LinkPageState extends State<LinkPage> {
-  // facebok, instagram, youtube, twitter, snapchat, tiktok
   final liens = [
     {
-      "title": "Facebook",
-      "subtitle": "@grandpublic",
-      "icon": "assets/icons/red_facebook.png",
-      "link": "https://www.facebook.com/grandpublicofficiel/",
+      "icon": FontAwesomeIcons.youtube,
+      "href": "https://www.youtube.com/@Grandpublic2024",
+      "label": "YouTube",
     },
     {
-      "title": "Instagram",
-      "subtitle": "@grandpublic",
-      "icon": "assets/icons/red_insta.png",
-      "link": "https://www.instagram.com/grandpublic1/",
+      "icon": FontAwesomeIcons.facebook,
+      "href": "https://www.facebook.com/grandpublicofficiel/",
+      "label": "Facebook",
     },
     {
-      "title": "Youtube",
-      "subtitle": "Grand Public TV",
-      "icon": "assets/icons/red_youtube.png",
-      "link": "https://www.youtube.com/@Grandpublic2024",
+      "icon": FontAwesomeIcons.instagram,
+      "href": "https://www.instagram.com/grandpublic1/",
+      "label": "Instagram",
     },
     {
-      "title": "Twitter",
-      "subtitle": "@grandpublic",
-      "icon": "assets/icons/red_tw.png",
-      "link": "https://x.com/grandpublictv?lang=fr",
+      "icon": FontAwesomeIcons.xTwitter,
+      "href": "https://x.com/grandpublictv",
+      "label": "X (Twitter)",
     },
-    // {
-    //   "title": "Snapchat",
-    //   "subtitle": "@grandpublic",
-    //   "icon": "assets/icons/red_snap.png",
-    //   "link": "https://grandpublic.bj/",
-    // },
     {
-      "title": "Tiktok",
-      "subtitle": "@grandpublic",
-      "icon": "assets/icons/red_tiktok.png",
-      "link": "https://www.tiktok.com/@grandpublic",
+      "icon": FontAwesomeIcons.whatsapp,
+      "href": "https://wa.me/+2290163634444",
+      "label": "WhatsApp",
+    },
+    {"icon": FontAwesomeIcons.snapchat, "href": "#", "label": "Snapchat"},
+    {
+      "icon": FontAwesomeIcons.tiktok,
+      "href": "https://www.tiktok.com/@grandpublic",
+      "label": "TikTok",
     },
   ];
 
-  Future<void> _launchUrl(url) async {
-    if (!await launchUrl(url)) {
+  Future<void> _launchUrl(String url) async {
+    if (url == "#") {
+      Fluttertoast.showToast(
+        msg: "Lien Snapchat indisponible",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
+
+      return;
+    }
+
+    final uri = Uri.parse(url);
+
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       Fluttertoast.showToast(
         msg: "Impossible d'ouvrir le lien",
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
         backgroundColor: Colors.red,
         textColor: Colors.white,
         fontSize: 16.0,
@@ -71,50 +80,71 @@ class _LinkPageState extends State<LinkPage> {
       child: Column(
         children: [
           const SizedBox(height: 20),
+
           Text(
             "LIENS",
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: GPTheme.primaryColor,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
             textAlign: TextAlign.center,
           ),
+
           const SizedBox(height: 10),
+
           ListView.separated(
             padding: const EdgeInsets.all(15),
-            separatorBuilder: (context, index) => const SizedBox(height: 15),
             shrinkWrap: true,
-            itemCount: liens.length,
             physics: const NeverScrollableScrollPhysics(),
+            itemCount: liens.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 15),
+
             itemBuilder: (context, index) {
+              final lien = liens[index];
+
               return Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                     topRight: Radius.circular(20),
                     bottomLeft: Radius.circular(20),
                   ),
                   color: Colors.grey.withValues(alpha: 0.2),
                 ),
                 child: ListTile(
-                  leading: Image.asset(
-                    liens[index]["icon"]!,
-                    width: 50,
-                    height: 50,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 8,
                   ),
+
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    alignment: AlignmentGeometry.center,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
+                    ),
+                    child: FaIcon(
+                      lien["icon"] as FaIconData,
+                      size: 25,
+                      color: SectionHelper.color,
+                    ),
+                  ),
+
                   title: Text(
-                    liens[index]["title"]!,
+                    lien["label"] as String,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  subtitle: Text(
-                    liens[index]["subtitle"]!,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  onTap: () => _launchUrl(Uri.parse(liens[index]["link"]!)),
+
+                  onTap: () => _launchUrl(lien["href"] as String),
+
                   trailing: Icon(
-                    Icons.arrow_outward_outlined,
+                    Icons.arrow_outward_rounded,
                     color: Theme.of(context).textTheme.bodyMedium?.color,
                   ),
                 ),

@@ -38,25 +38,45 @@ class ClubView extends StatelessWidget {
           children: [
             Center(
               child: Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade400,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-            Text('Paramètres du Club',
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: context.primary)),
+            Text(
+              'Paramètres du Club',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
+                color: context.primary,
+              ),
+            ),
             const SizedBox(height: 16),
-            Obx(() => SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  activeColor: GPTheme.clubColor,
-                  title: Text('Rappels d\'offres', style: TextStyle(color: context.primary, fontWeight: FontWeight.w600)),
-                  subtitle: Text(
-                    'Recevoir une notification à l\'ouverture de l\'app s\'il y a des offres disponibles pour vous.',
-                    style: TextStyle(color: context.subtle, fontSize: 12),
+            Obx(
+              () => SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                activeColor: GPTheme.clubColor,
+                title: Text(
+                  'Rappels d\'offres',
+                  style: TextStyle(
+                    color: context.primary,
+                    fontWeight: FontWeight.w600,
                   ),
-                  value: ctrl.remindersEnabled.value,
-                  onChanged: ctrl.isTogglingReminders.value ? null : ctrl.toggleReminders,
-                )),
+                ),
+                subtitle: Text(
+                  'Recevoir une notification à l\'ouverture de l\'app s\'il y a des offres disponibles pour vous.',
+                  style: TextStyle(color: context.subtle, fontSize: 12),
+                ),
+                value: ctrl.remindersEnabled.value,
+                onChanged: ctrl.isTogglingReminders.value
+                    ? null
+                    : ctrl.toggleReminders,
+              ),
+            ),
           ],
         ),
       ),
@@ -89,23 +109,29 @@ class ClubView extends StatelessWidget {
                           color: GPTheme.clubColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(Icons.card_giftcard_outlined,
-                            color: GPTheme.clubColor, size: 22),
+                        child: Icon(
+                          Icons.card_giftcard_outlined,
+                          color: GPTheme.clubColor,
+                          size: 22,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           'Club',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ),
                       if (ctrl.isPartner)
                         IconButton(
                           tooltip: 'Mon espace partenaire',
-                          icon: Icon(Icons.qr_code_scanner_rounded, color: context.subtle),
-                          onPressed: () => Get.to(() => const PartnerDashboardView()),
+                          icon: Icon(
+                            Icons.qr_code_scanner_rounded,
+                            color: context.subtle,
+                          ),
+                          onPressed: () =>
+                              Get.to(() => const PartnerDashboardView()),
                         ),
                       IconButton(
                         tooltip: 'Paramètres du Club',
@@ -117,8 +143,7 @@ class ClubView extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     'Profitez de promotions exclusives chez nos partenaires',
-                    style: TextStyle(
-                        fontSize: 13, color: Colors.grey.shade500),
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
                   ),
                 ],
               ),
@@ -159,7 +184,11 @@ class ClubView extends StatelessWidget {
                   hintText:
                       'Rechercher un partenaire, un mot-clé, une adresse…',
                   hintStyle: TextStyle(fontSize: 13, color: context.subtle),
-                  prefixIcon: Icon(Icons.search_rounded, size: 20, color: context.subtle),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    size: 20,
+                    color: context.subtle,
+                  ),
                   filled: true,
                   fillColor: context.inputBg,
                   contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -212,8 +241,11 @@ class _ClubTabChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon,
-                size: 15, color: active ? GPTheme.clubOnColor : context.subtle),
+            Icon(
+              icon,
+              size: 15,
+              color: active ? GPTheme.clubOnColor : context.subtle,
+            ),
             const SizedBox(width: 6),
             Text(
               label,
@@ -261,10 +293,9 @@ class _OffresTab extends StatelessWidget {
           separatorBuilder: (_, __) => const SizedBox(height: 10),
           itemBuilder: (ctx, i) => _PromoCard(
             promo: ctrl.promotions[i],
-            onTap: () => Get.to(() => PromoDetailView(
-                  promo: ctrl.promotions[i],
-                  ctrl: ctrl,
-                )),
+            onTap: () => Get.to(
+              () => PromoDetailView(promo: ctrl.promotions[i], ctrl: ctrl),
+            ),
             onShare: () => ShareHelper.showShareSheet(
               context,
               title: ctrl.promotions[i].title,
@@ -362,14 +393,19 @@ class _PartnerCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
               child: SizedBox(
                 height: 90,
                 width: double.infinity,
                 child: partner.bannerUrl != null
-                    ? Image.network(partner.bannerUrl!, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _neutralBanner(partner.id))
+                    ? Image.network(
+                        partner.bannerUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            _neutralBanner(partner.id),
+                      )
                     : _neutralBanner(partner.id),
               ),
             ),
@@ -387,35 +423,58 @@ class _PartnerCard extends StatelessWidget {
                             ? NetworkImage(partner.logoUrl!)
                             : null,
                         child: partner.logoUrl == null
-                            ? Icon(neutralPartnerIcon(partner.id), size: 14, color: GPTheme.clubColor)
+                            ? Icon(
+                                neutralPartnerIcon(partner.id),
+                                size: 14,
+                                color: GPTheme.clubColor,
+                              )
                             : null,
                       ),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text(partner.companyName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                        child: Text(
+                          partner.companyName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                   if (partner.address != null) ...[
                     const SizedBox(height: 6),
-                    Text(partner.address!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                    Text(
+                      partner.address!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
                   ],
                   if ((partner.activeOffersCount ?? 0) > 0) ...[
                     const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.green.shade50,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Text('${partner.activeOffersCount} offre(s) active(s)',
-                          style: TextStyle(fontSize: 10, color: Colors.green.shade700, fontWeight: FontWeight.w600)),
+                      child: Text(
+                        '${partner.activeOffersCount} offre(s) active(s)',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.green.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
                 ],
@@ -432,23 +491,38 @@ Widget _neutralBanner(int id) {
   return Container(
     color: GPTheme.clubColor.withOpacity(0.1),
     alignment: Alignment.center,
-    child: Icon(neutralPartnerIcon(id), size: 28, color: GPTheme.clubColor.withOpacity(0.4)),
+    child: Icon(
+      neutralPartnerIcon(id),
+      size: 28,
+      color: GPTheme.clubColor.withOpacity(0.4),
+    ),
   );
 }
 
-Widget _emptyState({required IconData icon, required String title, required String subtitle}) {
+Widget _emptyState({
+  required IconData icon,
+  required String title,
+  required String subtitle,
+}) {
   return Center(
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 64, color: Colors.grey.shade300),
         const SizedBox(height: 12),
-        Text(title,
-            style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey.shade500)),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade500,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(subtitle,
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade400)),
+        Text(
+          subtitle,
+          style: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+        ),
       ],
     ),
   );
@@ -491,13 +565,18 @@ class _PromoCard extends StatelessWidget {
             children: [
               // Image ou gradient
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
                 child: SizedBox(
                   height: 120,
                   width: double.infinity,
                   child: promo.imageUrl != null
-                      ? Image.network(promo.imageUrl!, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _gradientPlaceholder())
+                      ? Image.network(
+                          promo.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _gradientPlaceholder(),
+                        )
                       : _gradientPlaceholder(),
                 ),
               ),
@@ -510,49 +589,93 @@ class _PromoCard extends StatelessWidget {
                     // Badges
                     Row(
                       children: [
-                        _Badge(label: _typeLabel(promo.type), color: _typeColor(promo.type)),
+                        _Badge(
+                          label: _typeLabel(promo.type),
+                          color: _typeColor(promo.type),
+                        ),
                         const SizedBox(width: 6),
-                        _Badge(label: _targetLabel(promo.target), color: Colors.grey.shade200),
+                        _Badge(
+                          label: _targetLabel(promo.target),
+                          color: Colors.grey.shade200,
+                        ),
                         if (promo.userPendingQr != null) ...[
                           const SizedBox(width: 6),
-                          _Badge(label: 'QR actif', color: Colors.green.shade50,
-                              textColor: Colors.green.shade700),
+                          _Badge(
+                            label: 'QR actif',
+                            color: Colors.green.shade50,
+                            textColor: Colors.green.shade700,
+                          ),
                         ],
                         if (promo.isExpired) ...[
                           const SizedBox(width: 6),
-                          _Badge(label: 'Expirée', color: Colors.grey.shade100,
-                              textColor: Colors.grey.shade500),
+                          _Badge(
+                            label: 'Expirée',
+                            color: Colors.grey.shade100,
+                            textColor: Colors.grey.shade500,
+                          ),
                         ],
                       ],
                     ),
                     const SizedBox(height: 8),
 
-                    Text(promo.title,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    Text(
+                      promo.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(promo.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                    Text(
+                      promo.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
                     const SizedBox(height: 10),
 
                     // Footer
                     Row(
                       children: [
-                        Icon(Icons.store_outlined, size: 14, color: Colors.grey.shade400),
+                        Icon(
+                          Icons.store_outlined,
+                          size: 14,
+                          color: Colors.grey.shade400,
+                        ),
                         const SizedBox(width: 4),
-                        Text(promo.partner?.name ?? '',
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                        Text(
+                          promo.partner?.name ?? '',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
                         const Spacer(),
-                        Icon(Icons.calendar_today_outlined, size: 13, color: Colors.grey.shade400),
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 13,
+                          color: Colors.grey.shade400,
+                        ),
                         const SizedBox(width: 4),
-                        Text(_formatDate(promo.endsAt),
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                        Text(
+                          _formatDate(promo.endsAt),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
                         if (onShare != null) ...[
                           const SizedBox(width: 8),
                           GestureDetector(
                             onTap: onShare,
-                            child: Icon(Icons.share_outlined, size: 16, color: Colors.grey.shade500),
+                            child: Icon(
+                              Icons.share_outlined,
+                              size: 16,
+                              color: Colors.grey.shade500,
+                            ),
                           ),
                         ],
                       ],
@@ -590,7 +713,13 @@ class _PromoCard extends StatelessWidget {
   }
 
   String _typeLabel(String t) =>
-      {'discount': 'Réduction', 'gift': 'Cadeau', 'access': 'Accès', 'other': 'Offre'}[t] ?? t;
+      {
+        'discount': 'Réduction',
+        'gift': 'Cadeau',
+        'access': 'Accès',
+        'other': 'Offre',
+      }[t] ??
+      t;
 
   String _targetLabel(String t) =>
       {'all': 'Tous', 'active': 'Actifs', 'premium': 'Premium'}[t] ?? t;
@@ -598,18 +727,18 @@ class _PromoCard extends StatelessWidget {
   Color _typeColor(String t) {
     return switch (t) {
       'discount' => Colors.orange,
-      'gift'     => Colors.pink,
-      'access'   => Colors.purple,
-      _          => Colors.blue,
+      'gift' => Colors.pink,
+      'access' => Colors.purple,
+      _ => Colors.blue,
     };
   }
 
   IconData _typeIcon(String t) {
     return switch (t) {
       'discount' => Icons.percent_rounded,
-      'gift'     => Icons.card_giftcard_rounded,
-      'access'   => Icons.vpn_key_outlined,
-      _          => Icons.local_offer_outlined,
+      'gift' => Icons.card_giftcard_rounded,
+      'access' => Icons.vpn_key_outlined,
+      _ => Icons.local_offer_outlined,
     };
   }
 
@@ -637,11 +766,14 @@ class _Badge extends StatelessWidget {
         color: color,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(label,
-          style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: textColor ?? Colors.grey.shade700)),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: textColor ?? Colors.grey.shade700,
+        ),
+      ),
     );
   }
 }
