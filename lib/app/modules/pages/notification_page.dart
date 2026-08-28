@@ -53,8 +53,10 @@ class NotificationPage extends StatelessWidget {
                         ),
                         child: Text(
                           '$count',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: SectionHelper.index == 2
+                                ? Colors.black
+                                : Colors.white,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
@@ -200,7 +202,9 @@ class _CategoryChips extends StatelessWidget {
                 showCheckmark: false,
                 selectedColor: SectionHelper.color,
                 labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : context.primary,
+                  color: isSelected
+                      ? (SectionHelper.index == 2 ? Colors.black : Colors.white)
+                      : context.primary,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
                   fontSize: 13,
                 ),

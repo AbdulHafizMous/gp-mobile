@@ -9,6 +9,7 @@ import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dar
 import 'package:grand_public_v2/app/modules/notifs/controllers/notifs_controller.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
+import 'package:grand_public_v2/app/utils/section_helper.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HOME VIEW — layout shell
@@ -21,41 +22,39 @@ class HomeView extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-  key: controller.scaffoldKey,
+      key: controller.scaffoldKey,
 
-  appBar: PreferredSize(
-    preferredSize: const Size.fromHeight(kToolbarHeight),
-    child: Obx(
-      () => _HomeAppBar(
-        ctrl: controller,
-        canPop: controller.canPop,
-        currentRoute: controller.currentRoute,
-        sectionIndex: controller.activeSectionIndex,
-        notificationCount: notifsController.unreadCount.value,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: Obx(
+          () => _HomeAppBar(
+            ctrl: controller,
+            canPop: controller.canPop,
+            currentRoute: controller.currentRoute,
+            sectionIndex: controller.activeSectionIndex,
+            notificationCount: notifsController.unreadCount.value,
+          ),
+        ),
       ),
-    ),
-  ),
 
-  drawer: Obx(
-    () => _DynamicDrawer(
-      activeSectionIndex: controller.activeSectionIndex,
-    ),
-  ),
+      drawer: Obx(
+        () => _DynamicDrawer(activeSectionIndex: controller.activeSectionIndex),
+      ),
 
-  body: Obx(
-    () => _AnimatedBody(
-      routeKey: controller.currentRoute,
-      child: controller.currentPage,
-    ),
-  ),
+      body: Obx(
+        () => _AnimatedBody(
+          routeKey: controller.currentRoute,
+          child: controller.currentPage,
+        ),
+      ),
 
-  bottomNavigationBar: Obx(
-    () => _SectionsBottomBar(
-      activeIndex: controller.activeSectionIndex,
-      onTap: controller.goToSection,
-    ),
-  ),
-);
+      bottomNavigationBar: Obx(
+        () => _SectionsBottomBar(
+          activeIndex: controller.activeSectionIndex,
+          onTap: controller.goToSection,
+        ),
+      ),
+    );
   }
 }
 
@@ -134,17 +133,21 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       // Si sous-page → bouton retour ; sinon → bouton hamburger
       leading: canPop
           ? IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.arrow_back_rounded,
-                color: Colors.white,
+                color: (SectionHelper.index == 2 && !context.isDark)
+                    ? Colors.black
+                    : Colors.white,
                 size: 24,
               ),
               onPressed: ctrl.popPage,
             )
           : IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.menu_rounded,
-                color: Colors.white,
+                color: (SectionHelper.index == 2 && !context.isDark)
+                    ? Colors.black
+                    : Colors.white,
                 size: 26,
               ),
               onPressed: () => ctrl.scaffoldKey.currentState?.openDrawer(),
@@ -191,9 +194,11 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
           clipBehavior: Clip.none,
           children: [
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.notifications_outlined,
-                color: Colors.white,
+                color: (SectionHelper.index == 2 && !context.isDark)
+                    ? Colors.black
+                    : Colors.white,
               ),
               onPressed: () => ctrl.navigateTo('/notifs'),
             ),
@@ -214,7 +219,12 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                   decoration: BoxDecoration(
                     color: Colors.red,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.white, width: 1.5),
+                    border: Border.all(
+                      color: (SectionHelper.index == 2 && !context.isDark)
+                          ? Colors.black
+                          : Colors.white,
+                      width: 1.5,
+                    ),
                   ),
                   child: Text(
                     notificationCount > 99
@@ -233,7 +243,12 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
           ],
         ),
         IconButton(
-          icon: const Icon(Icons.person_outline_rounded, color: Colors.white),
+          icon: Icon(
+            Icons.person_outline_rounded,
+            color: (SectionHelper.index == 2 && !context.isDark)
+                ? Colors.black
+                : Colors.white,
+          ),
           onPressed: () => ctrl.navigateTo('/profile'),
         ),
         const SizedBox(width: 4),
@@ -289,7 +304,13 @@ class _SectionsBottomBar extends StatelessWidget {
             curve: Curves.easeInOutCubic,
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isSelected ? Colors.white : Colors.transparent,
+              color: isSelected
+                  ? (activeIndex == 2
+                        ? (context.isDark
+                              ? GPTheme.colorForSection(2)
+                              : Colors.black)
+                        : Colors.white)
+                  : Colors.transparent,
               shape: BoxShape.circle,
             ),
             child: AnimatedScale(
@@ -298,7 +319,13 @@ class _SectionsBottomBar extends StatelessWidget {
               child: Icon(
                 sections[i].icon,
                 size: 24,
-                color: isSelected
+                color: (i != 2 && context.isDark && activeIndex == 2)
+                    ? GPTheme.colorForSection(2)
+                    : (i == 2 && context.isDark && activeIndex == 2)
+                    ? Colors.black
+                    : (activeIndex == 2 && i != 2 && !context.isDark)
+                    ? Colors.black
+                    : isSelected
                     ? GPTheme.colorForSection(i)
                     : Colors.white.withValues(alpha: 0.4),
               ),
@@ -310,7 +337,13 @@ class _SectionsBottomBar extends StatelessWidget {
             style: TextStyle(
               fontSize: 10,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected ? Colors.white : Colors.white38,
+              color: (activeIndex == 2 && context.isDark)
+                  ? GPTheme.colorForSection(2)
+                  : (activeIndex == 2 && !context.isDark)
+                  ? Colors.black
+                  : isSelected
+                  ? Colors.white
+                  : Colors.white38,
             ),
             child: Text(sections[i].title, overflow: TextOverflow.ellipsis),
           ),
@@ -601,6 +634,8 @@ class _DrawerSectionLabel extends StatelessWidget {
     final Color contentColor = isDark
         ? Colors
               .white // GPTheme.primaryColor
+        : SectionHelper.index == 2
+        ? Colors.black
         : Colors.white.withValues(alpha: 0.95);
 
     return Padding(
