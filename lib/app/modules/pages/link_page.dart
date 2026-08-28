@@ -123,9 +123,11 @@ class _LinkPageState extends State<LinkPage> {
                     alignment: AlignmentGeometry.center,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
+                      color: SectionHelper.index == 2
+                          ? Colors.black
+                          : Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                     ),
                     child: FaIcon(
                       lien["icon"] as FaIconData,
