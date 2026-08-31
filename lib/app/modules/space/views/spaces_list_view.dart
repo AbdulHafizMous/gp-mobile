@@ -151,14 +151,204 @@ class _SpacesListViewState extends State<SpacesListView> {
       );
     }
 
+    final isSingleSpace = _spaces.length == 1;
+
     return RefreshIndicator(
       color: GPTheme.primaryColor,
       onRefresh: _load,
-      child: ListView.builder(
+      child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        itemCount: _spaces.length,
-        itemBuilder: (_, i) => _SpaceCard(space: _spaces[i], index: i),
+        children: [
+          for (int i = 0; i < _spaces.length; i++)
+            _SpaceCard(space: _spaces[i], index: i),
+          if (isSingleSpace) _SingleSpaceFiller(space: _spaces.first),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SINGLE SPACE FILLER
+// Affiché uniquement quand il n'y a qu'un seul espace, pour éviter que la
+// page paraisse vide : accès rapide direct aux catégories (sans dépendre du
+// bouton "déplier" de la carte) + une bannière "à venir" décorative.
+// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// SINGLE SPACE FILLER
+// ─────────────────────────────────────────────────────────────────────────────
+class _SingleSpaceFiller extends StatelessWidget {
+  final SpaceModel space;
+  const _SingleSpaceFiller({required this.space});
+
+  void _openCategory(int index) {
+    Get.toNamed(
+      '/home/spaces/${space.id}',
+      parameters: {'categoryIndex': '$index'},
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Text(
+          'ACCÈS RAPIDE',
+          style: TextStyle(
+            color: context.subtleText,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.5,
+          ),
+        ),
+        const SizedBox(height: 12),
+        for (int i = 0; i < space.categories.length; i++) ...[
+          _QuickCategoryCard(
+            category: space.categories[i],
+            accent: _SpaceCardState
+                ._accents[i % _SpaceCardState._accents.length][0],
+            onTap: () => _openCategory(i),
+          ),
+          if (i != space.categories.length - 1) const SizedBox(height: 10),
+        ],
+        const SizedBox(height: 24),
+        _ComingSoonBanner(),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QUICK CATEGORY CARD — une par ligne, hauteur naturelle, sans overflow
+// ─────────────────────────────────────────────────────────────────────────────
+class _QuickCategoryCard extends StatelessWidget {
+  final SpaceCategory category;
+  final Color accent;
+  final VoidCallback onTap;
+
+  const _QuickCategoryCard({
+    required this.category,
+    required this.accent,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.isDark;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: accent.withValues(alpha: isDark ? 0.10 : 0.08),
+            border: Border.all(color: accent.withValues(alpha: 0.28), width: 1),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: accent.withValues(alpha: 0.16),
+                ),
+                child: Icon(Icons.play_arrow_rounded, color: accent, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      category.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: context.primaryText,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14.5,
+                      ),
+                    ),
+                    if (category.description.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        category.description,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: context.subtleText,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right_rounded, color: accent, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ComingSoonBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: context.cardDecoration,
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: GPTheme.primaryColor.withValues(alpha: 0.12),
+            ),
+            child: Icon(
+              Icons.auto_awesome_rounded,
+              color: GPTheme.primaryColor,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'De nouveaux espaces arrivent bientôt',
+                  style: TextStyle(
+                    color: context.primaryText,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13.5,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Revenez régulièrement pour découvrir du nouveau contenu.',
+                  style: TextStyle(
+                    color: context.subtleText,
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
