@@ -4,21 +4,21 @@ import 'package:grand_public_v2/app/constants/index.dart';
 class GPTheme {
   static TextTheme lightTextTheme = const TextTheme();
 
-  static Color primaryColor = const Color(0xFFEF193B);
-  static Color secondaryColor = const Color.fromARGB(85, 239, 25, 61);
+  static Color primaryColor = const Color.fromARGB(255, 235, 32, 64);
+  static Color secondaryColor = const Color.fromARGB(85, 235, 32, 64);
 
   // ── Couleurs par section (Espaces / Social / Club) ──────────────────────
   // Espaces garde le rouge "main" (primaryColor). Social passe au bleu,
   // Club au jaune. Utilisé pour l'appbar, la bottom bar et le sidebar sur le
   // Home ; la cohérence dark/light reste gérée par les appelants
   // (en dark on garde le fond noir, ces couleurs ne s'appliquent qu'en light).
-  static Color socialColor = const Color(0xFF1565C0);
-  static Color clubColor = const Color(0xFFF5B301);
+  static Color socialColor = const Color.fromARGB(255, 0, 134, 201);
+  static Color clubColor = const Color.fromARGB(255, 255, 198, 0);
   // Couleur de contenu (texte/icône) à utiliser PAR-DESSUS un fond plein
   // clubColor : le jaune est trop clair pour du texte blanc (contraste
   // insuffisant), on utilise donc une couleur sombre. Le bleu Social a un
   // contraste suffisant avec du blanc, pas besoin d'équivalent pour lui.
-  static Color clubOnColor = const Color(0xFF241900);
+  static Color clubOnColor = const Color.fromARGB(255, 0, 0, 0);
 
   /// Couleur d'accent (fond appbar/bottombar/drawer) pour l'index de section
   /// donné (0 = Espaces, 1 = Social, 2 = Club).

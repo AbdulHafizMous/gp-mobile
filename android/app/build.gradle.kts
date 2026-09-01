@@ -34,8 +34,8 @@ android {
         applicationId = "com.maxafrica.gpbenin"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = 14
-        versionName = "14"
+        versionCode = 15
+        versionName = "15"
     }
 
     signingConfigs {
