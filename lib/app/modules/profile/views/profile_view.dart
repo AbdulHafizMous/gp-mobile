@@ -620,8 +620,8 @@ class _MainProfilePage extends GetView<ProfileController> {
                       controller.goTo(ProfileSubPage.interests);
                     },
                   ),
-                  const _TileDivider(),
-                  _ActionTile(
+                  if(!isPlatformiOS) const _TileDivider(),
+                  if (!isPlatformiOS) _ActionTile(
                     title: 'Mes abonnements',
                     icon: Icons.subscriptions_outlined,
                     onTap: () =>

@@ -44,6 +44,8 @@ const String REVENUECAT_IOS_API_KEY = "appl_PWZcuaTWEDfdfWQSLjWXOpPqTCy";
 // ══════════════════════════════════════════════════════════════════════════
 const bool skipMediaOnIos = true;
 
+bool isPlatformiOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
 /// Version effective à utiliser partout dans le code : le flag ci-dessus ne
 /// doit JAMAIS masquer quoi que ce soit sur Android/Web — uniquement sur
 /// iOS, quelle que soit la valeur de `skipMediaOnIos`.
