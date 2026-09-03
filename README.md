@@ -1,5 +1,7 @@
 # grand_public_v2
 
+Apple resize tool : https://batchtools.pro/en/resize
+
 A new Flutter project.
 
 ## Getting Started
