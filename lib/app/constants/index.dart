@@ -49,6 +49,8 @@ bool isPlatformiOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 /// Version effective à utiliser partout dans le code : le flag ci-dessus ne
 /// doit JAMAIS masquer quoi que ce soit sur Android/Web — uniquement sur
 /// iOS, quelle que soit la valeur de `skipMediaOnIos`.
+// const bool shouldSkipMedia = true;
+// 
 bool get shouldSkipMedia =>
     skipMediaOnIos && !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 

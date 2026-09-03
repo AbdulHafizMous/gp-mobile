@@ -13,7 +13,7 @@ import 'package:video_player/video_player.dart';
 // For Test
 const bool useMock = false;
 // Versionning
-const String kAppVersion = '1.1.0';
+const String kAppVersion = '1.2.0';
 // User
 final activeUser = User.empty().obs;
 //
