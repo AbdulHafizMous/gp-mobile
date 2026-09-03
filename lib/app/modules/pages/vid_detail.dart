@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -30,6 +31,20 @@ extension _ThemeX on BuildContext {
       isDark ? const Color(0xFF2C2C2C) : const Color(0xFFEAEAEA);
 }
 
+/// Cache dédié aux vidéos hébergées sur notre serveur (pas YouTube — leur
+/// player gère déjà son propre streaming/cache en interne). Une vidéo déjà
+/// vue se rejoue instantanément, sans re-télécharger, même hors-ligne.
+class _VideoCacheManager {
+  static const key = 'gp_video_cache';
+  static final instance = CacheManager(
+    Config(
+      key,
+      stalePeriod: const Duration(days: 14),
+      maxNrOfCacheObjects: 40,
+    ),
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // VID DETAIL
 // ─────────────────────────────────────────────────────────────────────────────
@@ -45,8 +60,22 @@ class _VidDetailState extends State<VidDetail> {
   late final VideosController ctrl;
   YoutubePlayerController? _ytCtrl;
   VideoPlayerController? _nativeCtrl; // vidéo hébergée sur notre serveur
-  bool _playerReady = false;
   bool _showControls = true;
+
+  // ── États de chargement, séparés du "prêt à jouer" ────────────────────
+  // _playerReady   : le controller est initialisé et peut jouer.
+  // _isPreparing   : on est en train de préparer la vidéo (téléchargement
+  //                  cache / initialisation StoreKit-like), spinner plein écran.
+  // _isBuffering   : lecture démarrée mais le flux stagne (réseau lent) —
+  //                  spinner discret par-dessus l'image déjà affichée.
+  // _loadError     : message si l'initialisation a échoué, avec un bouton
+  //                  "Réessayer" plutôt qu'un écran figé.
+  bool _playerReady = false;
+  bool _isPreparing = true;
+  bool _isBuffering = false;
+  String? _loadError;
+
+  int _initRequestId = 0; // évite qu'une init obsolète écrase l'état actuel
 
   final List<double> _speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
@@ -66,7 +95,10 @@ class _VidDetailState extends State<VidDetail> {
   }
 
   void _maybeInitPlayer(SpaceVideo video) {
-    if (!video.canRead) return;
+    if (!video.canRead) {
+      setState(() => _isPreparing = false);
+      return;
+    }
 
     // ── Vidéo hébergée directement sur notre serveur ──────────────────────
     if (video.sourceType == 'upload' &&
@@ -80,21 +112,74 @@ class _VidDetailState extends State<VidDetail> {
     final ytId = _extractYoutubeId(
       video.youtubeId.isNotEmpty ? video.youtubeId : video.videoUrl,
     );
-    if (ytId == null) return;
+    if (ytId == null) {
+      setState(() {
+        _isPreparing = false;
+        _loadError = "Impossible de charger cette vidéo (lien invalide).";
+      });
+      return;
+    }
     _initPlayer(ytId);
   }
 
-  void _initNativePlayer(String url) {
-    _ytCtrl?.dispose();
-    _ytCtrl = null;
-    _nativeCtrl?.dispose();
-    _nativeCtrl = VideoPlayerController.networkUrl(Uri.parse(url))
-      ..addListener(_onNativePlayerUpdate)
-      ..initialize().then((_) {
-        if (!mounted) return;
-        setState(() => _playerReady = true);
-        ctrl.totalDuration.value = _nativeCtrl!.value.duration;
+  /// Récupère le fichier vidéo depuis le cache local s'il existe déjà,
+  /// sinon le télécharge et le met en cache pour la prochaine lecture.
+  Future<void> _initNativePlayer(String url) async {
+    final requestId = ++_initRequestId;
+    setState(() {
+      _isPreparing = true;
+      _playerReady = false;
+      _loadError = null;
+    });
+
+    try {
+      // Sert instantanément depuis le cache si déjà téléchargée ; sinon
+      // télécharge en tâche de fond et retourne le fichier une fois prêt.
+      final fileInfo = await _VideoCacheManager.instance.getSingleFile(url);
+      if (requestId != _initRequestId || !mounted) return; // page changée entretemps
+
+      _ytCtrl?.dispose();
+      _ytCtrl = null;
+      _nativeCtrl?.dispose();
+
+      final controller = VideoPlayerController.file(fileInfo);
+      _nativeCtrl = controller;
+      controller.addListener(_onNativePlayerUpdate);
+
+      await controller.initialize();
+      if (requestId != _initRequestId || !mounted) return;
+
+      ctrl.totalDuration.value = controller.value.duration;
+      setState(() {
+        _playerReady = true;
+        _isPreparing = false;
       });
+    } catch (e) {
+      debugPrint('Erreur chargement vidéo serveur : $e');
+      if (requestId != _initRequestId || !mounted) return;
+      // Repli : si la mise en cache échoue (ex: stockage plein, fichier
+      // introuvable), on tente quand même la lecture directe en streaming.
+      try {
+        _nativeCtrl?.dispose();
+        final controller = VideoPlayerController.networkUrl(Uri.parse(url));
+        _nativeCtrl = controller;
+        controller.addListener(_onNativePlayerUpdate);
+        await controller.initialize();
+        if (requestId != _initRequestId || !mounted) return;
+        ctrl.totalDuration.value = controller.value.duration;
+        setState(() {
+          _playerReady = true;
+          _isPreparing = false;
+        });
+      } catch (e2) {
+        debugPrint('Erreur streaming direct : $e2');
+        if (requestId != _initRequestId || !mounted) return;
+        setState(() {
+          _isPreparing = false;
+          _loadError = "Impossible de charger la vidéo. Vérifiez votre connexion.";
+        });
+      }
+    }
   }
 
   void _onNativePlayerUpdate() {
@@ -102,10 +187,27 @@ class _VidDetailState extends State<VidDetail> {
     final v = _nativeCtrl!.value;
     ctrl.isPlaying.value = v.isPlaying;
     ctrl.currentPosition.value = v.position;
-    ctrl.totalDuration.value = v.duration;
+    if (v.duration > Duration.zero) {
+      ctrl.totalDuration.value = v.duration;
+    }
+    if (v.isBuffering != _isBuffering) {
+      setState(() => _isBuffering = v.isBuffering);
+    }
+    if (v.hasError && _loadError == null) {
+      setState(() => _loadError = 'Erreur de lecture. Vérifiez votre connexion.');
+    }
   }
 
   void _initPlayer(String ytId) {
+    final requestId = ++_initRequestId;
+    setState(() {
+      _isPreparing = true;
+      _playerReady = false;
+      _loadError = null;
+    });
+
+    _nativeCtrl?.dispose();
+    _nativeCtrl = null;
     _ytCtrl?.dispose();
     _ytCtrl = YoutubePlayerController(
       initialVideoId: ytId,
@@ -116,7 +218,12 @@ class _VidDetailState extends State<VidDetail> {
         forceHD: false,
       ),
     )..addListener(_onPlayerUpdate);
-    setState(() => _playerReady = true);
+
+    if (requestId != _initRequestId || !mounted) return;
+    setState(() {
+      _playerReady = true;
+      _isPreparing = false;
+    });
   }
 
   void _onPlayerUpdate() {
@@ -124,7 +231,17 @@ class _VidDetailState extends State<VidDetail> {
     final v = _ytCtrl!.value;
     ctrl.isPlaying.value = v.isPlaying;
     ctrl.currentPosition.value = v.position;
-    ctrl.totalDuration.value = v.metaData.duration;
+    if (v.metaData.duration > Duration.zero) {
+      ctrl.totalDuration.value = v.metaData.duration;
+    }
+    final buffering = v.playerState == PlayerState.buffering;
+    if (buffering != _isBuffering) {
+      setState(() => _isBuffering = buffering);
+    }
+  }
+
+  void _retryLoad() {
+    _maybeInitPlayer(ctrl.currentVideo.value ?? widget.video);
   }
 
   @override
@@ -189,18 +306,18 @@ class _VidDetailState extends State<VidDetail> {
       final dt = DateTime.parse(raw);
       const months = [
         '',
-        'Jan',
-        'Fév',
-        'Mar',
-        'Avr',
-        'Mai',
-        'Juin',
-        'Juil',
-        'Aoû',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Déc',
+        'Jan.',
+        'Fév.',
+        'Mar.',
+        'Avr.',
+        'Mai.',
+        'Juin.',
+        'Juil.',
+        'Aoû.',
+        'Sep.',
+        'Oct.',
+        'Nov.',
+        'Déc.',
       ];
       return '${dt.day} ${months[dt.month]} ${dt.year}';
     } catch (_) {
@@ -309,8 +426,74 @@ class _VidDetailState extends State<VidDetail> {
               errorBuilder: (_, __, ___) => Container(color: Colors.black87),
             ),
 
+          // ── Chargement initial : spinner plein écran par-dessus la miniature ──
+          if (video.canRead && _isPreparing && _loadError == null)
+            Container(
+              color: Colors.black.withOpacity(0.35),
+              alignment: Alignment.center,
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 34,
+                    height: 34,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.5,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Chargement de la vidéo…',
+                    style: TextStyle(color: Colors.white, fontSize: 12.5),
+                  ),
+                ],
+              ),
+            ),
+
+          // ── Buffering en cours de lecture : spinner discret, non bloquant ──
+          if (video.canRead && _playerReady && _isBuffering && _loadError == null)
+            Container(
+              color: Colors.black.withOpacity(0.15),
+              alignment: Alignment.center,
+              child: const SizedBox(
+                width: 30,
+                height: 30,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+              ),
+            ),
+
+          // ── Erreur de chargement : message + bouton Réessayer ──
+          if (video.canRead && _loadError != null)
+            Container(
+              color: Colors.black.withOpacity(0.7),
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.wifi_off_rounded, color: Colors.white70, size: 30),
+                  const SizedBox(height: 10),
+                  Text(
+                    _loadError!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                  ),
+                  const SizedBox(height: 14),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white54),
+                    ),
+                    onPressed: _retryLoad,
+                    child: const Text('Réessayer'),
+                  ),
+                ],
+              ),
+            ),
+
           // Overlay contrôles
-          if (video.canRead && _playerReady)
+          if (video.canRead && _playerReady && _loadError == null)
             _controlsOverlay(context, fullscreen: fullscreen),
 
           // Overlay premium
@@ -459,16 +642,18 @@ class _VidDetailState extends State<VidDetail> {
               ),
               child: Slider(
                 value: progress,
-                onChanged: (v) {
-                  final target = Duration(
-                    milliseconds: (v * dur.inMilliseconds).round(),
-                  );
-                  if (_nativeCtrl != null) {
-                    _nativeCtrl!.seekTo(target);
-                  } else {
-                    _ytCtrl?.seekTo(target);
-                  }
-                },
+                onChanged: dur.inMilliseconds > 0
+                    ? (v) {
+                        final target = Duration(
+                          milliseconds: (v * dur.inMilliseconds).round(),
+                        );
+                        if (_nativeCtrl != null) {
+                          _nativeCtrl!.seekTo(target);
+                        } else {
+                          _ytCtrl?.seekTo(target);
+                        }
+                      }
+                    : null,
               ),
             ),
             Row(
@@ -485,7 +670,9 @@ class _VidDetailState extends State<VidDetail> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '${_fmt(pos)} / ${_fmt(dur)}',
+                  dur.inMilliseconds > 0
+                      ? '${_fmt(pos)} / ${_fmt(dur)}'
+                      : _fmt(pos),
                   style: const TextStyle(color: Colors.white70, fontSize: 11),
                 ),
                 const Spacer(),
@@ -747,19 +934,6 @@ class _VidDetailState extends State<VidDetail> {
                   : null,
             ),
 
-            // const SizedBox(width: 6),
-            // Flexible(
-            //   child: Text(
-            //     v.spaceName ?? 'grandpublic',
-            //     overflow: TextOverflow.ellipsis,
-            //     maxLines: 2,
-            //     style: TextStyle(
-            //       color: GPTheme.primaryColor,
-            //       fontWeight: FontWeight.w700,
-            //       fontSize: 13,
-            //     ),
-            //   ),
-            // ),
             const Spacer(),
             // Vues
             Row(
@@ -1045,7 +1219,6 @@ class _VidDetailState extends State<VidDetail> {
                                       ),
                                     )
                                   : Row(
-                                      // mainAxisSize: MainAxisSize.min,
                                       children: const [
                                         Icon(
                                           Icons.send_rounded,
@@ -1135,10 +1308,7 @@ class _VidDetailState extends State<VidDetail> {
       context: context,
       video: video,
       onPurchaseSuccess: () {
-        final ytId = _extractYoutubeId(
-          video.youtubeId.isNotEmpty ? video.youtubeId : video.videoUrl,
-        );
-        if (ytId != null && mounted) _initPlayer(ytId);
+        if (mounted) _maybeInitPlayer(video);
       },
     );
   }
