@@ -30,3 +30,6 @@
 -keepattributes Signature
 -keepattributes *Annotation*
 -keepattributes SourceFile,LineNumberTable
+
+# ── Play Core (deferred components non utilisé) ────────────────────
+-dontwarn com.google.android.play.core.**
