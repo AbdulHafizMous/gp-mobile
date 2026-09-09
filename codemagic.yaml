@@ -68,8 +68,8 @@ workflows:
       - name: Installer les dépendances Flutter
         script: flutter pub get
 
-      - name: Générer les icônes launcher
-        script: dart run flutter_launcher_icons
+      # - name: Générer les icônes launcher
+      #   script: dart run flutter_launcher_icons
 
       - name: Installer les pods iOS
         script: |
