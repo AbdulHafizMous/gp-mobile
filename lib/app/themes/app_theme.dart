@@ -33,6 +33,17 @@ class GPTheme {
     }
   }
 
+  static Color colorAdjustedForSection(int index) {
+    switch (index) {
+      case 1:
+        return socialColor;
+      case 2:
+        return clubOnColor;
+      default:
+        return primaryColor;
+    }
+  }
+
   /// Couleur à utiliser pour du texte/icône POSÉ SUR une surface claire
   /// (ex : pill blanche d'un item de sidebar) selon la section active.
   /// Contrairement à [colorForSection], celle-ci reste lisible sur blanc

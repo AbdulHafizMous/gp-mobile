@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 
-const LOGO_PIXEL = 'assets/images/logo_gpb.png';
-const LOGO = 'assets/images/logo_gpb.png';
+const LOGO_NAV = 'assets/images/Logo_G3_blanc.png';
+const LOGO_NAV_Dark_Club = 'assets/images/Logo_G3_noir.png';
+const LOGO_PIXEL = 'assets/images/icon.png';
+const LOGO = 'assets/images/icon.png';
 // Logos par section (appbar + sidebar) — voir GPTheme.logoForSection
 const LOGO_SOCIAL = 'assets/images/logo_gp_social.png';
 const LOGO_MEDIA = 'assets/images/logo_gp_media.png';

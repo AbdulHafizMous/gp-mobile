@@ -40,7 +40,7 @@ class SucessPageView extends GetView<SucessPageController> {
                     children: [
                       const SizedBox(height: 30),
                       Image.asset(
-                        "assets/images/success_logo.png",
+                        "assets/images/icon.png",
                         width: 190,
                         height: 180,
                         cacheHeight: 180,

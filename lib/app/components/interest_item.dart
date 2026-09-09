@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:grand_public_v2/app/utils/section_helper.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// THEME HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+extension _ThemeX on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+}
+
 class InterestItem extends StatefulWidget {
   final String title;
   final bool isSelected;
@@ -28,11 +35,19 @@ class _InterestItemState extends State<InterestItem> {
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
         decoration: BoxDecoration(
           color: widget.isSelected
-              ? (widget.fromProfile ? SectionHelper.color : Colors.white)
+              ? (widget.fromProfile
+                    ? (context.isDark
+                          ? SectionHelper.color
+                          : SectionHelper.colorAdjusted)
+                    : Colors.white)
               : Colors.transparent,
           border: Border.all(
             width: 1,
-            color: widget.fromProfile ? SectionHelper.color : Colors.white,
+            color: widget.fromProfile
+                ? (context.isDark
+                      ? SectionHelper.color
+                      : SectionHelper.colorAdjusted)
+                : Colors.white,
           ),
           borderRadius: const BorderRadius.all(Radius.circular(30)),
         ),
@@ -41,8 +56,16 @@ class _InterestItemState extends State<InterestItem> {
             widget.title,
             style: TextStyle(
               color: widget.isSelected
-                  ? (widget.fromProfile ? Colors.white : SectionHelper.color)
-                  : (widget.fromProfile ? SectionHelper.color : Colors.white),
+                  ? (widget.fromProfile
+                        ? (context.isDark ? Colors.black : SectionHelper.color)
+                        : (context.isDark
+                              ? SectionHelper.color
+                              : SectionHelper.colorAdjusted))
+                  : (widget.fromProfile
+                        ? (context.isDark
+                              ? SectionHelper.color
+                              : SectionHelper.colorAdjusted)
+                        : Colors.white),
               fontWeight: FontWeight.w600,
             ),
           ),

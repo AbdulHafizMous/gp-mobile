@@ -130,6 +130,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
           ? const Color(0xFF0A0A0A)
           : GPTheme.colorForSection(sectionIndex),
       elevation: 0,
+      centerTitle: false,
       // Si sous-page → bouton retour ; sinon → bouton hamburger
       leading: canPop
           ? IconButton(
@@ -152,43 +153,49 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
               onPressed: () => ctrl.scaffoldKey.currentState?.openDrawer(),
             ),
-      title: InkWell(
-        onTap: () {
-          if (canPop) {
-            // Retour à la racine de la section
-            ctrl.goToSection(ctrl.activeSectionIndex, showToast: false);
-          } else {
-            ctrl.goToSection(0, showToast: false);
-          }
-        },
-        child: Image.asset(
-          GPTheme.logoForSection(sectionIndex),
-          height: 44,
-          width: 44,
-          filterQuality: FilterQuality.high,
+      title: SizedBox(
+        // color: Colors.cyanAccent,
+        height: 25,
+        child: InkWell(
+          onTap: () {
+            if (canPop) {
+              // Retour à la racine de la section
+              ctrl.goToSection(ctrl.activeSectionIndex, showToast: false);
+            } else {
+              ctrl.goToSection(0, showToast: false);
+            }
+          },
+          child: Image.asset(
+            // GPTheme.logoForSection(sectionIndex),
+            ctrl.activeSectionIndex == 2 && !context.isDark
+                ? LOGO_NAV_Dark_Club
+                : LOGO_NAV,
+            height: 30,
+            // width: 44,
+            filterQuality: FilterQuality.high,
+          ),
+          // Container(
+          //   height: 44,
+          //   width: 44,
+          //   decoration: BoxDecoration(
+          //     color: Colors.white,
+          //     image: DecorationImage(
+          //       image: AssetImage(LOGO_PIXEL),
+          //       fit: BoxFit.contain,
+          //     ),
+          //     borderRadius: BorderRadius.circular(60),
+          //     border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+          //   ),
+          //   // child: Image.asset(
+          //   //   LOGO_PIXEL,
+          //   //   height: 44,
+          //   //   width: 44,
+          //   //   cacheHeight: 44,
+          //   //   cacheWidth: 44,
+          //   // ),
+          // ),
         ),
-        // Container(
-        //   height: 44,
-        //   width: 44,
-        //   decoration: BoxDecoration(
-        //     color: Colors.white,
-        //     image: DecorationImage(
-        //       image: AssetImage(LOGO_PIXEL),
-        //       fit: BoxFit.contain,
-        //     ),
-        //     borderRadius: BorderRadius.circular(60),
-        //     border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-        //   ),
-        //   // child: Image.asset(
-        //   //   LOGO_PIXEL,
-        //   //   height: 44,
-        //   //   width: 44,
-        //   //   cacheHeight: 44,
-        //   //   cacheWidth: 44,
-        //   // ),
-        // ),
       ),
-      centerTitle: true,
       actions: [
         Stack(
           clipBehavior: Clip.none,

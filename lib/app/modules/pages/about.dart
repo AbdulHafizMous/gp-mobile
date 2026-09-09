@@ -54,7 +54,7 @@ class _AboutPageState extends State<AboutPage> {
 
                 // ── GRAND PUBLIC BÉNIN ──────────────────────────────────
                 Text(
-                  "GRAND PUBLIC BENIN",
+                  "GRANDPUBLIC",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -63,7 +63,7 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 6),
                 Text(
-                  "100% Vidéo, 100% Bénin !",
+                  "Le Meilleur du Bénin dans ta main !",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 15,
@@ -72,14 +72,14 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 12),
                 Text(
-                  "Bienvenue dans l'univers de GRAND PUBLIC BENIN : Media, Social, Club.",
+                  "Bienvenue dans l'univers tridimensionnel de GRANDPUBLIC : Media, Social, Club.",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
                 SizedBox(height: 30),
 
                 // ── GRAND PUBLIC MEDIA ───────────────────────────────────
                 Text(
-                  "GRAND PUBLIC MEDIA",
+                  "GRANDPUBLIC MEDIA",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -119,7 +119,7 @@ class _AboutPageState extends State<AboutPage> {
 
                 // ── GRAND PUBLIC SOCIAL ──────────────────────────────────
                 Text(
-                  "GRAND PUBLIC SOCIAL",
+                  "GRANDPUBLIC SOCIAL",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -159,7 +159,7 @@ class _AboutPageState extends State<AboutPage> {
 
                 // ── GRAND PUBLIC CLUB ────────────────────────────────────
                 Text(
-                  "GRAND PUBLIC CLUB",
+                  "GRANDPUBLIC CLUB",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -177,7 +177,7 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 12),
                 Text(
-                  "Tu es dans GRAND PUBLIC BENIN, tu bénéficies de tous les meilleurs plans !",
+                  "Tu es dans GRAND PUBLIC, tu bénéficies de tous les meilleurs plans !",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
                 SizedBox(height: 12),
@@ -203,7 +203,7 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 20),
                 Text(
-                  "GRAND PUBLIC, PARTAGEONS LES GRANDS MOMENTS !",
+                  "GRANDPUBLIC, LE MEILLEUR DU BENIN DANS TA MAIN !",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
               ],

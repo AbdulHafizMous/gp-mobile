@@ -12,6 +12,10 @@ class SectionHelper {
     return GPTheme.colorForSection(index);
   }
 
+  static Color get colorAdjusted {
+    return GPTheme.colorAdjustedForSection(index);
+  }
+
   static Color get contentColor {
     return GPTheme.contentColorForSection(index);
   }
