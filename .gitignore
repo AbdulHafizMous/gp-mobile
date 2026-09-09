@@ -61,3 +61,5 @@ build/
 tmp.md
 
 *.zip
+.gradle/
+android/.gradle/
