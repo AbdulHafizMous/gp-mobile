@@ -15,6 +15,7 @@ migrate_working_dir/
 .idea/
 .gradle/
 android/.gradle/
+android/.gradle/*
 
 
 # IntelliJ related
