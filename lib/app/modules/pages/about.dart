@@ -52,7 +52,7 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 30),
 
-                // ── GRAND PUBLIC BÉNIN ──────────────────────────────────
+                // ── GRANDPUBLIC ──────────────────────────────────
                 Text(
                   "GRANDPUBLIC",
                   style: TextStyle(
@@ -63,7 +63,7 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 6),
                 Text(
-                  "Le Meilleur du Bénin dans ta main !",
+                  "Le Meilleur pour Kiffer !",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 15,
@@ -203,7 +203,7 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 20),
                 Text(
-                  "GRANDPUBLIC, LE MEILLEUR DU BENIN DANS TA MAIN !",
+                  "GRANDPUBLIC, LE MEILLEUR POUR KIFFER !",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
               ],

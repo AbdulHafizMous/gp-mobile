@@ -132,7 +132,7 @@ class _MainAppState extends State<MainApp> {
   Widget build(BuildContext context) {
     return Obx(
       () => GetMaterialApp(
-        title: "Grand Public Bénin",
+        title: "Grandpublic",
         theme: controller.isDark.value ? darktheme : theme,
         // darkTheme: darktheme,
         initialRoute: AppPages.INITIAL,
