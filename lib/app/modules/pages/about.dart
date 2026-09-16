@@ -142,7 +142,7 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 12),
                 Text(
-                  "› TCHAT : Ton point de vue sur les sujets qui comptent ;",
+                  "› TCHAT : Discussion entre amis sur des sujets qui comptent ;",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
                 SizedBox(height: 10),

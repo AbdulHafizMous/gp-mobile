@@ -1194,9 +1194,7 @@ class _MatchAvatar extends StatelessWidget {
     decoration: BoxDecoration(
       shape: BoxShape.circle,
       border: Border.all(color: GPTheme.socialColor, width: 3),
-      color: isMe
-          ? GPTheme.socialColor.withOpacity(0.2)
-          : Colors.grey.shade800,
+      color: isMe ? GPTheme.socialColor.withOpacity(0.2) : Colors.grey.shade800,
       image: url != null && url!.isNotEmpty
           ? DecorationImage(image: NetworkImage(url!), fit: BoxFit.cover)
           : null,
@@ -1409,7 +1407,6 @@ class _MatchTile extends StatelessWidget {
   }
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // PREFERENCES SETUP
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1442,13 +1439,13 @@ class _PreferencesSetup extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                'Bienvenue dans Date !',
+                'Bienvenue dans Crush !',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
                   color: context.primary,
-                ),
+                ),   
               ),
               const SizedBox(height: 10),
               Text(

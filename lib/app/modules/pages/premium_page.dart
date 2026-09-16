@@ -186,7 +186,7 @@ class _PremiumPageState extends State<PremiumPage> {
               maxWidth: MediaQuery.of(context).size.width * 0.8,
             ),
             child: Text(
-              "Rejoignez Grand Public et vivez l'expérience sans limite",
+              "Rejoignez Grandpublic et vivez l'expérience sans limite",
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,

@@ -102,7 +102,7 @@ class _ShareSheet extends StatelessWidget {
               child: Icon(Icons.send_rounded, color: GPTheme.primaryColor),
             ),
             title: Text('Envoyer à un ami', style: TextStyle(color: context.primary, fontWeight: FontWeight.w600)),
-            subtitle: Text('Via une conversation Grand Public', style: TextStyle(color: context.subtle, fontSize: 12)),
+            subtitle: Text('Via une conversation Grandpublic', style: TextStyle(color: context.subtle, fontSize: 12)),
             onTap: () {
               Get.back();
               Get.bottomSheet(
