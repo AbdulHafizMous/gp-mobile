@@ -15,7 +15,7 @@ class _LinkPageState extends State<LinkPage> {
   final liens = [
     {
       "icon": FontAwesomeIcons.youtube,
-      "href": "https://www.youtube.com/@Grandpublic2024",
+      "href": "https://www.youtube.com/@GrandpublicOfficiel",
       "label": "YouTube",
     },
     {
@@ -25,14 +25,14 @@ class _LinkPageState extends State<LinkPage> {
     },
     {
       "icon": FontAwesomeIcons.instagram,
-      "href": "https://www.instagram.com/grandpublic1/",
+      "href": "https://www.instagram.com/grandpublic.officiel/",
       "label": "Instagram",
     },
-    {
-      "icon": FontAwesomeIcons.xTwitter,
-      "href": "https://x.com/grandpublictv",
-      "label": "X (Twitter)",
-    },
+    // {
+    //   "icon": FontAwesomeIcons.xTwitter,
+    //   "href": "https://x.com/grandpublictv",
+    //   "label": "X (Twitter)",
+    // },
     {
       "icon": FontAwesomeIcons.whatsapp,
       "href": "https://wa.me/+2290163634444",
