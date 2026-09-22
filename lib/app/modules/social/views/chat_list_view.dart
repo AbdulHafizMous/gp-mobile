@@ -186,6 +186,8 @@ class _ChatListViewState extends State<ChatListView>
   Future<void> _showCreateChannelDialog(BuildContext context) async {
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
+    final tagsCtrl = TextEditingController();
+    final tagsError = false.obs;
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -253,6 +255,40 @@ class _ChatListViewState extends State<ChatListView>
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
+            const SizedBox(height: 12),
+            Obx(
+              () => TextField(
+                controller: tagsCtrl,
+                style: TextStyle(color: context.primary),
+                onChanged: (_) => tagsError.value = false,
+                decoration: InputDecoration(
+                  labelText: 'Thèmes / tags (obligatoire, séparés par des virgules)',
+                  hintText: 'Ex : Sport, Actualité, Musique',
+                  labelStyle: TextStyle(color: context.subtle),
+                  filled: true,
+                  fillColor: context.isDark ? Colors.white10 : Colors.grey.shade100,
+                  errorText: tagsError.value
+                      ? 'Ajoutez au moins un thème pour décrire votre canal.'
+                      : null,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: context.divider),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: GPTheme.socialColor),
+                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+            if (!_ctrl.myIsAdmin) ...[
+              const SizedBox(height: 10),
+              Text(
+                'Votre canal sera visible de tous après validation par un administrateur.',
+                style: TextStyle(color: context.subtle, fontSize: 12),
+              ),
+            ],
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -262,9 +298,19 @@ class _ChatListViewState extends State<ChatListView>
                       ? null
                       : () async {
                           if (nameCtrl.text.trim().isEmpty) return;
+                          final tags = tagsCtrl.text
+                              .split(',')
+                              .map((t) => t.trim())
+                              .where((t) => t.isNotEmpty)
+                              .toList();
+                          if (tags.isEmpty) {
+                            tagsError.value = true;
+                            return;
+                          }
                           final ok = await _ctrl.createChannel(
                             nameCtrl.text.trim(),
                             descCtrl.text.trim(),
+                            tags: tags,
                           );
                           if (ok) Get.back();
                         },
@@ -377,9 +423,14 @@ class _ChannelsTab extends StatelessWidget {
         );
       }
 
-      // Grouper: rejoints en premier
-      final joined = list.where((c) => c.isJoined).toList();
-      final others = list.where((c) => !c.isJoined).toList();
+      // "Mes canaux" triés par récence, "À découvrir" = approuvés uniquement
+      // (un canal encore "pending" reste invisible des autres utilisateurs).
+      final joined = ctrl.myChannelsSorted
+          .where((c) => list.any((l) => l.id == c.id))
+          .toList();
+      final others = ctrl.discoverChannels
+          .where((c) => list.any((l) => l.id == c.id))
+          .toList();
 
       return RefreshIndicator(
         color: GPTheme.socialColor,
@@ -397,11 +448,12 @@ class _ChannelsTab extends StatelessWidget {
                   onLeave: () => _confirmLeave(context, c),
                   onEdit: () => _showEditChannelDialog(context, ctrl, c),
                   onDelete: () => _confirmDeleteChannel(context, ctrl, c),
+                  onToggleMute: () => ctrl.toggleMuteChannel(c),
                 ),
               ),
             ],
             if (others.isNotEmpty) ...[
-              _SectionHeader(label: 'Découvrir (${others.length})'),
+              _SectionHeader(label: 'À découvrir (${others.length})'),
               ...others.map(
                 (c) => _ChannelTile(
                   channel: c,
@@ -568,6 +620,7 @@ class _ChannelTile extends StatelessWidget {
   final VoidCallback? onLeave;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final VoidCallback? onToggleMute;
 
   const _ChannelTile({
     required this.channel,
@@ -576,6 +629,7 @@ class _ChannelTile extends StatelessWidget {
     this.onLeave,
     this.onEdit,
     this.onDelete,
+    this.onToggleMute,
   });
 
   @override
@@ -657,6 +711,28 @@ class _ChannelTile extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (channel.isPending) ...[
+                        Container(
+                          margin: const EdgeInsets.only(right: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            'En attente',
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (channel.isMuted) ...[
+                        Icon(Icons.notifications_off_rounded, size: 14, color: context.subtle),
+                        const SizedBox(width: 4),
+                      ],
                       if (channel.lastMessage != null)
                         Text(
                           channel.lastMessage!.timeLabel,
@@ -667,7 +743,7 @@ class _ChannelTile extends StatelessWidget {
                   const SizedBox(height: 3),
                   // Dernier message ou description
                   Text(
-                    channel.lastMessage?.content ?? channel.description ?? '',
+                    channel.lastMessage?.displayContent ?? channel.description ?? '',
                     style: TextStyle(
                       fontSize: 13,
                       color: context.subtle,
@@ -769,20 +845,49 @@ class _ChannelTile extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
 
-                      // Menu créateur — renommer / supprimer le canal
-                      if (channel.isMine)
+                      // Menu : mise en sourdine (tous canaux rejoints) +
+                      // renommer/supprimer réservé au créateur.
+                      if (channel.isJoined && onToggleMute != null || channel.isMine)
                         PopupMenuButton<String>(
                           icon: Icon(Icons.more_vert_rounded, size: 18, color: context.subtle),
                           padding: EdgeInsets.zero,
-                          onSelected: (v) => v == 'edit' ? onEdit?.call() : onDelete?.call(),
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(value: 'edit', child: Row(children: [
-                              Icon(Icons.edit_outlined, size: 16), SizedBox(width: 8), Text('Modifier'),
-                            ])),
-                            PopupMenuItem(value: 'delete', child: Row(children: [
-                              Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red), SizedBox(width: 8),
-                              Text('Supprimer', style: TextStyle(color: Colors.red)),
-                            ])),
+                          onSelected: (v) {
+                            switch (v) {
+                              case 'edit':
+                                onEdit?.call();
+                                break;
+                              case 'delete':
+                                onDelete?.call();
+                                break;
+                              case 'mute':
+                                onToggleMute?.call();
+                                break;
+                            }
+                          },
+                          itemBuilder: (_) => [
+                            if (channel.isJoined && onToggleMute != null)
+                              PopupMenuItem(
+                                value: 'mute',
+                                child: Row(children: [
+                                  Icon(
+                                    channel.isMuted
+                                        ? Icons.notifications_active_outlined
+                                        : Icons.notifications_off_outlined,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(channel.isMuted ? 'Réactiver les notifs' : 'Mettre en sourdine'),
+                                ]),
+                              ),
+                            if (channel.isMine) ...const [
+                              PopupMenuItem(value: 'edit', child: Row(children: [
+                                Icon(Icons.edit_outlined, size: 16), SizedBox(width: 8), Text('Modifier'),
+                              ])),
+                              PopupMenuItem(value: 'delete', child: Row(children: [
+                                Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red), SizedBox(width: 8),
+                                Text('Supprimer', style: TextStyle(color: Colors.red)),
+                              ])),
+                            ],
                           ],
                         ),
 
@@ -863,7 +968,11 @@ class _MessagesTab extends StatelessWidget {
           child: CircularProgressIndicator(color: GPTheme.socialColor),
         );
       }
-      final convs = ctrl.privateConversations;
+      // Tri par ordre de récence (dernier message en premier).
+      final convs = [...ctrl.privateConversations]..sort((a, b) => compareByRecency(
+            a.lastMessageAt ?? a.lastMessage?.sentAt ?? DateTime.fromMillisecondsSinceEpoch(0),
+            b.lastMessageAt ?? b.lastMessage?.sentAt ?? DateTime.fromMillisecondsSinceEpoch(0),
+          ));
       if (convs.isEmpty) {
         return Center(
           child: Padding(
@@ -920,6 +1029,7 @@ class _MessagesTab extends StatelessWidget {
                 duration: const Duration(milliseconds: 300),
               );
             },
+            onLongPress: () => ctrl.toggleMuteConversation(convs[i]),
           ),
         ),
       );
@@ -930,7 +1040,8 @@ class _MessagesTab extends StatelessWidget {
 class _ConvTile extends StatelessWidget {
   final PrivateConversation conv;
   final VoidCallback onTap;
-  const _ConvTile({required this.conv, required this.onTap});
+  final VoidCallback? onLongPress;
+  const _ConvTile({required this.conv, required this.onTap, this.onLongPress});
 
   @override
   Widget build(BuildContext context) {
@@ -939,6 +1050,7 @@ class _ConvTile extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       splashColor: GPTheme.socialColor.withOpacity(0.05),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -1004,6 +1116,10 @@ class _ConvTile extends StatelessWidget {
                           ),
                         ),
                       ),
+                      if (conv.isMuted) ...[
+                        Icon(Icons.notifications_off_rounded, size: 13, color: context.subtle),
+                        const SizedBox(width: 4),
+                      ],
                       Text(
                         conv.lastMessage?.timeLabel ?? '',
                         style: TextStyle(

@@ -12,6 +12,8 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 // import 'package:grand_public_v2/app/services/notification_service.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/services/iap_debug_logger.dart';
+import 'package:grand_public_v2/app/services/brand_takeover_service.dart';
+import 'package:grand_public_v2/app/services/crush_quota_service.dart';
 import 'package:grand_public_v2/firebase_options.dart';
 
 import 'app/routes/app_pages.dart';
@@ -84,8 +86,16 @@ Future<void> main() async {
   // 4. GetStorage
   await GetStorage.init();
 
+  // 4ter. FullAppAd — vérifie si un sponsor a une prise de contrôle de
+  // marque active (rebranding temporaire). N'importe jamais le démarrage :
+  // en cas d'échec réseau, l'app démarre normalement sans branding.
+  await Get.putAsync(() => BrandTakeoverService().init());
+
+  // 4quater. Quota de messages Crush (désactivé par défaut côté backend).
+  await Get.putAsync(() => CrushQuotaService().init());
+
   // 4bis. RevenueCat (Apple IAP — Guideline 3.1.1). iOS uniquement :
-  // Android/le reste continuent d'utiliser Kkiapay / le paiement web.
+  // Android/le reste continuent d'utiliser Moneroo / le paiement web.
   IapDebugLogger.log(
     'Platform check : kIsWeb=$kIsWeb, Platform.isIOS=${kIsWeb ? "n/a" : Platform.isIOS}',
   );
@@ -139,6 +149,29 @@ class _MainAppState extends State<MainApp> {
         getPages: AppPages.routes,
         debugShowCheckedModeBanner: false,
         themeMode: ThemeMode.system,
+        // ── FullAppAd : superpose le motif de fond du sponsor (si une
+        // prise de contrôle de marque est active) derrière TOUTE l'app,
+        // sans avoir à toucher chaque écran individuellement.
+        builder: (context, child) {
+          return Obx(() {
+            final takeover = BrandTakeoverService.to.current.value;
+            if (takeover?.backgroundUrl == null) {
+              return child ?? const SizedBox.shrink();
+            }
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.network(
+                  takeover!.backgroundUrl!,
+                  fit: BoxFit.cover,
+                  opacity: const AlwaysStoppedAnimation(0.18),
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+                child ?? const SizedBox.shrink(),
+              ],
+            );
+          });
+        },
         onUnknownRoute: (settings) {
           return GetPageRoute(
             page: () => Scaffold(

@@ -22,7 +22,9 @@ dependencies:
   url_launcher: ^6.3.2
   feexpay_flutter: ^1.0.12
   uuid: ^4.5.2
-  kkiapay_flutter_sdk: ^1.3.4
+  # Passé de KKiaPay à Moneroo (paiement Mobile Money / carte) — voir
+  # social_premium_controller.dart et videos_controller.dart.
+  moneroo_flutter_sdk: ^0.3.4
   # Apple Guideline 3.1.1 : IAP obligatoire pour le contenu payant consommé
   # dans l'app sur iOS. RevenueCat encapsule StoreKit proprement.
   purchases_flutter: ^9.5.0
@@ -59,6 +61,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_native_splash: ^2.4.3
 
 flutter:
   uses-material-design: true
@@ -99,3 +102,54 @@ flutter_icons:
 dependency_overrides:
   record_linux: ^1.0.0
   record_platform_interface: ^1.5.0
+
+# ══════════════════════════════════════════════════════════════════════════
+# SPLASH NATIF (écran natif Android/iOS affiché AVANT que Flutter ne démarre)
+# ──────────────────────────────────────────────────────────────────────────
+# Corrige le problème : écran noir avec logo "coupé" sur les 4 côtés au
+# lancement sur Android, suivi d'un 2e écran (celui de SplashView) où le
+# logo est bien affiché.
+#
+# Cause : l'icône de lancement Android est générée en "full bleed"
+# (icon_full.png remplit tout le canevas) et est réutilisée telle quelle
+# comme image de splash natif. Or la fenêtre de démarrage Android 12+
+# (et l'ancien launch_background.xml des versions précédentes) n'affiche
+# le logo que dans une zone de sécurité centrale : un visuel qui va bord à
+# bord y est donc rogné sur les 4 côtés. Le fond "noir" observé est aussi
+# la couleur par défaut de cette fenêtre système quand aucune couleur de
+# fond n'est configurée.
+#
+# Solution : on génère un unique splash natif (Android + iOS), avec un
+# visuel qui respecte la zone de sécurité (comme `assets/images/icon.png`,
+# déjà utilisé par SplashView, contrairement à `icon_full.png`), un fond
+# blanc identique à celui de SplashView, et l'icône adaptative Android 12+
+# dimensionnée pour ne pas dépasser (`icon_background_color` + taille
+# raisonnable). Résultat : un seul écran de démarrage cohérent, sans flash
+# noir ni recadrage.
+#
+# ⚠️ Cette configuration ne prend effet qu'après avoir exécuté, une fois
+# les dossiers android/ et ios/ du projet disponibles en local :
+#     flutter pub get
+#     dart run flutter_native_splash:create
+# (Ce zip ne contient que le code Dart : les dossiers natifs android/ios
+# ne sont pas inclus, donc cette commande doit être lancée sur votre poste
+# ou en CI juste avant le build.)
+# ══════════════════════════════════════════════════════════════════════════
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/images/icon.png
+  color_dark: "#121212"
+  image_dark: assets/images/icon.png
+
+  android_12:
+    color: "#FFFFFF"
+    image: assets/images/icon.png
+    icon_background_color: "#FFFFFF"
+    color_dark: "#121212"
+    image_dark: assets/images/icon.png
+    icon_background_color_dark: "#121212"
+
+  android: true
+  ios: true
+  web: false
+  fullscreen: true

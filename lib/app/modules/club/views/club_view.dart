@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/components/ad_banner_widget.dart';
 import 'package:grand_public_v2/app/data/models/promotion.dart';
 import 'package:grand_public_v2/app/modules/club/controllers/club_controller.dart';
 import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
@@ -388,26 +389,76 @@ class _OffresTab extends StatelessWidget {
         );
       }
 
+      final featured = ctrl.promotions.where((p) => p.isFeatured).toList();
+
       return RefreshIndicator(
         onRefresh: () => ctrl.fetchPromotions(refresh: true),
         color: GPTheme.clubColor,
-        child: ListView.separated(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          itemCount: ctrl.promotions.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
-          itemBuilder: (ctx, i) => _PromoCard(
-            promo: ctrl.promotions[i],
-            onTap: () => Get.to(
-              () => PromoDetailView(promo: ctrl.promotions[i], ctrl: ctrl),
+        child: Column(
+          children: [
+            const AdBannerWidget(screen: 'club'),
+            // ── Offres sponsorisées / vedette (ex: MTN pendant sa semaine
+            // de takeover) — mises en avant en haut, avant le reste ────────
+            if (featured.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.star_rounded, size: 16, color: Colors.amber.shade700),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Offres sponsorisées',
+                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 140,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  itemCount: featured.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  itemBuilder: (ctx, i) => SizedBox(
+                    width: 260,
+                    child: _PromoCard(
+                      promo: featured[i],
+                      onTap: () => Get.to(() => PromoDetailView(promo: featured[i], ctrl: ctrl)),
+                      onShare: () => ShareHelper.showShareSheet(
+                        context,
+                        title: featured[i].title,
+                        subtitle: featured[i].partner?.name,
+                        type: 'promotion',
+                        id: '${featured[i].id}',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const Divider(height: 20),
+            ],
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                itemCount: ctrl.promotions.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (ctx, i) => _PromoCard(
+                  promo: ctrl.promotions[i],
+                  onTap: () => Get.to(
+                    () => PromoDetailView(promo: ctrl.promotions[i], ctrl: ctrl),
+                  ),
+                  onShare: () => ShareHelper.showShareSheet(
+                    context,
+                    title: ctrl.promotions[i].title,
+                    subtitle: ctrl.promotions[i].partner?.name,
+                    type: 'promotion',
+                    id: '${ctrl.promotions[i].id}',
+                  ),
+                ),
+              ),
             ),
-            onShare: () => ShareHelper.showShareSheet(
-              context,
-              title: ctrl.promotions[i].title,
-              subtitle: ctrl.promotions[i].partner?.name,
-              type: 'promotion',
-              id: '${ctrl.promotions[i].id}',
-            ),
-          ),
+          ],
         ),
       );
     });

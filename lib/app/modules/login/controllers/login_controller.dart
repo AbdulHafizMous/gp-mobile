@@ -12,6 +12,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
+import 'package:grand_public_v2/app/services/app_mode_service.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -543,7 +544,7 @@ class LoginController extends GetxController {
       textColor: Colors.white,
     );
 
-    Get.offAllNamed('/home'); // #Beno10
+    Get.offAllNamed(AppModeService.homeRoute); // #Beno10
   }
 
   // ══════════════════════════════════════════════════════════════════════════

@@ -54,6 +54,10 @@ class ChatMessage {
   final MessageType type;
   final MessageStatus status;
   final bool isPending;
+  // true si un admin a supprimé/modéré ce message : le contenu affiché est
+  // alors remplacé par "Supprimé par l'administration" au lieu de faire
+  // disparaître le message (traçabilité + transparence pour les membres).
+  final bool isRemovedByAdmin;
 
   // Reply
   final int? replyToId;
@@ -80,6 +84,7 @@ class ChatMessage {
     this.type = MessageType.text,
     this.status = MessageStatus.sent,
     this.isPending = false,
+    this.isRemovedByAdmin = false,
     this.replyToId,
     this.replyToSenderName,
     this.replyToContent,
@@ -97,6 +102,11 @@ class ChatMessage {
   String get timeLabel {
     return '${sentAt.hour.toString().padLeft(2,'0')}:${sentAt.minute.toString().padLeft(2,'0')}';
   }
+
+  /// Contenu à afficher : remplace par le message standard de modération si
+  /// le message a été supprimé par un administrateur.
+  String get displayContent =>
+      isRemovedByAdmin ? 'Supprimé par l\'administration' : content;
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     final replyTo = json['reply_to'] as Map<String, dynamic>?;
@@ -117,6 +127,7 @@ class ChatMessage {
       isMe:            _b(json['is_me']),
       type:            MessageTypeX.fromString(json['type']?.toString()),
       status:          MessageStatus.sent,
+      isRemovedByAdmin:_b(json['is_removed_by_admin']),
       replyToId:       replyTo != null ? _i(replyTo['id']) : null,
       replyToSenderName: replyTo?['sender_name']?.toString(),
       replyToContent:  replyTo?['content']?.toString(),
@@ -128,6 +139,7 @@ class ChatMessage {
     MessageStatus? status,
     bool? isPending,
     String? mediaUrl,
+    bool? isRemovedByAdmin,
     int? replyToId,
     String? replyToSenderName,
     String? replyToContent,
@@ -142,6 +154,7 @@ class ChatMessage {
     audioDurationSec: audioDurationSec, sentAt: sentAt, isMe: isMe, type: type,
     status: status ?? this.status,
     isPending: isPending ?? this.isPending,
+    isRemovedByAdmin: isRemovedByAdmin ?? this.isRemovedByAdmin,
     replyToId: replyToId ?? this.replyToId,
     replyToSenderName: replyToSenderName ?? this.replyToSenderName,
     replyToContent: replyToContent ?? this.replyToContent,
@@ -175,6 +188,11 @@ class ChatChannel {
   final ChatMessage? lastMessage;
   final int unreadCount;
   final List<String> tags;
+  final bool isMuted;
+  // pending  -> en attente de validation par un admin (créé par un non-admin)
+  // approved -> visible de tous dans "À découvrir"
+  // rejected -> refusé par un admin, visible seulement du créateur
+  final String status;
 
   const ChatChannel({
     required this.id,
@@ -188,7 +206,15 @@ class ChatChannel {
     this.lastMessage,
     this.unreadCount = 0,
     this.tags = const [],
+    this.isMuted = false,
+    this.status = 'approved',
   });
+
+  bool get isPending => status == 'pending';
+  bool get isRejected => status == 'rejected';
+
+  // DateTime get _sortDate =>
+  //     lastMessage?.sentAt ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   factory ChatChannel.fromJson(Map<String, dynamic> json) {
     return ChatChannel(
@@ -203,15 +229,27 @@ class ChatChannel {
       lastMessage:  json['last_message'] != null ? ChatMessage.fromJson(json['last_message']) : null,
       unreadCount:  _i(json['unread_count']),
       tags:         (json['tags'] as List<dynamic>? ?? []).map((t) => t.toString()).toList(),
+      isMuted:      _b(json['is_muted']),
+      status:       json['status']?.toString() ?? 'approved',
     );
   }
 
-  ChatChannel copyWith({bool? isJoined, int? unreadCount, ChatMessage? lastMessage, String? name, String? description}) =>
+  ChatChannel copyWith({
+    bool? isJoined,
+    int? unreadCount,
+    ChatMessage? lastMessage,
+    String? name,
+    String? description,
+    bool? isMuted,
+    String? status,
+  }) =>
       ChatChannel(
         id: id, name: name ?? this.name, description: description ?? this.description, imageUrl: imageUrl,
         membersCount: membersCount, isJoined: isJoined ?? this.isJoined, isMine: isMine,
         isOnline: isOnline, lastMessage: lastMessage ?? this.lastMessage,
         unreadCount: unreadCount ?? this.unreadCount, tags: tags,
+        isMuted: isMuted ?? this.isMuted,
+        status: status ?? this.status,
       );
 
   static int _i(dynamic v) => v is int ? v : int.tryParse('$v') ?? 0;
@@ -221,6 +259,10 @@ class ChatChannel {
     return false;
   }
 }
+
+/// Tri par ordre de récence (dernier message le plus récent en premier),
+/// utilisé pour "Mes canaux" et "Conversations" — voir ChatController.
+int compareByRecency(DateTime a, DateTime b) => b.compareTo(a);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PRIVATE CONVERSATION
@@ -234,6 +276,11 @@ class PrivateConversation {
   final ChatMessage? lastMessage;
   final int unreadCount;
   final DateTime? lastMessageAt;
+  final bool isMuted;
+  // true si cette conversation provient d'un match Crush (et non d'une
+  // discussion sociale classique) — voir PrivateConversation::match() côté
+  // backend. Utilisé pour savoir où afficher CrushQuotaBanner.
+  final bool isCrushMatch;
 
   const PrivateConversation({
     required this.id,
@@ -244,6 +291,8 @@ class PrivateConversation {
     this.lastMessage,
     this.unreadCount = 0,
     this.lastMessageAt,
+    this.isMuted = false,
+    this.isCrushMatch = false,
   });
 
   factory PrivateConversation.fromJson(Map<String, dynamic> json) {
@@ -256,8 +305,17 @@ class PrivateConversation {
       lastMessage:     json['last_message'] != null ? ChatMessage.fromJson(json['last_message']) : null,
       unreadCount:     _i(json['unread_count']),
       lastMessageAt:   json['last_message_at'] != null ? DateTime.tryParse(json['last_message_at'].toString()) : null,
+      isMuted:         _b(json['is_muted']),
+      isCrushMatch:    _b(json['is_crush_match']),
     );
   }
+
+  PrivateConversation copyWith({bool? isMuted, int? unreadCount}) => PrivateConversation(
+    id: id, otherUserId: otherUserId, otherUserName: otherUserName,
+    otherUserAvatar: otherUserAvatar, otherIsOnline: otherIsOnline,
+    lastMessage: lastMessage, unreadCount: unreadCount ?? this.unreadCount,
+    lastMessageAt: lastMessageAt, isMuted: isMuted ?? this.isMuted,
+  );
 
   static int _i(dynamic v) => v is int ? v : int.tryParse('$v') ?? 0;
   static bool _b(dynamic v) {

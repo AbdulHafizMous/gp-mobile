@@ -10,7 +10,10 @@ import 'package:get/get.dart' hide FormData, MultipartFile;
 import 'package:get_storage/get_storage.dart';
 import 'package:grand_public_v2/app/data/models/chat_models.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
+import 'package:grand_public_v2/app/services/crush_quota_service.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
+import 'package:grand_public_v2/app/utils/api_error_helper.dart';
+import 'package:grand_public_v2/app/utils/crush_paywall_helper.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -82,6 +85,10 @@ class ChatController extends GetxController {
   // ── Auth ───────────────────────────────────────────────────────────────────
   int    get myUserId => GetStorage().read<int>('userId') ?? 0;
   String get myName   => GetStorage().read<String>('username') ?? 'Moi';
+  bool   get myIsAdmin {
+    final role = GetStorage().read<String>('role')?.toLowerCase() ?? '';
+    return role == 'admin' || role == 'super admin';
+  }
 
   // ─────────────────────────────────────────────────────────────────────────
   // INIT / CLOSE
@@ -191,6 +198,50 @@ class ChatController extends GetxController {
     return [...joined.where(match), ...others.where(match)];
   }
 
+  /// "Mes canaux" — canaux déjà rejoints, triés par ordre de récence
+  /// (dernier message reçu en premier), comme une messagerie classique.
+  List<ChatChannel> get myChannelsSorted {
+    final q = searchQuery.value.toLowerCase();
+    var list = channels.where((c) => c.isJoined).toList();
+    if (q.isNotEmpty) {
+      list = list
+          .where((c) =>
+              c.name.toLowerCase().contains(q) ||
+              (c.description?.toLowerCase().contains(q) ?? false) ||
+              c.tags.any((t) => t.toLowerCase().contains(q)))
+          .toList();
+    }
+    list.sort((a, b) => compareByRecency(
+          a.lastMessage?.sentAt ?? DateTime.fromMillisecondsSinceEpoch(0),
+          b.lastMessage?.sentAt ?? DateTime.fromMillisecondsSinceEpoch(0),
+        ));
+    return list;
+  }
+
+  /// "À découvrir" — canaux non rejoints ET approuvés par un admin
+  /// uniquement (un canal en attente de validation reste invisible pour
+  /// tout le monde sauf son créateur, cf. isPending ci-dessous).
+  List<ChatChannel> get discoverChannels {
+    final q = searchQuery.value.toLowerCase();
+    var list = channels
+        .where((c) => !c.isJoined && (c.status == 'approved' || c.isMine))
+        .toList();
+    if (q.isNotEmpty) {
+      list = list
+          .where((c) =>
+              c.name.toLowerCase().contains(q) ||
+              (c.description?.toLowerCase().contains(q) ?? false) ||
+              c.tags.any((t) => t.toLowerCase().contains(q)))
+          .toList();
+    }
+    return list;
+  }
+
+  /// Canaux créés par l'utilisateur encore en attente de validation admin
+  /// (à afficher avec un badge "En attente" dans "Mes canaux").
+  List<ChatChannel> get myPendingChannels =>
+      channels.where((c) => c.isMine && c.isPending).toList();
+
   Future<void> joinChannel(ChatChannel channel) async {
     try {
       if (!useMock) await RequestService().post('/social/channels/${channel.id}/join');
@@ -201,22 +252,52 @@ class ChatController extends GetxController {
   }
 
   /// N'importe quel utilisateur peut créer son propre canal de discussion.
+  /// Les tags thématiques sont désormais OBLIGATOIRES (au moins un), et si
+  /// le créateur n'est pas admin, le canal part en statut "pending" : il
+  /// reste invisible des autres jusqu'à validation par un administrateur.
   final isCreatingChannel = false.obs;
 
-  Future<bool> createChannel(String name, String? description) async {
+  Future<bool> createChannel(
+    String name,
+    String? description, {
+    required List<String> tags,
+  }) async {
+    if (tags.isEmpty) {
+      ToastHelper.showToast(
+        'Ajoutez au moins un thème (tag) pour décrire votre canal.',
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+      return false;
+    }
+
     isCreatingChannel.value = true;
     try {
       if (useMock) {
         await Future.delayed(const Duration(milliseconds: 500));
         await loadChannels();
+        ToastHelper.showToast(
+          myIsAdmin
+              ? 'Canal créé avec succès.'
+              : 'Canal créé — en attente de validation par un administrateur.',
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
         return true;
       }
       await RequestService().post('/social/channels', data: {
         'name': name,
+        'tags': tags,
         if (description != null && description.isNotEmpty) 'description': description,
       });
       await loadChannels();
-      ToastHelper.showToast('Canal créé avec succès', backgroundColor: Colors.green, textColor: Colors.white);
+      ToastHelper.showToast(
+        myIsAdmin
+            ? 'Canal créé avec succès.'
+            : 'Canal créé — en attente de validation par un administrateur.',
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+      );
       return true;
     } on DioException catch (e) {
       _dioErr(e);
@@ -270,6 +351,55 @@ class ChatController extends GetxController {
       if (i != -1) channels[i] = channels[i].copyWith(isJoined: false);
       await loadChannels();
     } on DioException catch (e) { _dioErr(e); }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // MUTE — mise en sourdine (pas de notif push) d'un canal ou d'une
+  // conversation privée. Purement côté "volet social", comme demandé.
+  // ─────────────────────────────────────────────────────────────────────────
+  Future<void> toggleMuteChannel(ChatChannel channel) async {
+    final newValue = !channel.isMuted;
+    final i = channels.indexWhere((c) => c.id == channel.id);
+    if (i != -1) channels[i] = channels[i].copyWith(isMuted: newValue);
+    try {
+      if (!useMock) {
+        await RequestService().post(
+          '/social/channels/${channel.id}/mute',
+          data: {'muted': newValue},
+        );
+      }
+      ToastHelper.showToast(
+        newValue ? 'Notifications coupées pour ${channel.name}' : 'Notifications réactivées pour ${channel.name}',
+        backgroundColor: Colors.black87,
+        textColor: Colors.white,
+      );
+    } on DioException catch (e) {
+      // Rollback en cas d'échec réseau.
+      if (i != -1) channels[i] = channels[i].copyWith(isMuted: !newValue);
+      _dioErr(e);
+    }
+  }
+
+  Future<void> toggleMuteConversation(PrivateConversation conv) async {
+    final newValue = !conv.isMuted;
+    final i = privateConversations.indexWhere((c) => c.id == conv.id);
+    if (i != -1) privateConversations[i] = privateConversations[i].copyWith(isMuted: newValue);
+    try {
+      if (!useMock) {
+        await RequestService().post(
+          '/social/conversations/${conv.id}/mute',
+          data: {'muted': newValue},
+        );
+      }
+      ToastHelper.showToast(
+        newValue ? 'Notifications coupées' : 'Notifications réactivées',
+        backgroundColor: Colors.black87,
+        textColor: Colors.white,
+      );
+    } on DioException catch (e) {
+      if (i != -1) privateConversations[i] = privateConversations[i].copyWith(isMuted: !newValue);
+      _dioErr(e);
+    }
   }
 
   Future<void> openChannel(ChatChannel channel) async {
@@ -352,7 +482,7 @@ class ChatController extends GetxController {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // DELETE MESSAGE
+  // DELETE MESSAGE (auteur du message — retrait pur et simple)
   // ─────────────────────────────────────────────────────────────────────────
   Future<void> deleteMessage(ChatMessage msg) async {
     // Supprime localement immédiatement
@@ -363,6 +493,27 @@ class ChatController extends GetxController {
     try {
       await RequestService().delete('/social/messages/${msg.id}');
     } on DioException catch (e) {
+      _dioErr(e);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ADMIN DELETE MESSAGE — modération : le message N'EST PAS retiré de
+  // l'historique, son contenu est remplacé par "Supprimé par
+  // l'administration" (transparence pour les autres membres du canal).
+  // ─────────────────────────────────────────────────────────────────────────
+  Future<void> adminDeleteMessage(ChatMessage msg) async {
+    final i = messages.indexWhere((m) => m.id == msg.id);
+    if (i != -1) messages[i] = messages[i].copyWith(isRemovedByAdmin: true);
+
+    if (useMock || msg.id < 0) return;
+    try {
+      await RequestService().delete(
+        '/social/messages/${msg.id}',
+        data: {'moderation': true},
+      );
+    } on DioException catch (e) {
+      if (i != -1) messages[i] = messages[i].copyWith(isRemovedByAdmin: false);
       _dioErr(e);
     }
   }
@@ -408,10 +559,22 @@ class ChatController extends GetxController {
     }
   }
 
-  Future<void> sendPrivateMessage(int convId) async {
+  Future<void> sendPrivateMessage(int convId, {BuildContext? context}) async {
     final text = messageCtrl.text.trim();
     final file = pendingFile.value;
     if (text.isEmpty && file == null) return;
+
+    // Vérification OPTIMISTE du quota Crush avant même de tenter l'envoi —
+    // évite un aller-retour réseau inutile quand on sait déjà que le quota
+    // est épuisé. No-op tant que CrushQuotaService.isEnabled est false.
+    final quota = CrushQuotaService.to;
+    final conv = privateConversations.firstWhereOrNull((c) => c.id == convId);
+    if (quota.isEnabled && (conv?.isCrushMatch ?? false) && !quota.status.value.canSendMessage) {
+      if (context != null && context.mounted) {
+        await showCrushPacksSheet(context);
+      }
+      return;
+    }
 
     final reply = replyingTo.value;
     final tempId = -DateTime.now().millisecondsSinceEpoch;
@@ -446,8 +609,22 @@ class ChatController extends GetxController {
       final data = await _buildFormData(text, capturedFile, capturedType, replyId: reply?.id);
       await RequestService().post('/social/conversations/$convId/messages', data: data);
       _confirmPending(privateMessages, tempId);
+      // Message Crush envoyé avec succès : le quota a été décompté côté
+      // serveur, on rafraîchit l'affichage local (no-op si désactivé).
+      if (quota.isEnabled && (conv?.isCrushMatch ?? false)) {
+        unawaited(quota.refreshQuota());
+      }
     } on DioException catch (e) {
       _failPending(privateMessages, tempId);
+      if (e.response?.statusCode == 402) {
+        // Quota épuisé (détecté serveur, ex: appareil désynchronisé) :
+        // on resynchronise le quota local puis on propose le paywall.
+        unawaited(quota.refreshQuota());
+        if (context != null && context.mounted) {
+          showCrushPacksSheet(context);
+          return;
+        }
+      }
       _dioErr(e);
     }
   }
@@ -733,10 +910,9 @@ class ChatController extends GetxController {
     if (i != -1) target[i] = target[i].copyWith(status: MessageStatus.failed, isPending: false);
   }
 
-  void _dioErr(DioException e) {
-    final msg = e.response != null ? 'Erreur ${e.response?.statusCode}' : e.message ?? 'Erreur réseau';
-    ToastHelper.showToast(msg, backgroundColor: Colors.red, textColor: Colors.white);
-  }
+  // Factorisé : voir lib/app/utils/api_error_helper.dart. Corrige entre
+  // autres l'affichage brut "Erreur 401" -> "Vous êtes déconnecté".
+  void _dioErr(DioException e) => ApiErrorHelper.showError(e);
 
   static int _i(dynamic v) => v is int ? v : int.tryParse('$v') ?? 0;
 

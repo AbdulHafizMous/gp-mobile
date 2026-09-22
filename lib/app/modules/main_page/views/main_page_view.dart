@@ -14,6 +14,7 @@ import 'package:grand_public_v2/app/data/models/space_model.dart';
 import 'package:grand_public_v2/app/data/models/section_model.dart';
 import 'package:grand_public_v2/app/modules/main_page/controllers/main_page_controller.dart';
 import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
+import 'package:grand_public_v2/app/services/brand_takeover_service.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -195,8 +196,11 @@ class _MainPageViewState extends State<MainPageView>
 
   @override
   Widget build(BuildContext context) {
+    // FullAppAd : si un sponsor a une prise de contrôle de marque active,
+    // le fond de l'écran d'accueil (le plus vu de l'app) adopte sa couleur.
+    final takeoverColor = BrandTakeoverService.to.current.value?.primaryColor;
     return Scaffold(
-      backgroundColor: context.isDark ? null : GPTheme.primaryColor,
+      backgroundColor: context.isDark ? null : (takeoverColor ?? GPTheme.primaryColor),
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [

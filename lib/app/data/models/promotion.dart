@@ -14,6 +14,10 @@ class Promotion {
   final bool isAvailable;
   final String? imageUrl;
   final PromotionPartner? partner;
+  // Offre mise en avant par un sponsor (ex: MTN pendant sa semaine de
+  // takeover) dans la section "Offres sponsorisées" du Club.
+  final bool isFeatured;
+  final String? sponsorName;
 
   // Infos du user connecté
   final int userUsageCount;
@@ -37,6 +41,8 @@ class Promotion {
     required this.isAvailable,
     this.imageUrl,
     this.partner,
+    this.isFeatured = false,
+    this.sponsorName,
     this.userUsageCount = 0,
     this.userCanClaim = false,
     this.userPendingQr,
@@ -62,6 +68,8 @@ class Promotion {
       partner:         json['partner'] != null
                          ? PromotionPartner.fromJson(json['partner'])
                          : null,
+      isFeatured:      json['is_featured'] == true,
+      sponsorName:     json['sponsor_name']?.toString(),
       userUsageCount:  (json['user_usage_count'] as num?)?.toInt() ?? 0,
       userCanClaim:    json['user_can_claim'] == true,
       userPendingQr:   json['user_pending_qr']?.toString(),
@@ -83,7 +91,7 @@ class Promotion {
       totalMaxUses: totalMaxUses, usedCount: usedCount,
       startsAt: startsAt, endsAt: endsAt, isActive: isActive,
       isExpired: isExpired, isAvailable: isAvailable, imageUrl: imageUrl,
-      partner: partner,
+      partner: partner, isFeatured: isFeatured, sponsorName: sponsorName,
       userUsageCount:  userUsageCount  ?? this.userUsageCount,
       userCanClaim:    userCanClaim    ?? this.userCanClaim,
       userPendingQr:   userPendingQr   ?? this.userPendingQr,

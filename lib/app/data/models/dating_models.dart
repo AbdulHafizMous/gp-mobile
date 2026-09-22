@@ -14,6 +14,9 @@ class DatingProfile {
   final List<String> interests;
   final String? gender;
   final double? distance;
+  // Nombre de centres d'intérêt en commun avec l'utilisateur courant —
+  // voir DatingController::_buildSuggestionQuery côté backend.
+  final int sharedInterestsCount;
 
   const DatingProfile({
     required this.id,
@@ -26,6 +29,7 @@ class DatingProfile {
     this.interests = const [],
     this.gender,
     this.distance,
+    this.sharedInterestsCount = 0,
   });
 
   String get displayPhoto =>
@@ -65,6 +69,7 @@ class DatingProfile {
           .toList(),
       gender:    json['gender']?.toString(),
       distance:  (json['distance'] as num?)?.toDouble(),
+      sharedInterestsCount: _i(json['shared_interests_count']),
     );
   }
 

@@ -1,18 +1,14 @@
 // lib/app/modules/social_premium/controllers/social_premium_controller.dart
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io' show Platform;
-
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
-import 'package:kkiapay_flutter_sdk/kkiapay_flutter_sdk.dart';
+import 'package:moneroo_flutter_sdk/moneroo_flutter_sdk.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:uuid/uuid.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/data/models/subscription.dart';
 import 'package:grand_public_v2/app/data/models/user.dart';
@@ -20,6 +16,7 @@ import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/services/iap_debug_logger.dart';
 import 'package:grand_public_v2/app/services/web_account_link_service.dart';
+import 'package:grand_public_v2/app/utils/api_error_helper.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
@@ -33,9 +30,6 @@ class SocialPremiumController extends GetxController {
   // ── Historique des abonnements ─────────────────────────────────────────────
   final subscriptionHistory = <ActiveSubscription>[].obs;
   final isLoadingHistory = false.obs;
-
-  final _uuid = const Uuid();
-  final _storage = GetStorage();
 
   // ══════════════════════════════════════════════════════════════════════════
   //  FETCH PLANS DISPONIBLES
@@ -115,7 +109,7 @@ class SocialPremiumController extends GetxController {
   // ══════════════════════════════════════════════════════════════════════════
   //  POINT D'ENTRÉE UNIQUE — appelé depuis les vues (sub_card.dart, etc.)
   //  iOS  -> RevenueCat / StoreKit (obligatoire, Guideline 3.1.1)
-  //  Autres plateformes -> Kkiapay natif OU redirection web, selon
+  //  Autres plateformes -> Moneroo natif OU redirection web, selon
   //  `useExternalPaywall` (lib/app/constants/index.dart)
   // ══════════════════════════════════════════════════════════════════════════
   Future<void> handleSubscribe({
@@ -128,7 +122,7 @@ class SocialPremiumController extends GetxController {
     if (useExternalPaywall) {
       return handleSubscribeOnWeb(context: context, plan: plan);
     }
-    return _subscribeWithKkiapay(context: context, plan: plan);
+    return _subscribeWithMoneroo(context: context, plan: plan);
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -179,18 +173,22 @@ class SocialPremiumController extends GetxController {
           'Paid Applications Agreement non actif, produit pas en review/approuvé, '
           'Product ID différent entre ASC/RevenueCat/admin, clé API RevenueCat invalide.',
         );
-        _showPaymentFailedDialog(context, 'Forfait introuvable sur l\'App Store.');
+        _showPaymentFailedDialog(
+          context,
+          'Forfait introuvable sur l\'App Store.',
+        );
         return;
       }
 
-      IapDebugLogger.log('Appel Purchases.purchase() — ouverture du popup StoreKit...');
+      IapDebugLogger.log(
+        'Appel Purchases.purchase() — ouverture du popup StoreKit...',
+      );
       final result = await Purchases.purchase(
         PurchaseParams.storeProduct(products.first),
       );
       IapDebugLogger.log('✅ Achat StoreKit réussi côté client.');
 
-      final transactionId =
-          result.storeTransaction.transactionIdentifier;
+      final transactionId = result.storeTransaction.transactionIdentifier;
       IapDebugLogger.log('transactionId reçu : $transactionId');
 
       await _doSubscribeBackend(
@@ -204,7 +202,9 @@ class SocialPremiumController extends GetxController {
       );
     } on PlatformException catch (e) {
       final code = PurchasesErrorHelper.getErrorCode(e);
-      IapDebugLogger.log('❌ PlatformException : code=$code message=${e.message}');
+      IapDebugLogger.log(
+        '❌ PlatformException : code=$code message=${e.message}',
+      );
       if (code != PurchasesErrorCode.purchaseCancelledError) {
         _showPaymentFailedDialog(
           context,
@@ -222,9 +222,9 @@ class SocialPremiumController extends GetxController {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  ABONNEMENT — Kkiapay natif (Android / non-iOS quand useExternalPaywall=false)
+  //  ABONNEMENT — Moneroo natif (Android / non-iOS quand useExternalPaywall=false)
   // ══════════════════════════════════════════════════════════════════════════
-  Future<void> _subscribeWithKkiapay({
+  Future<void> _subscribeWithMoneroo({
     required BuildContext context,
     required Subscription plan,
   }) async {
@@ -236,49 +236,45 @@ class SocialPremiumController extends GetxController {
 
     selectedPlan.value = plan;
 
-    final kkiapay = KKiaPay(
-      callback: (dynamic response, BuildContext ctx) async {
-        final status = response['status']?.toString() ?? '';
-        try {
-          switch (status) {
-            case 'PAYMENT_CANCELLED':
+    Get.to(
+      () => Moneroo(
+        amount: plan.price.toInt(),
+        apiKey: MONEROO_API_KEY,
+        currency: MonerooCurrency.XOF,
+        customer: MonerooCustomer(
+          email: activeUser.value.email,
+          firstName: activeUser.value.firstName,
+          lastName: activeUser.value.lastName,
+        ),
+        description: plan.name,
+        onPaymentCompleted: (infos, ctx) async {
+          try {
+            if (infos.status == MonerooStatus.success) {
               try {
-                Get.back();
+                Navigator.of(ctx).pop();
               } catch (_) {}
-              break;
-            case 'PAYMENT_SUCCESS':
-              try {
-                Get.back();
-              } catch (_) {}
-              final transactionId =
-                  response['transactionId']?.toString() ?? '';
-              final amount = response['requestData']?['amount'];
               await _doSubscribeBackend(
                 context: context,
                 plan: plan,
-                transactionId: transactionId,
-                metadata: {'amount': amount, 'kkiapay_response': response},
+                transactionId: infos.id.toString(),
+                metadata: {'gateway': 'moneroo'},
               );
-              break;
-            default:
-              debugPrint('KKiaPay EVENT: $status');
+            } else if (infos.status == MonerooStatus.cancelled) {
+              try {
+                Navigator.of(ctx).pop();
+              } catch (_) {}
+            } else {
+              debugPrint('Moneroo EVENT: ${infos.status}');
+            }
+          } catch (e) {
+            debugPrint('Moneroo callback error: $e');
           }
-        } catch (e) {
-          debugPrint('KKiaPay callback error: $e');
-        }
-      },
-      amount: plan.price.toInt(),
-      apikey: FEEX_API_KEY,
-      sandbox: true,
-      data: jsonEncode({'trans_key': _uuid.v4(), 'subscription_id': plan.id}),
-      phone: _storage.read('phone') ?? '',
-      name: _storage.read('username') ?? '',
-      reason: plan.name,
-      email: _storage.read('email') ?? '',
-      countries: const ['BJ'],
+        },
+        onError: (error, context) {
+          debugPrint('Moneroo SUBSCRIPTION ERROR: ${error.toJson()}');
+        },
+      ),
     );
-
-    Get.to(() => kkiapay);
   }
 
   Future<void> _doSubscribeBackend({
@@ -308,7 +304,8 @@ class SocialPremiumController extends GetxController {
         if (context.mounted) _showPaymentFailedDialog(context, message);
       }
     } on DioException catch (e) {
-      final reason = e.response?.data?['message']?.toString() ??
+      final reason =
+          e.response?.data?['message']?.toString() ??
           e.message ??
           'Erreur réseau';
       if (context.mounted) _showPaymentFailedDialog(context, reason);
@@ -602,17 +599,7 @@ class SocialPremiumController extends GetxController {
   //  HELPERS & MOCKS
   // ══════════════════════════════════════════════════════════════════════════
 
-  void _handleDioError(DioException e) {
-    final msg = e.response != null
-        ? 'Erreur ${e.response?.statusCode}'
-        : e.message ?? 'Erreur réseau';
-    debugPrint('DioError: $msg');
-    ToastHelper.showToast(
-      msg,
-      backgroundColor: Colors.red,
-      textColor: Colors.white,
-    );
-  }
+  void _handleDioError(DioException e) => ApiErrorHelper.showError(e);
 
   List<Subscription> _mockPlans() {
     return [

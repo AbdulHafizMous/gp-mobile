@@ -7,6 +7,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:grand_public_v2/app/data/models/dating_models.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
+import 'package:grand_public_v2/app/utils/api_error_helper.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 
 class DatingController extends GetxController {
@@ -326,8 +327,5 @@ class DatingController extends GetxController {
     }
   }
 
-  void _handleDioError(DioException e) {
-    final msg = e.response != null ? 'Erreur ${e.response?.statusCode}' : e.message ?? 'Erreur réseau';
-    ToastHelper.showToast(msg, backgroundColor: Colors.red, textColor: Colors.white);
-  }
+  void _handleDioError(DioException e) => ApiErrorHelper.showError(e);
 }

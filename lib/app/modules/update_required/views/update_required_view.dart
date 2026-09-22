@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
@@ -21,7 +20,12 @@ class UpdateRequiredView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    // Mise à jour obligatoire : on empêche aussi la sortie de cet écran via
+    // le bouton "retour" matériel Android (sinon on contournerait le blocage
+    // du bouton "Continuer sans mettre à jour" ci-dessus).
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
       backgroundColor: GPTheme.primaryColor,
       body: SafeArea(
         child: Padding(
@@ -116,22 +120,26 @@ class UpdateRequiredView extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
-
-              // ── Bouton continuer (optionnel) ─────────────────────────
-              TextButton(
-                onPressed: () => Get.offAllNamed('/onboarding'),
-                child: const Text(
-                  'Continuer sans mettre à jour',
-                  style: TextStyle(
-                    color: Colors.white54,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
+              // ── Bouton "Continuer sans mettre à jour" ────────────────
+              // Mise à jour rendue OBLIGATOIRE à la demande : ce bouton
+              // d'échappement est désormais désactivé. L'utilisateur ne
+              // peut plus contourner l'écran tant que la version installée
+              // n'est pas à jour.
+              // const SizedBox(height: 14),
+              // TextButton(
+              //   onPressed: () => Get.offAllNamed('/onboarding'),
+              //   child: const Text(
+              //     'Continuer sans mettre à jour',
+              //     style: TextStyle(
+              //       color: Colors.white54,
+              //       fontSize: 13,
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),
+      ),
       ),
     );
   }

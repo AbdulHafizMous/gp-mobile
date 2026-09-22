@@ -6,6 +6,7 @@ import 'package:grand_public_v2/app/data/models/dating_models.dart';
 import 'package:grand_public_v2/app/modules/social/controllers/chat_controller.dart';
 import 'package:grand_public_v2/app/modules/social/controllers/dating_controller.dart';
 import 'package:grand_public_v2/app/modules/social/views/chat_room_view.dart';
+import 'package:grand_public_v2/app/services/crush_quota_service.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -91,7 +92,7 @@ class _DatingAppBar extends StatelessWidget implements PreferredSizeWidget {
   const _DatingAppBar({required this.ctrl, required this.tabCtrl});
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 10);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 16);
 
   @override
   Widget build(BuildContext context) {
@@ -202,10 +203,40 @@ class _DatingAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ],
             ),
+            const _CrushQuotaChip(),
           ],
         ),
       ),
     );
+  }
+}
+
+/// Petit indicateur de quota de messages Crush, invisible tant que la
+/// fonctionnalité est désactivée (comportement par défaut).
+class _CrushQuotaChip extends StatelessWidget {
+  const _CrushQuotaChip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final quota = CrushQuotaService.to.status.value;
+      if (!quota.enabled) return const SizedBox.shrink();
+
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        child: Row(
+          children: [
+            Icon(Icons.chat_bubble_outline_rounded, size: 12, color: Colors.white70),
+            const SizedBox(width: 5),
+            Text(
+              '${quota.remainingToday}/${quota.dailyLimit} messages restants aujourd\'hui'
+              '${quota.bonusCredits > 0 ? ' • +${quota.bonusCredits} bonus' : ''}',
+              style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }
 
@@ -607,6 +638,34 @@ class _ProfileCard extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 6),
+                        if (profile.sharedInterestsCount > 0)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: GPTheme.socialColor.withOpacity(0.85),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.favorite_rounded, color: Colors.white, size: 12),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    profile.sharedInterestsCount == 1
+                                        ? '1 centre d\'intérêt en commun'
+                                        : '${profile.sharedInterestsCount} centres d\'intérêt en commun',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         if (profile.city != null)
                           Row(
                             children: [

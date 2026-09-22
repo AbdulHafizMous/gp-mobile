@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/components/crush_quota_banner.dart';
 import 'package:video_player/video_player.dart';
 import 'package:grand_public_v2/app/data/models/chat_models.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
@@ -77,7 +78,7 @@ class _ChatRoomViewState extends State<ChatRoomView> {
 
   void _onSend() {
     if (_isPrivate) {
-      _ctrl.sendPrivateMessage(widget.privateConv!.id);
+      _ctrl.sendPrivateMessage(widget.privateConv!.id, context: context);
     } else {
       _ctrl.sendMessage(widget.channel!.id);
     }
@@ -91,6 +92,7 @@ class _ChatRoomViewState extends State<ChatRoomView> {
       appBar: _buildAppBar(context),
       body: Column(
         children: [
+          if (widget.privateConv?.isCrushMatch == true) const CrushQuotaBanner(),
           Expanded(
             child: _MessagesList(
               ctrl: _ctrl,
@@ -1294,6 +1296,16 @@ class _MessageContextMenu extends StatelessWidget {
                 ctrl.deleteMessage(message);
               },
             ),
+          if (!message.isMe && ctrl.myIsAdmin && !message.isRemovedByAdmin)
+            _CtxItem(
+              icon: Icons.gavel_rounded,
+              label: 'Supprimer (modération)',
+              color: Colors.red,
+              onTap: () {
+                Get.back();
+                ctrl.adminDeleteMessage(message);
+              },
+            ),
           if (message.type == MessageType.text)
             _CtxItem(
               icon: Icons.copy_rounded,
@@ -1396,6 +1408,34 @@ class _BubbleContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Message supprimé par un administrateur : on remplace tout contenu
+    // (texte, image, audio...) par le message de modération standard, on
+    // ne fait jamais disparaître le message de l'historique.
+    if (message.isRemovedByAdmin) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.gavel_rounded,
+              size: 15,
+              color: isMe ? Colors.white70 : Colors.grey.shade600,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              message.displayContent,
+              style: TextStyle(
+                color: isMe ? Colors.white70 : Colors.grey.shade600,
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     switch (message.type) {
       case MessageType.image:
         return _ImageBubble(message: message, isMe: isMe);

@@ -34,6 +34,7 @@ abstract class Routes {
   static const NOTIFS = _Paths.NOTIFS;
   static const SHOP = _Paths.SHOP;
   static const SHOP_MY_LISTINGS = _Paths.SHOP_MY_LISTINGS;
+  static const BLOWMUSIC_HOME = _Paths.BLOWMUSIC_HOME;
 }
 
 abstract class _Paths {
@@ -69,4 +70,5 @@ abstract class _Paths {
   static const NOTIFS = '/notifs';
   static const SHOP = '/shop';
   static const SHOP_MY_LISTINGS = '/shop/my-listings';
+  static const BLOWMUSIC_HOME = '/blowmusic/home';
 }

@@ -11,6 +11,7 @@ import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/data/models/user.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
+import 'package:grand_public_v2/app/utils/api_error_helper.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -491,17 +492,7 @@ class ProfileController extends GetxController {
     }
   }
 
-  void _handleDioError(DioException e) {
-    final msg = e.response != null
-        ? 'Erreur ${e.response?.statusCode}'
-        : e.message ?? 'Erreur réseau';
-    debugPrint('DioError: $msg');
-    ToastHelper.showToast(
-      msg,
-      backgroundColor: Colors.red,
-      textColor: Colors.white,
-    );
-  }
+  void _handleDioError(DioException e) => ApiErrorHelper.showError(e);
 
   @override
   void onClose() {

@@ -3,9 +3,9 @@
 // Conformité Apple Guideline 3.1.1 : tout paiement lié à un contenu/service
 // numérique (abonnement Premium, vidéo à l'unité) doit passer par un moyen
 // autre que In-App Purchase UNIQUEMENT s'il est proposé en dehors de l'app.
-// On ne propose donc plus KKiaPay dans l'app : on redirige l'utilisateur vers
-// le site web (grandpublic.bj) où il peut payer librement (Mobile Money,
-// carte bancaire, etc.).
+// On ne propose donc plus de paiement natif dans l'app sur iOS : on
+// redirige l'utilisateur vers le site web (grandpublic.bj) où il peut
+// payer librement (Mobile Money, carte bancaire — via Moneroo).
 //
 // Comme certains comptes sont créés via Apple/Google (pas de mot de passe,
 // parfois pas d'email joignable), on ne demande pas à l'utilisateur de se

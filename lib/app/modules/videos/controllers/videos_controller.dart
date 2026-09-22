@@ -1,7 +1,6 @@
 // lib/app/modules/videos/controllers/videos_controller.dart
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io' show Platform;
 import 'dart:math';
 import 'package:dio/dio.dart';
@@ -9,10 +8,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
-import 'package:kkiapay_flutter_sdk/kkiapay_flutter_sdk.dart';
+import 'package:moneroo_flutter_sdk/moneroo_flutter_sdk.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:uuid/uuid.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/data/models/space_model.dart';
 import 'package:grand_public_v2/app/data/models/video_comment.dart';
@@ -46,8 +43,6 @@ class VideosController extends GetxController {
 
   // ── PPV ────────────────────────────────────────────────────────────────────
   final isPurchasing = false.obs;
-  final _uuid = const Uuid();
-  final _storage = GetStorage();
 
   @override
   void onClose() {
@@ -274,7 +269,7 @@ class VideosController extends GetxController {
   // ══════════════════════════════════════════════════════════════════════════
   //  POINT D'ENTRÉE UNIQUE — appelé depuis les vues (vid_detail.dart)
   //  iOS  -> RevenueCat / StoreKit (obligatoire, Guideline 3.1.1)
-  //  Autres plateformes -> Kkiapay natif OU redirection web, selon
+  //  Autres plateformes -> Moneroo natif OU redirection web, selon
   //  `useExternalPaywall` (lib/app/constants/index.dart)
   // ══════════════════════════════════════════════════════════════════════════
   Future<void> handlePayPerView({
@@ -296,7 +291,7 @@ class VideosController extends GetxController {
         onPurchaseSuccess: onPurchaseSuccess,
       );
     }
-    return _purchaseVideoWithKkiapay(
+    return _purchaseVideoWithMoneroo(
       context: context,
       video: video,
       onSuccess: onPurchaseSuccess,
@@ -360,58 +355,55 @@ class VideosController extends GetxController {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  PAY-PER-VIEW — Kkiapay natif (Android / non-iOS quand useExternalPaywall=false)
+  //  PAY-PER-VIEW — Moneroo natif (Android / non-iOS quand useExternalPaywall=false)
   // ══════════════════════════════════════════════════════════════════════════
-  Future<void> _purchaseVideoWithKkiapay({
+  Future<void> _purchaseVideoWithMoneroo({
     required BuildContext context,
     required SpaceVideo video,
     required VoidCallback onSuccess,
   }) async {
     if (video.ppvPrice == null) return;
 
-    final kkiapay = KKiaPay(
-      callback: (dynamic response, BuildContext ctx) async {
-        final status = response['status']?.toString() ?? '';
-        try {
-          switch (status) {
-            case 'PAYMENT_CANCELLED':
-              try { Get.back(); } catch (_) {}
-              break;
-            case 'PAYMENT_SUCCESS':
-              try { Get.back(); } catch (_) {}
-              final transactionId =
-                  response['transactionId']?.toString() ?? '';
+    Get.to(
+      () => Moneroo(
+        amount: video.ppvPrice!.toInt(),
+        apiKey: MONEROO_API_KEY,
+        currency: MonerooCurrency.XOF,
+        customer: MonerooCustomer(
+          email: activeUser.value.email,
+          firstName: activeUser.value.firstName,
+          lastName: activeUser.value.lastName,
+        ),
+        description: 'Accès vidéo : ${video.title}',
+        onPaymentCompleted: (infos, ctx) async {
+          try {
+            if (infos.status == MonerooStatus.success) {
+              try { Navigator.of(ctx).pop(); } catch (_) {}
               await _doPurchaseVideoBackend(
                 context: context,
                 video: video,
-                transactionId: transactionId,
-                metadata: {'kkiapay_response': response},
+                transactionId: infos.id.toString(),
+                metadata: {'gateway': 'moneroo'},
                 onSuccess: onSuccess,
               );
-              break;
-            default:
-              debugPrint('KKiaPay PPV EVENT: $status');
+            } else if (infos.status == MonerooStatus.cancelled) {
+              try { Navigator.of(ctx).pop(); } catch (_) {}
+            } else {
+              debugPrint('Moneroo PPV EVENT: ${infos.status}');
+            }
+          } catch (e) {
+            debugPrint('Moneroo PPV callback error: $e');
           }
-        } catch (e) {
-          debugPrint('KKiaPay PPV callback error: $e');
-        }
-      },
-      amount: video.ppvPrice!.toInt(),
-      apikey: FEEX_API_KEY,
-      sandbox: true,
-      data: jsonEncode({
-        'trans_key': _uuid.v4(),
-        'video_id': video.id,
-        'type': 'ppv',
-      }),
-      phone: _storage.read('phone') ?? '',
-      name: _storage.read('username') ?? '',
-      reason: 'Accès vidéo : ${video.title}',
-      email: _storage.read('email') ?? '',
-      countries: const ['BJ'],
+        },
+        onError: (error, context) {
+          debugPrint('Moneroo PPV ERROR: $error');
+          _showPurchaseFailedDialog(
+            context,
+            'Le paiement Moneroo a échoué. Réessayez.',
+          );
+        },
+      ),
     );
-
-    Get.to(() => kkiapay);
   }
 
   Future<void> _doPurchaseVideoBackend({

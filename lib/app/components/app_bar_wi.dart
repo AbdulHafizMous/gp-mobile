@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
+import 'package:grand_public_v2/app/services/brand_takeover_service.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 class AppBarWi extends StatefulWidget {
@@ -16,28 +17,33 @@ class _AppBarWiState extends State<AppBarWi> {
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
-      title: InkWell(
-        onTap: () => Get.offAllNamed('/home'),
-        child: Image.asset(
-          LOGO,
-          width: 50,
-          height: 50,
+    return Obx(() {
+      // FullAppAd : si une prise de contrôle de marque est active, l'AppBar
+      // (affichée sur la quasi-totalité des écrans) adopte le logo et la
+      // couleur du sponsor à la place du logo/couleur Grandpublic.
+      final takeover = BrandTakeoverService.to.current.value;
+
+      return AppBar(
+        title: InkWell(
+          onTap: () => Get.offAllNamed('/home'),
+          child: takeover?.logoUrl != null
+              ? Image.network(takeover!.logoUrl!, width: 50, height: 50)
+              : Image.asset(LOGO, width: 50, height: 50),
         ),
-      ),
-      centerTitle: true,
-      backgroundColor: GPTheme.primaryColor,
-      toolbarHeight: 100,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.search, color: Colors.white),
-          onPressed: () => Get.toNamed('/search'),
-        ),
-        IconButton(
-          onPressed: () => Get.toNamed('/profile'),
-          icon: const Icon(Icons.person, color: Colors.white),
-        ),
-      ],
-    );
+        centerTitle: true,
+        backgroundColor: takeover?.primaryColor ?? GPTheme.primaryColor,
+        toolbarHeight: 100,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search, color: Colors.white),
+            onPressed: () => Get.toNamed('/search'),
+          ),
+          IconButton(
+            onPressed: () => Get.toNamed('/profile'),
+            icon: const Icon(Icons.person, color: Colors.white),
+          ),
+        ],
+      );
+    });
   }
 }

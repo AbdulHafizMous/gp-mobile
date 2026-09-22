@@ -5,6 +5,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:grand_public_v2/app/data/mocks/interest_mock.dart';
 import 'package:grand_public_v2/app/data/models/profile_interest.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
+import 'package:grand_public_v2/app/services/app_mode_service.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 
@@ -102,7 +103,7 @@ class InterestController extends GetxController {
         await Future.delayed(const Duration(milliseconds: 500));
         // debugPrint("Git : ${selected.map((e) => e.id).toList()}");
         GetStorage().write('isLogged', true);
-        Get.offAllNamed('/home'); // #Beno10
+        Get.offAllNamed(AppModeService.homeRoute); // #Beno10
         return;
       }
 
@@ -113,7 +114,7 @@ class InterestController extends GetxController {
         data: {"interest_center_ids": selected.map((e) => e.id).toList()},
       );
       GetStorage().write('isLogged', true);
-      Get.offAllNamed('/home'); // #Beno10
+      Get.offAllNamed(AppModeService.homeRoute); // #Beno10
     } catch (e) {
       Get.snackbar(
         'Erreur',
