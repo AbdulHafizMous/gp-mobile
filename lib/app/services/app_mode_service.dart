@@ -1,40 +1,60 @@
 // lib/app/services/app_mode_service.dart
 //
-// Centralise tout ce qui concerne le choix "Grand Public" vs "Blow Music".
-// Tant que `isBlowMusicActivated` (constants/index.dart) est à false, ce
-// service se comporte toujours comme s'il n'y avait que Grand Public :
-// aucun changement visible pour les utilisateurs actuels.
+// Centralise le choix "Grand Public" / "Blow Music" / "GameZ". Tant que
+// isBlowMusicActivated ET isGameZActivated sont à false, ce service se
+// comporte comme s'il n'y avait que Grand Public : rien ne change pour les
+// utilisateurs actuels.
 
 import 'package:get_storage/get_storage.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 
-enum AppMode { grandPublic, blowMusic }
+enum AppMode { grandPublic, blowMusic, gameZ }
 
 class AppModeService {
   AppModeService._();
 
-  static const _grandPublicValue = 'grandpublic';
-  static const _blowMusicValue = 'blowmusic';
+  static const _values = {
+    AppMode.grandPublic: 'grandpublic',
+    AppMode.blowMusic: 'blowmusic',
+    AppMode.gameZ: 'gamez',
+  };
 
-  /// Mode courant. Si Blow Music est désactivé globalement, on force
-  /// toujours Grand Public quel que soit ce qui a été stocké précédemment.
+  /// Un choix de module est-il nécessaire (plus d'un module actif) ?
+  static bool get hasMultipleModules => isBlowMusicActivated || isGameZActivated;
+
   static AppMode get current {
-    if (!isBlowMusicActivated) return AppMode.grandPublic;
     final raw = GetStorage().read<String>(kAppModeStorageKey);
-    return raw == _blowMusicValue ? AppMode.blowMusic : AppMode.grandPublic;
+    if (raw == _values[AppMode.blowMusic] && isBlowMusicActivated) return AppMode.blowMusic;
+    if (raw == _values[AppMode.gameZ] && isGameZActivated) return AppMode.gameZ;
+    return AppMode.grandPublic;
   }
 
   static bool get isBlowMusic => current == AppMode.blowMusic;
+  static bool get isGameZ => current == AppMode.gameZ;
+
+  /// L'utilisateur a-t-il déjà choisi un module au moins une fois ?
+  static bool get hasChosenMode => GetStorage().read<String>(kAppModeStorageKey) != null;
 
   static Future<void> setMode(AppMode mode) async {
-    await GetStorage().write(
-      kAppModeStorageKey,
-      mode == AppMode.blowMusic ? _blowMusicValue : _grandPublicValue,
-    );
+    await GetStorage().write(kAppModeStorageKey, _values[mode]);
   }
 
-  /// Route du "shell" principal correspondant au mode courant, utilisée
-  /// après le splash / après connexion pour savoir où renvoyer l'utilisateur.
-  static String get homeRoute =>
-      isBlowMusic ? '/blowmusic/home' : '/home';
+  /// Route du "shell" principal du module courant.
+  static String get homeRoute {
+    switch (current) {
+      case AppMode.blowMusic:
+        return '/blowmusic/home';
+      case AppMode.gameZ:
+        return '/gamez/home';
+      case AppMode.grandPublic:
+        return '/home';
+    }
+  }
+
+  /// Où renvoyer l'utilisateur juste après connexion/inscription : l'écran
+  /// de choix de module s'il y a plus d'un module actif ET qu'aucun choix
+  /// n'a encore été fait, sinon directement le module déjà choisi (ou
+  /// Grand Public par défaut — comportement actuel conservé à 100%).
+  static String get postAuthRoute =>
+      (hasMultipleModules && !hasChosenMode) ? '/module-choice' : homeRoute;
 }

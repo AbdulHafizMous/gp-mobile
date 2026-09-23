@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:moneroo_flutter_sdk/moneroo_flutter_sdk.dart';
+import 'package:grand_public_v2/app/components/moneroo_webview_payment_page.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/data/models/subscription.dart';
@@ -173,22 +173,18 @@ class SocialPremiumController extends GetxController {
           'Paid Applications Agreement non actif, produit pas en review/approuvé, '
           'Product ID différent entre ASC/RevenueCat/admin, clé API RevenueCat invalide.',
         );
-        _showPaymentFailedDialog(
-          context,
-          'Forfait introuvable sur l\'App Store.',
-        );
+        _showPaymentFailedDialog(context, 'Forfait introuvable sur l\'App Store.');
         return;
       }
 
-      IapDebugLogger.log(
-        'Appel Purchases.purchase() — ouverture du popup StoreKit...',
-      );
+      IapDebugLogger.log('Appel Purchases.purchase() — ouverture du popup StoreKit...');
       final result = await Purchases.purchase(
         PurchaseParams.storeProduct(products.first),
       );
       IapDebugLogger.log('✅ Achat StoreKit réussi côté client.');
 
-      final transactionId = result.storeTransaction.transactionIdentifier;
+      final transactionId =
+          result.storeTransaction.transactionIdentifier;
       IapDebugLogger.log('transactionId reçu : $transactionId');
 
       await _doSubscribeBackend(
@@ -202,9 +198,7 @@ class SocialPremiumController extends GetxController {
       );
     } on PlatformException catch (e) {
       final code = PurchasesErrorHelper.getErrorCode(e);
-      IapDebugLogger.log(
-        '❌ PlatformException : code=$code message=${e.message}',
-      );
+      IapDebugLogger.log('❌ PlatformException : code=$code message=${e.message}');
       if (code != PurchasesErrorCode.purchaseCancelledError) {
         _showPaymentFailedDialog(
           context,
@@ -236,45 +230,32 @@ class SocialPremiumController extends GetxController {
 
     selectedPlan.value = plan;
 
-    Get.to(
-      () => Moneroo(
-        amount: plan.price.toInt(),
-        apiKey: MONEROO_API_KEY,
-        currency: MonerooCurrency.XOF,
-        customer: MonerooCustomer(
-          email: activeUser.value.email,
-          firstName: activeUser.value.firstName,
-          lastName: activeUser.value.lastName,
-        ),
-        description: plan.name,
-        onPaymentCompleted: (infos, ctx) async {
-          try {
-            if (infos.status == MonerooStatus.success) {
-              try {
-                Navigator.of(ctx).pop();
-              } catch (_) {}
-              await _doSubscribeBackend(
-                context: context,
-                plan: plan,
-                transactionId: infos.id.toString(),
-                metadata: {'gateway': 'moneroo'},
-              );
-            } else if (infos.status == MonerooStatus.cancelled) {
-              try {
-                Navigator.of(ctx).pop();
-              } catch (_) {}
-            } else {
-              debugPrint('Moneroo EVENT: ${infos.status}');
-            }
-          } catch (e) {
-            debugPrint('Moneroo callback error: $e');
-          }
-        },
-        onError: (error, context) {
-          debugPrint('Moneroo SUBSCRIPTION ERROR: ${error.toJson()}');
-        },
-      ),
-    );
+    // Le widget natif Moneroo() plante à la fin du paiement (bug connu du
+    // SDK) : on passe par une simple WebView pilotée par notre backend.
+    try {
+      final res = await RequestService().post('/subscriptions/${plan.id}/pay');
+      final data = res.data?['data'];
+      final checkoutUrl = data?['checkout_url']?.toString();
+      final returnUrlPrefix = data?['return_url_prefix']?.toString();
+      if (checkoutUrl == null || returnUrlPrefix == null || !context.mounted) return;
+
+      final paymentId = await openMonerooWebviewPayment(
+        context,
+        checkoutUrl: checkoutUrl,
+        returnUrlPrefix: returnUrlPrefix,
+      );
+
+      if (paymentId != null && context.mounted) {
+        await _doSubscribeBackend(
+          context: context,
+          plan: plan,
+          transactionId: paymentId,
+          metadata: {'gateway': 'moneroo'},
+        );
+      }
+    } on DioException catch (e) {
+      ApiErrorHelper.showError(e);
+    }
   }
 
   Future<void> _doSubscribeBackend({
@@ -304,8 +285,7 @@ class SocialPremiumController extends GetxController {
         if (context.mounted) _showPaymentFailedDialog(context, message);
       }
     } on DioException catch (e) {
-      final reason =
-          e.response?.data?['message']?.toString() ??
+      final reason = e.response?.data?['message']?.toString() ??
           e.message ??
           'Erreur réseau';
       if (context.mounted) _showPaymentFailedDialog(context, reason);

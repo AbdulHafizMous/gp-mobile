@@ -15,6 +15,9 @@ import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/app_mode_service.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
+import 'package:grand_public_v2/app/services/brand_takeover_service.dart';
+import 'package:grand_public_v2/app/services/crush_quota_service.dart';
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -544,7 +547,13 @@ class LoginController extends GetxController {
       textColor: Colors.white,
     );
 
-    Get.offAllNamed(AppModeService.homeRoute); // #Beno10
+    // Ces services ont été initialisés AVANT la connexion (donc sans
+    // session valide) : on les rafraîchit maintenant pour qu'ils
+    // reflètent bien l'utilisateur connecté (FullAppAd, quota Crush).
+    unawaited(BrandTakeoverService.to.refresh());
+    unawaited(CrushQuotaService.to.refreshQuota());
+
+    Get.offAllNamed(AppModeService.postAuthRoute); // #Beno10
   }
 
   // ══════════════════════════════════════════════════════════════════════════

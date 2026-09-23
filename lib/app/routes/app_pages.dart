@@ -17,6 +17,10 @@ import 'package:grand_public_v2/app/modules/space/bindings/space_binding.dart';
 import 'package:grand_public_v2/app/modules/space/views/space_view.dart';
 import 'package:grand_public_v2/app/modules/blowmusic/bindings/blowmusic_binding.dart';
 import 'package:grand_public_v2/app/modules/blowmusic/views/blowmusic_home_view.dart';
+import 'package:grand_public_v2/app/modules/gamez/bindings/gamez_binding.dart';
+import 'package:grand_public_v2/app/modules/gamez/views/gamez_home_view.dart';
+import 'package:grand_public_v2/app/modules/module_choice/bindings/module_choice_binding.dart';
+import 'package:grand_public_v2/app/modules/module_choice/views/module_choice_view.dart';
 
 import '../modules/confirm/bindings/confirm_binding.dart';
 import '../modules/confirm/views/confirm_view.dart';
@@ -204,6 +208,16 @@ class AppPages {
       name: _Paths.BLOWMUSIC_HOME,
       page: () => const BlowMusicHomeView(),
       binding: BlowMusicBinding(),
+    ),
+    GetPage(
+      name: _Paths.GAMEZ_HOME,
+      page: () => const GameZHomeView(),
+      binding: GameZBinding(),
+    ),
+    GetPage(
+      name: _Paths.MODULE_CHOICE,
+      page: () => const ModuleChoiceView(),
+      binding: ModuleChoiceBinding(),
     ),
   ];
 }

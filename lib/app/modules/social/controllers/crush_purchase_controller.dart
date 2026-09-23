@@ -19,12 +19,11 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/data/models/message_credit_pack_model.dart';
-import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/crush_quota_service.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/utils/api_error_helper.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
-import 'package:moneroo_flutter_sdk/moneroo_flutter_sdk.dart';
+import 'package:grand_public_v2/app/components/moneroo_webview_payment_page.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 class CrushPurchaseController extends GetxController {
@@ -100,50 +99,34 @@ class CrushPurchaseController extends GetxController {
   }
 
   // ══════════════════════════════════════════════════════════════════════
-  //  Moneroo natif (Android / autres plateformes)
+  //  Moneroo (Android / autres plateformes) — via WebView + backend init
+  //  (le widget natif Moneroo() du SDK plante à la fin du paiement).
   // ══════════════════════════════════════════════════════════════════════
   Future<void> _purchaseWithMoneroo({
     required BuildContext context,
     required MessageCreditPack pack,
   }) async {
-    Get.to(
-      () => Moneroo(
-        amount: pack.price.toInt(),
-        apiKey: MONEROO_API_KEY,
-        currency: MonerooCurrency.XOF,
-        customer: MonerooCustomer(
-          email: activeUser.value.email,
-          firstName: activeUser.value.firstName,
-          lastName: activeUser.value.lastName,
-        ),
-        description: pack.name,
-        onPaymentCompleted: (infos, ctx) async {
-          try {
-            if (infos.status == MonerooStatus.success) {
-              try {
-                Navigator.of(ctx).pop();
-              } catch (_) {}
-              await _confirmPurchaseBackend(
-                pack: pack,
-                transactionId: infos.id.toString(),
-                gateway: 'moneroo',
-              );
-            } else if (infos.status == MonerooStatus.cancelled) {
-              try {
-                Navigator.of(ctx).pop();
-              } catch (_) {}
-            } else {
-              debugPrint('Moneroo crush pack EVENT: ${infos.status}');
-            }
-          } catch (e) {
-            debugPrint('Moneroo crush pack callback error: $e');
-          }
-        },
-        onError: (error, context) {
-          debugPrint('Moneroo CRUSH PACK ERROR: $error');
-        },
-      ),
-    );
+    try {
+      final res = await RequestService().post('/crush/packs/${pack.id}/pay');
+      final data = res.data?['data'];
+      final checkoutUrl = data?['checkout_url']?.toString();
+      if (checkoutUrl == null || !context.mounted) return;
+      // return_url côté Crush n'est pas préfixé publiquement (pas de route
+      // web dédiée) : on surveille simplement le domaine de l'API.
+      final returnUrlPrefix = Uri.parse(API_URL).origin + '/api/crush/packs/${pack.id}/return';
+
+      final paymentId = await openMonerooWebviewPayment(
+        context,
+        checkoutUrl: checkoutUrl,
+        returnUrlPrefix: returnUrlPrefix,
+      );
+
+      if (paymentId != null) {
+        await _confirmPurchaseBackend(pack: pack, transactionId: paymentId, gateway: 'moneroo');
+      }
+    } on DioException catch (e) {
+      ApiErrorHelper.showError(e);
+    }
   }
 
   // ══════════════════════════════════════════════════════════════════════

@@ -30,7 +30,7 @@ const FEEX_SHOP_ID = "68499e0e4e10d69c0dbfd22d";
 // (voir MONEROO_SECRET_KEY / PaymentService côté backend) avant d'activer
 // quoi que ce soit — cette clé ne permet donc pas, à elle seule, de créditer
 // un compte. À remplacer par la vraie clé Moneroo (tableau de bord Moneroo).
-const MONEROO_API_KEY = "pvk_sandbox_h25fy9|01M31MPHG0C53J8FRH808KTP6S";
+const MONEROO_API_KEY = "90366b50372111f189b307c79e518cc5";
 
 // ══════════════════════════════════════════════════════════════════════════
 // PAYWALL : paiement natif in-app vs redirection web
@@ -88,7 +88,6 @@ const bool isDebuggingIap = true;
 //          mène directement au login Grand Public (aucun écran de choix).
 // ══════════════════════════════════════════════════════════════════════════
 const bool isBlowMusicActivated = true;
-
 // Logos / identité visuelle dédiés à Blow Music (à remplacer par les vrais
 // assets une fois livrés par le design : assets/images/blowmusic_*.png).
 const String LOGO_BLOWMUSIC = 'assets/images/logo_new_pixel.png';
@@ -97,3 +96,8 @@ const String LOGO_BLOWMUSIC_NAV = 'assets/images/logo_pixel.png';
 // Clé utilisée dans GetStorage pour retenir quelle application l'utilisateur
 // a choisie ('grandpublic' | 'blowmusic'). Voir AppModeService.
 const String kAppModeStorageKey = 'app_mode';
+
+// GameZ — jeux HTML5 embarqués via WebView, à côté de BlowMusic.
+const bool isGameZActivated = true;
+const String LOGO_GAMEZ = 'assets/images/logo_gp_club.png';
+const String LOGO_GAMEZ_NAV = 'assets/images/logo_gp_club.png';

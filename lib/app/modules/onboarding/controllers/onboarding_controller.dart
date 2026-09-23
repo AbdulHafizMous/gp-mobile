@@ -11,7 +11,7 @@ class OnboardingController extends GetxController {
     final token = GetStorage().read('token');
     // Only redirect to home when isLogged is boolean true and token exists
     if (isLogged == true && token != null) {
-      Get.offAllNamed(AppModeService.homeRoute); // #Beno10
+      Get.offAllNamed(AppModeService.postAuthRoute); // #Beno10
     }
   }
 

@@ -6,6 +6,8 @@ import 'package:grand_public_v2/app/data/models/user.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/main_page/controllers/main_page_controller.dart';
 import 'package:grand_public_v2/app/services/app_mode_service.dart';
+import 'package:grand_public_v2/app/services/brand_takeover_service.dart';
+import 'package:grand_public_v2/app/services/crush_quota_service.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 
 class SplashController extends GetxController {
@@ -36,7 +38,9 @@ class SplashController extends GetxController {
       if (user.id == 0) {
         Get.offAllNamed('/onboarding');
       } else {
-        Get.offAllNamed(AppModeService.homeRoute); // #Beno10
+        BrandTakeoverService.to.refresh();
+        CrushQuotaService.to.refreshQuota();
+        Get.offAllNamed(AppModeService.postAuthRoute); // #Beno10
       }
     } else {
       Future.delayed(const Duration(seconds: 2), () {

@@ -195,4 +195,16 @@ var fixedDrawerItems = [
     icon: Icons.info_outline_rounded,
     route: "/social-about",
   ),
+  if (isBlowMusicActivated)
+    DrawerItem(
+      title: "Blow Music",
+      icon: Icons.graphic_eq_rounded,
+      route: "/blowmusic/home",
+    ),
+  if (isGameZActivated)
+    DrawerItem(
+      title: "GameZ",
+      icon: Icons.sports_esports_rounded,
+      route: "/gamez/home",
+    ),
 ];

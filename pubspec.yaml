@@ -24,7 +24,11 @@ dependencies:
   uuid: ^4.5.2
   # Passé de KKiaPay à Moneroo (paiement Mobile Money / carte) — voir
   # social_premium_controller.dart et videos_controller.dart.
-  moneroo_flutter_sdk: ^0.3.4
+  # webview_flutter (ci-dessous) remplace moneroo_flutter_sdk, retiré : son
+  # widget de paiement natif plantait à la fin du paiement (bug de parsing
+  # JSON du SDK). Le paiement passe maintenant par une simple WebView
+  # pilotée par notre backend (voir MonerooWebviewPaymentPage).
+  webview_flutter: ^4.10.0
   # Apple Guideline 3.1.1 : IAP obligatoire pour le contenu payant consommé
   # dans l'app sur iOS. RevenueCat encapsule StoreKit proprement.
   purchases_flutter: ^9.5.0

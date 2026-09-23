@@ -103,7 +103,7 @@ class InterestController extends GetxController {
         await Future.delayed(const Duration(milliseconds: 500));
         // debugPrint("Git : ${selected.map((e) => e.id).toList()}");
         GetStorage().write('isLogged', true);
-        Get.offAllNamed(AppModeService.homeRoute); // #Beno10
+        Get.offAllNamed(AppModeService.postAuthRoute); // #Beno10
         return;
       }
 
@@ -114,7 +114,7 @@ class InterestController extends GetxController {
         data: {"interest_center_ids": selected.map((e) => e.id).toList()},
       );
       GetStorage().write('isLogged', true);
-      Get.offAllNamed(AppModeService.homeRoute); // #Beno10
+      Get.offAllNamed(AppModeService.postAuthRoute); // #Beno10
     } catch (e) {
       Get.snackbar(
         'Erreur',

@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:moneroo_flutter_sdk/moneroo_flutter_sdk.dart';
+import 'package:grand_public_v2/app/components/moneroo_webview_payment_page.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/data/models/space_model.dart';
@@ -364,46 +364,34 @@ class VideosController extends GetxController {
   }) async {
     if (video.ppvPrice == null) return;
 
-    Get.to(
-      () => Moneroo(
-        amount: video.ppvPrice!.toInt(),
-        apiKey: MONEROO_API_KEY,
-        currency: MonerooCurrency.XOF,
-        customer: MonerooCustomer(
-          email: activeUser.value.email,
-          firstName: activeUser.value.firstName,
-          lastName: activeUser.value.lastName,
-        ),
-        description: 'Accès vidéo : ${video.title}',
-        onPaymentCompleted: (infos, ctx) async {
-          try {
-            if (infos.status == MonerooStatus.success) {
-              try { Navigator.of(ctx).pop(); } catch (_) {}
-              await _doPurchaseVideoBackend(
-                context: context,
-                video: video,
-                transactionId: infos.id.toString(),
-                metadata: {'gateway': 'moneroo'},
-                onSuccess: onSuccess,
-              );
-            } else if (infos.status == MonerooStatus.cancelled) {
-              try { Navigator.of(ctx).pop(); } catch (_) {}
-            } else {
-              debugPrint('Moneroo PPV EVENT: ${infos.status}');
-            }
-          } catch (e) {
-            debugPrint('Moneroo PPV callback error: $e');
-          }
-        },
-        onError: (error, context) {
-          debugPrint('Moneroo PPV ERROR: $error');
-          _showPurchaseFailedDialog(
-            context,
-            'Le paiement Moneroo a échoué. Réessayez.',
-          );
-        },
-      ),
-    );
+    // Le widget natif Moneroo() plante à la fin du paiement (bug connu du
+    // SDK) : on passe par une simple WebView pilotée par notre backend.
+    try {
+      final res = await RequestService().post('/videos/${video.id}/pay');
+      final data = res.data?['data'];
+      final checkoutUrl = data?['checkout_url']?.toString();
+      final returnUrlPrefix = data?['return_url_prefix']?.toString();
+      if (checkoutUrl == null || returnUrlPrefix == null || !context.mounted) return;
+
+      final paymentId = await openMonerooWebviewPayment(
+        context,
+        checkoutUrl: checkoutUrl,
+        returnUrlPrefix: returnUrlPrefix,
+      );
+
+      if (paymentId != null && context.mounted) {
+        await _doPurchaseVideoBackend(
+          context: context,
+          video: video,
+          transactionId: paymentId,
+          metadata: {'gateway': 'moneroo'},
+          onSuccess: onSuccess,
+        );
+      }
+    } on DioException catch (e) {
+      _showPurchaseFailedDialog(context, 'Le paiement Moneroo a échoué. Réessayez.');
+      debugPrint('Moneroo PPV init error: $e');
+    }
   }
 
   Future<void> _doPurchaseVideoBackend({

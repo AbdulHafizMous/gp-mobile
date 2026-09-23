@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:grand_public_v2/app/components/fullscreen_ad_page.dart';
+import 'package:grand_public_v2/app/services/app_mode_service.dart';
 import 'package:grand_public_v2/app/data/models/section_model.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
@@ -204,6 +206,7 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     _stack.add(_sectionDest(shouldSkipMedia ? 1 : 0));
+    WidgetsBinding.instance.addPostFrameCallback((_) => maybeShowFullscreenAd());
 
     final pending = _box.read<int>('_pendingSection');
     if (pending != null && pending >= 0 && pending < sections.length) {
@@ -243,6 +246,15 @@ class HomeController extends GetxController {
   // ─────────────────────────────────────────────────────────────────────────
   void navigateTo(String route, {Map<String, dynamic> params = const {}}) {
     _closeDrawer();
+
+    // Changement de module (Grand Public / Blow Music / GameZ) depuis le
+    // drawer : on fixe le mode ET on redémarre proprement sur son shell.
+    if (route == '/blowmusic/home' || route == '/gamez/home') {
+      final mode = route == '/blowmusic/home' ? AppMode.blowMusic : AppMode.gameZ;
+      AppModeService.setMode(mode);
+      Get.offAllNamed(route);
+      return;
+    }
 
     // Soumission App Store sans médias : on bloque tout accès direct
     // (deep link, notif...) aux Espaces et au Premium tant que c'est masqué.
