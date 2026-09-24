@@ -1,9 +1,3 @@
-// lib/app/modules/gamez/views/gamez_game_view.dart
-//
-// Lecteur de jeu HTML5 en WebView (PRD §7-9, §27) : le SDK JS embarqué dans
-// la page du jeu appelle `GameZBridge.postMessage(jsonEncode({...}))` pour
-// remonter les scores ; on écoute via un JavaScriptChannel nommé "GameZBridge".
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -20,21 +14,21 @@ class GameZGameView extends StatefulWidget {
 }
 
 class _GameZGameViewState extends State<GameZGameView> {
+  // On retire le mot-clé 'late' et on utilise un contrôleur nullable ou initialisé direct
   late final WebViewController _webCtrl;
   String? _sessionToken;
   bool _loading = true;
+  bool _isControllerInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _init();
+    _setupController();
+    _initSession();
   }
 
-  Future<void> _init() async {
+  void _setupController() {
     final ctrl = Get.find<GameZController>();
-    final session = await ctrl.startSession(widget.game);
-    _sessionToken = session?['session_token'];
-    final url = session?['entry_url'] ?? widget.game.entryUrl;
 
     _webCtrl = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -45,15 +39,46 @@ class _GameZGameViewState extends State<GameZGameView> {
             final payload = jsonDecode(message.message) as Map<String, dynamic>;
             if (payload['type'] == 'score' && _sessionToken != null) {
               final score = payload['score'];
-              if (score is int) ctrl.submitScore(_sessionToken!, score);
+              if (score is int) {
+                ctrl.submitScore(_sessionToken!, score).then((gained) {
+                  if (gained > 0 && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('🪙 +$gained GCoin gagnés !'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                });
+              }
             }
           } catch (_) {}
         },
       )
-      ..setNavigationDelegate(NavigationDelegate(onPageFinished: (_) => setState(() => _loading = false)))
-      ..loadRequest(Uri.parse(url));
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (_) {
+            if (mounted) setState(() => _loading = false);
+          },
+        ),
+      );
+  }
 
-    setState(() {});
+  Future<void> _initSession() async {
+    final ctrl = Get.find<GameZController>();
+    final session = await ctrl.startSession(widget.game);
+    _sessionToken = session?['session_token'];
+    final url = session?['entry_url'] ?? widget.game.entryUrl;
+
+    if (url.isNotEmpty) {
+      await _webCtrl.loadRequest(Uri.parse(url));
+    }
+
+    if (mounted) {
+      setState(() {
+        _isControllerInitialized = true;
+      });
+    }
   }
 
   @override
@@ -67,8 +92,11 @@ class _GameZGameViewState extends State<GameZGameView> {
       ),
       body: Stack(
         children: [
-          if (_sessionToken != null || widget.game.entryUrl.isNotEmpty) WebViewWidget(controller: _webCtrl),
-          if (_loading) const Center(child: CircularProgressIndicator()),
+          // On n'affiche la WebView que si le contrôleur a fini de charger l'URL de session
+          if (_isControllerInitialized)
+            WebViewWidget(controller: _webCtrl),
+          if (_loading)
+            const Center(child: CircularProgressIndicator()),
         ],
       ),
     );

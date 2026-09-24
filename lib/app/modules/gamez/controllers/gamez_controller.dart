@@ -1,9 +1,10 @@
 // lib/app/modules/gamez/controllers/gamez_controller.dart
-import 'package:get/get.dart';
 import 'package:flutter/widgets.dart';
+import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/fullscreen_ad_page.dart';
 import 'package:grand_public_v2/app/services/app_mode_service.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
+import 'package:grand_public_v2/app/services/recent_history_service.dart';
 
 class GzGame {
   final int id;
@@ -17,16 +18,17 @@ class GzGame {
         name = j['name']?.toString() ?? '',
         slug = j['slug']?.toString() ?? '',
         coverUrl = j['cover_url']?.toString(),
-        entryUrl = j['entry_url']?.toString() ?? '',
+        entryUrl = (j['play_url'] ?? j['entry_url'])?.toString() ?? '',
         category = j['category']?.toString();
 }
 
 class GameZController extends GetxController {
   final currentTab = 0.obs;
   final isLoading = true.obs;
+  final hasError = false.obs;
   final featured = <GzGame>[].obs;
   final catalog = <GzGame>[].obs;
-  final totalPoints = 0.obs;
+  final gcoinBalance = 0.obs;
   final leaderboard = <Map<String, dynamic>>[].obs;
 
   @override
@@ -44,12 +46,14 @@ class GameZController extends GetxController {
 
   Future<void> loadHome() async {
     isLoading.value = true;
+    hasError.value = false;
     try {
       final res = await RequestService().get('/gamez/home');
       final data = res.data?['data'];
       featured.assignAll((data?['featured'] as List<dynamic>? ?? []).map((j) => GzGame.fromJson(j)));
       catalog.assignAll((data?['catalog'] as List<dynamic>? ?? []).map((j) => GzGame.fromJson(j)));
     } catch (_) {
+      hasError.value = true;
     } finally {
       isLoading.value = false;
     }
@@ -58,7 +62,7 @@ class GameZController extends GetxController {
   Future<void> loadMe() async {
     try {
       final res = await RequestService().get('/gamez/me');
-      totalPoints.value = res.data?['data']?['total_points'] ?? 0;
+      gcoinBalance.value = res.data?['data']?['gcoin_balance'] ?? 0;
     } catch (_) {}
   }
 
@@ -73,6 +77,7 @@ class GameZController extends GetxController {
     try {
       final res = await RequestService().post('/gamez/games/${game.id}/session');
       final data = res.data?['data'];
+      RecentHistoryService.addRecentGame(id: game.id, name: game.name, cover: game.coverUrl);
       return {
         'session_token': data['session_token']?.toString() ?? '',
         'entry_url': data['entry_url']?.toString() ?? game.entryUrl,
@@ -82,10 +87,15 @@ class GameZController extends GetxController {
     }
   }
 
-  Future<void> submitScore(String sessionToken, int score) async {
+  Future<int> submitScore(String sessionToken, int score) async {
     try {
-      await RequestService().post('/gamez/sessions/$sessionToken/score', data: {'score': score});
-    } catch (_) {}
+      final res = await RequestService().post('/gamez/sessions/$sessionToken/score', data: {'score': score});
+      final gained = res.data?['data']?['gcoin_awarded'] ?? 0;
+      if (gained > 0) gcoinBalance.value += (gained as int);
+      return gained;
+    } catch (_) {
+      return 0;
+    }
   }
 
   Future<void> switchToGrandPublic() async {

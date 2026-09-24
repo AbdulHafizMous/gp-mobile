@@ -85,7 +85,7 @@ const bool isDebuggingIap = true;
 //          (logo, thème, menus dédiés) tout en partageant le même compte,
 //          la même session et la même API backend que Grand Public.
 // false -> comportement actuel inchangé : un seul bouton "Démarrer" qui
-//          mène directement au login Grand Public (aucun écran de choix).
+//          mène directement au login Grandpublic (aucun écran de choix).
 // ══════════════════════════════════════════════════════════════════════════
 const bool isBlowMusicActivated = true;
 // Logos / identité visuelle dédiés à Blow Music (à remplacer par les vrais

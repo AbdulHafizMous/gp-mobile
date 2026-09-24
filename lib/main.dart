@@ -12,6 +12,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 // import 'package:grand_public_v2/app/services/notification_service.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/services/iap_debug_logger.dart';
+import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
 import 'package:grand_public_v2/app/services/brand_takeover_service.dart';
 import 'package:grand_public_v2/app/services/crush_quota_service.dart';
 import 'package:grand_public_v2/firebase_options.dart';
@@ -93,6 +94,13 @@ Future<void> main() async {
 
   // 4quater. Quota de messages Crush (désactivé par défaut côté backend).
   await Get.putAsync(() => CrushQuotaService().init());
+
+  // HomeController est utilisé par des écrans partagés entre TOUS les
+  // modules (Profil, Notifications...) : on l'enregistre une fois pour
+  // toutes ici, sinon Get.find<HomeController>() plante quand ces écrans
+  // sont ouverts depuis Blow Music ou GameZ (qui n'utilisent pas le shell
+  // Grand Public).
+  Get.put(HomeController(), permanent: true);
 
   // 4bis. RevenueCat (Apple IAP — Guideline 3.1.1). iOS uniquement :
   // Android/le reste continuent d'utiliser Moneroo / le paiement web.
