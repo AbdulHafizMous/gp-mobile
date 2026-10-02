@@ -26,7 +26,16 @@ class GameZHomeView extends GetView<GameZController> {
 
     return Scaffold(
       backgroundColor: bg,
-      drawer: ModuleDrawer(accentColor: accent, moduleName: 'GameZ'),
+      drawer: ModuleDrawer(
+        accentColor: accent,
+        moduleName: 'GameZ',
+        moduleLogo: LOGO_GAMEZ,
+        variableItems: [
+          ModuleDrawerNavItem(title: 'Jeux', icon: Icons.grid_view_rounded, onTap: () => controller.changeTab(0)),
+          ModuleDrawerNavItem(title: 'GCoin', icon: Icons.monetization_on_outlined, onTap: () => controller.changeTab(1)),
+          ModuleDrawerNavItem(title: 'Classement', icon: Icons.leaderboard_rounded, onTap: () => controller.changeTab(2)),
+        ],
+      ),
       appBar: AppBar(
         backgroundColor: bg,
         elevation: 0,

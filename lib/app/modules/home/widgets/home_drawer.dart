@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/drawer_btn.dart';
+import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/data/models/section_model.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
@@ -122,6 +123,10 @@ class HomeDrawer extends StatelessWidget {
         return 'assets/icons/link.png';
       case '/social-about':
         return 'assets/icons/info.png';
+      case '/blowmusic/home':
+        return LOGO_BLOWMUSIC_NAV;
+      case '/gamez/home':
+        return LOGO_GAMEZ_NAV;
       default:
         return 'assets/icons/portrait.png';
     }

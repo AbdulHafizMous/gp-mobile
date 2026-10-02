@@ -34,7 +34,7 @@ class BlowMusicTab {
 const List<BlowMusicTab> kBlowMusicTabs = [
   BlowMusicTab('Accueil', 'home'),
   BlowMusicTab('Live', 'live'),
-  BlowMusicTab('Bibliothèque', 'library'),
+  BlowMusicTab('Biblio', 'library'),
   BlowMusicTab('Playlists', 'playlist'),
 ];
 

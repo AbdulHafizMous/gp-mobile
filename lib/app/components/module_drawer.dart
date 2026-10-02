@@ -1,19 +1,37 @@
 // lib/app/components/module_drawer.dart
 //
-// Drawer partagé par BlowMusic et GameZ : même architecture que le drawer
-// Grand Public (en-tête profil, liens, déconnexion) mais avec la couleur
-// d'accent du module. Permet aussi de basculer vers les autres modules.
+// Drawer partagé par BlowMusic et GameZ — même architecture/principe que
+// le drawer Grand Public (home_drawer.dart) : en-tête profil (avatar +
+// nom + email), section "menu variable" (les onglets du module), section
+// "menu fixe" (changer de module, déconnexion), logo du module en bas.
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
+import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/app_mode_service.dart';
+
+class ModuleDrawerNavItem {
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+  const ModuleDrawerNavItem({required this.title, required this.icon, required this.onTap});
+}
 
 class ModuleDrawer extends StatelessWidget {
   final Color accentColor;
   final String moduleName;
-  const ModuleDrawer({super.key, required this.accentColor, required this.moduleName});
+  final String moduleLogo;
+  final List<ModuleDrawerNavItem> variableItems;
+
+  const ModuleDrawer({
+    super.key,
+    required this.accentColor,
+    required this.moduleName,
+    required this.moduleLogo,
+    this.variableItems = const [],
+  });
 
   void _switchTo(AppMode mode, String route) {
     AppModeService.setMode(mode);
@@ -22,64 +40,145 @@ class ModuleDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final username = GetStorage().read<String>('username') ?? 'Utilisateur';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Drawer(
-      backgroundColor: const Color(0xFF111116),
-      child: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-              child: Row(
+      backgroundColor: isDark ? const Color(0xFF0A0A0A) : accentColor,
+      width: MediaQuery.of(context).size.width * 0.72,
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          // ── En-tête profil (même principe que Grand Public) ────────────
+          GestureDetector(
+            onTap: () => Get.toNamed('/profile'),
+            child: Container(
+              color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+              padding: const EdgeInsets.only(top: 30, left: 6, right: 6),
+              child: Column(
                 children: [
-                  CircleAvatar(radius: 26, backgroundColor: accentColor, child: const Icon(Icons.person, color: Colors.white)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(username, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
-                        Text(moduleName, style: TextStyle(color: accentColor, fontSize: 12, fontWeight: FontWeight.w700)),
-                      ],
+                  Container(
+                    width: 100,
+                    height: 100,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: isDark ? Colors.white12 : Colors.black12),
+                    child: ClipOval(
+                      child: (activeUser.value.hasAvatar)
+                          ? Image.network(
+                              activeUser.value.avatarUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => ColorFiltered(
+                                colorFilter: ColorFilter.mode(accentColor, BlendMode.srcIn),
+                                child: Image.asset('assets/images/profile.png', fit: BoxFit.cover),
+                              ),
+                            )
+                          : ColorFiltered(
+                              colorFilter: ColorFilter.mode(accentColor, BlendMode.srcIn),
+                              child: Image.asset('assets/images/profile.png', fit: BoxFit.cover),
+                            ),
                     ),
                   ),
+                  Text(
+                    activeUser.value.name,
+                    style: TextStyle(fontSize: 18, fontFamily: 'gotham_book', fontWeight: FontWeight.bold, color: isDark ? Colors.white : accentColor),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    activeUser.value.email,
+                    style: TextStyle(fontSize: 13, color: isDark ? Colors.white54 : accentColor.withOpacity(0.7)),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
-            Divider(color: Colors.white12, height: 1),
-            const SizedBox(height: 8),
-            _tile(context, Icons.home_rounded, 'Accueil $moduleName', () => Get.back()),
-            _tile(context, Icons.person_outline_rounded, 'Mon profil', () => Get.toNamed('/profile')),
-            _tile(context, Icons.notifications_none_rounded, 'Notifications', () => Get.toNamed('/notifs')),
-            const Padding(padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10), child: Divider(color: Colors.white12)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-              child: Text('CHANGER DE MODULE', style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11, fontWeight: FontWeight.w700)),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Menu variable (les onglets du module) ──────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+            child: Text(
+              moduleName.toUpperCase(),
+              style: TextStyle(color: isDark ? Colors.white : Colors.white, fontSize: 10.5, fontWeight: FontWeight.w700, letterSpacing: 1.4),
             ),
-            if (moduleName != 'Grand Public')
-              _tile(context, Icons.public_rounded, 'Grand Public', () => _switchTo(AppMode.grandPublic, '/home')),
-            if (isBlowMusicActivated && moduleName != 'Blow Music')
-              _tile(context, Icons.graphic_eq_rounded, 'Blow Music', () => _switchTo(AppMode.blowMusic, '/blowmusic/home')),
-            if (isGameZActivated && moduleName != 'GameZ')
-              _tile(context, Icons.sports_esports_rounded, 'GameZ', () => _switchTo(AppMode.gameZ, '/gamez/home')),
-            const Padding(padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10), child: Divider(color: Colors.white12)),
-            _tile(context, Icons.logout_rounded, 'Déconnexion', () {
+          ),
+          const SizedBox(height: 6),
+          ...variableItems.map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: ListTile(
+                  leading: Icon(item.icon, color: isDark ? accentColor : Colors.white),
+                  title: Text(item.title, style: TextStyle(color: isDark ? Colors.white : Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                  onTap: () {
+                    Get.back();
+                    item.onTap();
+                  },
+                ),
+              )),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Divider(color: isDark ? Colors.white12 : Colors.white38),
+          ),
+
+          // ── Menu fixe (comme Premium/Liens/À propos de Grand Public) ───
+          ListTile(
+            leading: Icon(Icons.notifications_none_rounded, color: isDark ? accentColor : Colors.white),
+            title: Text('Notifications', style: TextStyle(color: isDark ? Colors.white : Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+            onTap: () {
+              Get.back();
+              Get.toNamed('/notifs');
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+            child: Text('CHANGER DE MODULE', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10.5, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+          ),
+          if (moduleName != 'Grand Public')
+            _fixedItem(context, 'assets/images/icon.png', 'Grand Public', () => _switchTo(AppMode.grandPublic, '/home'), isDark),
+          if (isBlowMusicActivated && moduleName != 'Blow Music')
+            _fixedItem(context, LOGO_BLOWMUSIC_NAV, 'Blow Music', () => _switchTo(AppMode.blowMusic, '/blowmusic/home'), isDark),
+          if (isGameZActivated && moduleName != 'GameZ')
+            _fixedItem(context, LOGO_GAMEZ_NAV, 'GameZ', () => _switchTo(AppMode.gameZ, '/gamez/home'), isDark),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Divider(color: isDark ? Colors.white12 : Colors.white38),
+          ),
+          ListTile(
+            leading: Icon(Icons.logout_rounded, color: isDark ? accentColor : Colors.white),
+            title: Text('Déconnexion', style: TextStyle(color: isDark ? Colors.white : Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+            onTap: () {
               GetStorage().remove('token');
               GetStorage().write('isLogged', false);
               Get.offAllNamed('/login');
-            }),
-          ],
-        ),
+            },
+          ),
+          const SizedBox(height: 20),
+
+          // ── Logo du module en bas (comme Grand Public) ─────────────────
+          Center(
+            child: Image.asset(
+              moduleLogo,
+              height: 60,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }
 
-  Widget _tile(BuildContext context, IconData icon, String title, VoidCallback onTap) {
+  Widget _fixedItem(BuildContext context, String logo, String title, VoidCallback onTap, bool isDark) {
     return ListTile(
-      leading: Icon(icon, color: accentColor),
+      leading: SizedBox(
+        width: 24,
+        height: 24,
+        child: Image.asset(logo, fit: BoxFit.contain, errorBuilder: (_, __, ___) => Icon(Icons.apps_rounded, color: isDark ? accentColor : Colors.white)),
+      ),
       title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-      onTap: onTap,
+      onTap: () {
+        Get.back();
+        onTap();
+      },
     );
   }
 }

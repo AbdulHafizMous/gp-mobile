@@ -51,10 +51,10 @@ class AppModeService {
     }
   }
 
-  /// Où renvoyer l'utilisateur juste après connexion/inscription : l'écran
-  /// de choix de module s'il y a plus d'un module actif ET qu'aucun choix
-  /// n'a encore été fait, sinon directement le module déjà choisi (ou
-  /// Grand Public par défaut — comportement actuel conservé à 100%).
-  static String get postAuthRoute =>
-      (hasMultipleModules && !hasChosenMode) ? '/module-choice' : homeRoute;
+  /// Où renvoyer l'utilisateur juste après connexion (login/register) ET à
+  /// chaque ouverture de l'app si déjà connecté : le choix de destination
+  /// doit être reproposé À CHAQUE FOIS quand plus d'un module est actif —
+  /// ce n'est PAS un choix figé une fois pour toutes. Reste directement sur
+  /// Grand Public si un seul module est actif (comportement actuel conservé).
+  static String get postAuthRoute => hasMultipleModules ? '/module-choice' : homeRoute;
 }

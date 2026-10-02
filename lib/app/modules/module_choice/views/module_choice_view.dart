@@ -25,6 +25,7 @@ class ModuleChoiceView extends GetView<ModuleChoiceController> {
         subtitle: 'Social, Club, Media & Bizz',
         color: const Color(0xFF23232E),
         icon: Icons.public_rounded,
+        logo: LOGO_NAV,
       ),
       if (isBlowMusicActivated)
         _ModuleCardData(
@@ -33,6 +34,7 @@ class ModuleChoiceView extends GetView<ModuleChoiceController> {
           subtitle: 'Radio live, playlists & musique',
           color: GPTheme.primaryColor,
           icon: Icons.graphic_eq_rounded,
+          logo: LOGO_BLOWMUSIC,
         ),
       if (isGameZActivated)
         _ModuleCardData(
@@ -41,41 +43,49 @@ class ModuleChoiceView extends GetView<ModuleChoiceController> {
           subtitle: 'Jeux, classements & récompenses',
           color: GPTheme.clubColor,
           icon: Icons.sports_esports_rounded,
+          logo: LOGO_GAMEZ,
         ),
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0B12),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 22),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Bienvenue 👋',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(image: AssetImage('assets/images/wall_start.png'), fit: BoxFit.cover),
+        ),
+        child: Container(
+          color: Colors.black.withOpacity(0.55), // lisibilité du texte sur la photo
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 22),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Bienvenue 👋',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Que voulez-vous ouvrir ?',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 32),
+                  ...modules.map((m) => Padding(
+                        padding: const EdgeInsets.only(bottom: 18),
+                        child: _ModuleCard(data: m, onTap: () => controller.choose(m.mode)),
+                      )),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Vous pourrez changer de module à tout moment depuis le menu.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
+                  ),
+                ],
               ),
-              const SizedBox(height: 6),
-              const Text(
-                'Que voulez-vous ouvrir ?',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 32),
-              ...modules.map((m) => Padding(
-                    padding: const EdgeInsets.only(bottom: 18),
-                    child: _ModuleCard(data: m, onTap: () => controller.choose(m.mode)),
-                  )),
-              const SizedBox(height: 10),
-              Text(
-                'Vous pourrez changer de module à tout moment depuis le menu.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -89,12 +99,14 @@ class _ModuleCardData {
   final String subtitle;
   final Color color;
   final IconData icon;
+  final String? logo;
   _ModuleCardData({
     required this.mode,
     required this.title,
     required this.subtitle,
     required this.color,
     required this.icon,
+    this.logo,
   });
 }
 
@@ -126,11 +138,18 @@ class _ModuleCard extends StatelessWidget {
             Container(
               width: 58,
               height: 58,
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(data.icon, color: Colors.white, size: 30),
+              child: data.logo != null
+                  ? Image.asset(
+                      data.logo!,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Icon(data.icon, color: Colors.white, size: 30),
+                    )
+                  : Icon(data.icon, color: Colors.white, size: 30),
             ),
             const SizedBox(width: 16),
             Expanded(

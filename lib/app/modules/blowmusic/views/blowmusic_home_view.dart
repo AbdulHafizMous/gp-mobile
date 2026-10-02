@@ -37,7 +37,17 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
 
     return Scaffold(
       backgroundColor: bg,
-      drawer: ModuleDrawer(accentColor: accent, moduleName: 'Blow Music'),
+      drawer: ModuleDrawer(
+        accentColor: accent,
+        moduleName: 'Blow Music',
+        moduleLogo: LOGO_BLOWMUSIC,
+        variableItems: [
+          ModuleDrawerNavItem(title: 'Accueil', icon: Icons.home_rounded, onTap: () => controller.changeTab(0)),
+          ModuleDrawerNavItem(title: 'Live', icon: Icons.podcasts_rounded, onTap: () => controller.changeTab(1)),
+          ModuleDrawerNavItem(title: 'Biblio', icon: Icons.library_music_rounded, onTap: () => controller.changeTab(2)),
+          ModuleDrawerNavItem(title: 'Playlists', icon: Icons.playlist_play_rounded, onTap: () => controller.changeTab(3)),
+        ],
+      ),
       appBar: AppBar(
         backgroundColor: bg,
         elevation: 0,
