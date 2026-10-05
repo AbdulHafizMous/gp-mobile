@@ -81,6 +81,7 @@ class HomeDrawer extends StatelessWidget {
               child: DrawerBtn(
                 title: item.title,
                 icon: _fixedIcon(item.route),
+                keepIconColors: item.route == '/blowmusic/home' || item.route == '/gamez/home',
                 callback: () => ctrl.navigateTo(item.route ?? ''),
                 accentColor: linkColor,
               ),

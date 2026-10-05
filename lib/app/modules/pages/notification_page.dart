@@ -398,6 +398,11 @@ class _NotifTile extends StatelessWidget {
       'subscription' => Icons.workspace_premium_rounded,
       'chat_channel' => Icons.tag_rounded,
       'chat_private' => Icons.mail_outline_rounded,
+      'live' => Icons.sensors_rounded,
+      'bm_track' => Icons.music_note_rounded,
+      'bm_live' => Icons.podcasts_rounded,
+      'gz_game' => Icons.sports_esports_rounded,
+      'gz_reward' || 'gz_record' => Icons.emoji_events_rounded,
       _ => Icons.notifications_outlined,
     };
   }
@@ -414,6 +419,9 @@ class _NotifTile extends StatelessWidget {
       'dating_match' => Colors.pinkAccent,
       'subscription' => Colors.amber.shade700,
       'chat_channel' || 'chat_private' => GPTheme.socialColor,
+      'live' => Colors.redAccent,
+      'bm_track' || 'bm_live' || 'bm_playlist' => GPTheme.primaryColor,
+      'gz_game' || 'gz_reward' || 'gz_record' => GPTheme.clubColor,
       _ => SectionHelper.color,
     };
   }

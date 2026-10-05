@@ -8,6 +8,7 @@ import 'package:grand_public_v2/app/modules/shop/views/shop_detail_view.dart';
 import 'package:grand_public_v2/app/modules/social/controllers/chat_controller.dart';
 import 'package:grand_public_v2/app/modules/social/views/chat_list_view.dart';
 import 'package:grand_public_v2/app/modules/social/views/chat_room_view.dart';
+import 'package:grand_public_v2/app/services/app_mode_service.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 
 /// Point d'entrée UNIQUE pour toute navigation déclenchée depuis l'extérieur
@@ -75,6 +76,28 @@ class AppLinkRouter {
           } else {
             Get.to(() => const ChatListView());
           }
+          break;
+
+        // ── Modules Blow Music / GameZ : bascule de module + bon onglet ──
+        case 'bm_track':
+        case 'bm_live':
+        case 'bm_playlist':
+          await AppModeService.setMode(AppMode.blowMusic);
+          Get.offAllNamed('/blowmusic/home', arguments: {'tab': type == 'bm_live' ? 'live' : 'library'});
+          break;
+
+        case 'gz_game':
+        case 'gz_reward':
+        case 'gz_record':
+          await AppModeService.setMode(AppMode.gameZ);
+          Get.offAllNamed('/gamez/home', arguments: {'tab': 0});
+          break;
+
+        // Live Grand Public : retour à l'accueil, la section Live apparaît
+        // d'elle-même (polling) dans la catégorie concernée.
+        case 'live':
+          await AppModeService.setMode(AppMode.grandPublic);
+          Get.offAllNamed('/home');
           break;
 
         default:

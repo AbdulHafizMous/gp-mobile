@@ -553,7 +553,7 @@ class LoginController extends GetxController {
     unawaited(BrandTakeoverService.to.refresh());
     unawaited(CrushQuotaService.to.refreshQuota());
 
-    Get.offAllNamed(AppModeService.postAuthRoute); // #Beno10
+    Get.offAllNamed(await AppModeService.resolvePostAuthRoute()); // #Beno10
   }
 
   // ══════════════════════════════════════════════════════════════════════════

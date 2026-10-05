@@ -37,6 +37,7 @@ abstract class Routes {
   static const BLOWMUSIC_HOME = _Paths.BLOWMUSIC_HOME;
   static const GAMEZ_HOME = _Paths.GAMEZ_HOME;
   static const MODULE_CHOICE = _Paths.MODULE_CHOICE;
+  static const COMPLETE_PROFILE = _Paths.COMPLETE_PROFILE;
 }
 
 abstract class _Paths {
@@ -75,4 +76,5 @@ abstract class _Paths {
   static const BLOWMUSIC_HOME = '/blowmusic/home';
   static const GAMEZ_HOME = '/gamez/home';
   static const MODULE_CHOICE = '/module-choice';
+  static const COMPLETE_PROFILE = '/complete-profile';
 }

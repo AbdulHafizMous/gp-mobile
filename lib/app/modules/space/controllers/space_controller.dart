@@ -9,6 +9,8 @@
 //                             Les médias sont mis en cache dans _loadedCategoryIds
 //                             pour éviter de re-fetcher à chaque retour sur un onglet
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/data/models/space_model.dart';
@@ -49,6 +51,33 @@ class SpaceController extends GetxController {
     spaceId = int.tryParse(idParam) ?? 0;
     selectedCategoryIndex.value = initialCategoryIndex;
     loadSpace();
+    // Réactivité du live : l'admin peut démarrer / couper un live à tout moment.
+    _livePoll = Timer.periodic(const Duration(seconds: 20), (_) => refreshLive());
+  }
+
+  Timer? _livePoll;
+
+  @override
+  void onClose() {
+    _livePoll?.cancel();
+    super.onClose();
+  }
+
+  /// Rafraîchit uniquement le live de la catégorie affichée (requête très légère).
+  Future<void> refreshLive() async {
+    if (useMock) return;
+    final cur = space.value;
+    if (cur == null || cur.categories.isEmpty) return;
+    final idx = selectedCategoryIndex.value.clamp(0, cur.categories.length - 1);
+    final cat = cur.categories[idx];
+    try {
+      final r = await RequestService().get('/media-categories/${cat.id}/live');
+      final raw = r.data['data']?['live'];
+      final live = raw is Map ? Map<String, dynamic>.from(raw) : null;
+      final same = (live?['id']) == (cat.live?['id']);
+      if (same && live == null) return;
+      if (!same) space.value = cur.withUpdatedCategory(cat.copyWithLive(live));
+    } catch (_) {}
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -150,6 +179,7 @@ class SpaceController extends GetxController {
   // ── Appelé par le TabController quand l'onglet change ─────────────────────
   void onCategorySelected(int tabIndex) {
     selectedCategoryIndex.value = tabIndex;
+    refreshLive();
     final cats = space.value?.categories;
     if (cats == null || tabIndex >= cats.length) return;
     loadCategoryMedias(cats[tabIndex].id);

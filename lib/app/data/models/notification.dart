@@ -3,6 +3,7 @@ class AppNotification {
   final String title;
   final String body;
   final String type;
+  final String module; // grandpublic | blowmusic | gamez
   final String? route;
   final Map<String, dynamic>? data;
   final bool isRead;
@@ -14,6 +15,7 @@ class AppNotification {
     required this.title,
     required this.body,
     required this.type,
+    this.module = 'grandpublic',
     this.route,
     this.data,
     required this.isRead,
@@ -44,6 +46,7 @@ class AppNotification {
       body: json['body']?.toString() ?? '',
 
       type: json['type']?.toString() ?? 'general',
+      module: json['module']?.toString() ?? 'grandpublic',
 
       route: json['route']?.toString(),
 
@@ -63,6 +66,7 @@ class AppNotification {
       title: title,
       body: body,
       type: type,
+      module: module,
       route: route,
       data: data,
       isRead: isRead ?? this.isRead,

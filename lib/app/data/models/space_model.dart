@@ -195,12 +195,15 @@ class SpaceCategory {
   final String title;
   final String description;
   final List<SpaceVideo> videos; // vide au départ, chargé à la demande
+  /// Live actif de la catégorie (null = pas de section Live).
+  final Map<String, dynamic>? live;
 
   const SpaceCategory({
     required this.id,
     required this.title,
     required this.description,
     this.videos = const [],
+    this.live,
   });
 
   factory SpaceCategory.fromJson(Map<String, dynamic> json) {
@@ -211,6 +214,7 @@ class SpaceCategory {
       title: json['name']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       videos: const [],
+      live: json['live'] is Map ? Map<String, dynamic>.from(json['live']) : null,
     );
   }
 
@@ -219,6 +223,15 @@ class SpaceCategory {
     title: title,
     description: description,
     videos: newVideos,
+    live: live,
+  );
+
+  SpaceCategory copyWithLive(Map<String, dynamic>? newLive) => SpaceCategory(
+    id: id,
+    title: title,
+    description: description,
+    videos: videos,
+    live: newLive,
   );
 }
 

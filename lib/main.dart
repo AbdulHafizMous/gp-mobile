@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -71,6 +72,8 @@ Future<void> _initRevenueCat() async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  timeago.setLocaleMessages('fr', timeago.FrMessages());
+  timeago.setDefaultLocale('fr');
 
   // 1. Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);

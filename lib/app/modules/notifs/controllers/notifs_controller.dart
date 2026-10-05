@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:grand_public_v2/app/data/models/notification.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
+import 'package:grand_public_v2/app/services/app_mode_service.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 
 // ── Catégories de filtre (mappées sur les `type` réellement émis par le
@@ -21,6 +22,8 @@ const List<NotifCategory> kNotifCategories = [
   NotifCategory('social', 'Social', ['chat_channel', 'chat_private', 'dating_match']),
   NotifCategory('media', 'Media', ['media']),
   NotifCategory('account', 'Compte', ['subscription', 'campaign']),
+  NotifCategory('blowmusic', 'Blow Music', ['bm_track', 'bm_live', 'bm_playlist']),
+  NotifCategory('gamez', 'GameZ', ['gz_game', 'gz_reward', 'gz_record']),
 ];
 
 class NotifsPageController extends GetxController {
@@ -56,9 +59,27 @@ class NotifsPageController extends GetxController {
 
   int _currentPage = 1;
 
+  /// Depuis Blow Music / GameZ, la page s'ouvre directement sur la catégorie
+  /// du module (le Club continue de pré-sélectionner « club » lui-même).
+  void preselectModuleCategory() {
+    switch (AppModeService.current) {
+      case AppMode.blowMusic:
+        selectedCategory.value = 'blowmusic';
+        break;
+      case AppMode.gameZ:
+        selectedCategory.value = 'gamez';
+        break;
+      case AppMode.grandPublic:
+        if (selectedCategory.value == 'blowmusic' || selectedCategory.value == 'gamez') {
+          selectedCategory.value = 'all';
+        }
+    }
+  }
+
   @override
   void onInit() {
     super.onInit();
+    preselectModuleCategory();
     fetchNotifications();
   }
 
@@ -213,6 +234,15 @@ class NotifsPageController extends GetxController {
     // nommé de GetX — sinon on pousse une 2e HomeView par-dessus l'existante
     // (même GlobalKey de Scaffold utilisé deux fois → crash). Voir aussi
     // AppLinkRouter, qui centralise déjà cette règle pour les deep links.
+    // Notifications de module : on bascule dans le module puis on ouvre le bon onglet.
+    if (route.startsWith('/blowmusic') || route.startsWith('/gamez')) {
+      final isBlow = route.startsWith('/blowmusic');
+      AppModeService.setMode(isBlow ? AppMode.blowMusic : AppMode.gameZ).then((_) {
+        Get.offAllNamed(route, arguments: notif.data);
+      });
+      return;
+    }
+
     if (route.startsWith('/home') || route.startsWith('/social')) {
       if (Get.isRegistered<HomeController>()) {
         Get.find<HomeController>().navigateTo(route, params: notif.data ?? {});

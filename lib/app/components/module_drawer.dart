@@ -10,7 +10,17 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
+import 'package:grand_public_v2/app/modules/notifs/controllers/notifs_controller.dart';
 import 'package:grand_public_v2/app/services/app_mode_service.dart';
+
+/// Ouvre l'écran Notifications directement sur la catégorie du module
+/// (« blowmusic » ou « gamez »).
+void openModuleNotifications(String categoryId) {
+  final ctrl = Get.isRegistered<NotifsPageController>() ? Get.find<NotifsPageController>() : Get.put(NotifsPageController());
+  ctrl.selectedCategory.value = categoryId;
+  ctrl.fetchNotifications(refresh: true);
+  Get.toNamed('/notifs');
+}
 
 class ModuleDrawerNavItem {
   final String title;
@@ -125,7 +135,7 @@ class ModuleDrawer extends StatelessWidget {
             title: Text('Notifications', style: TextStyle(color: isDark ? Colors.white : Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
             onTap: () {
               Get.back();
-              Get.toNamed('/notifs');
+              openModuleNotifications(moduleName == 'Blow Music' ? 'blowmusic' : moduleName == 'GameZ' ? 'gamez' : 'all');
             },
           ),
           Padding(

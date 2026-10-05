@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/components/live_fullscreen_page.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:grand_public_v2/app/modules/blowmusic/widgets/fullscreen_video_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
 
@@ -67,12 +69,55 @@ class BlowMusicController extends GetxController {
   void onInit() {
     super.onInit();
     loadHome();
+    // Ouverture depuis une notification : onglet demandé (live / library…).
+    final args = Get.arguments;
+    if (args is Map && args['tab'] != null) {
+      final i = kBlowMusicTabs.indexWhere((t) => t.icon == args['tab']);
+      if (i >= 0) currentTab.value = i;
+    }
+    // Réactivité du direct : l'admin peut activer/couper un flux à tout moment.
+    _livePoll = Timer.periodic(const Duration(seconds: 15), (_) => refreshLive());
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => maybeShowFullscreenAd(),
     );
   }
 
+  Timer? _livePoll;
+
   void changeTab(int i) => currentTab.value = i;
+
+  /// Interroge l'API (léger). Si le direct change (nouveau flux, ou coupé) :
+  ///  - on met à jour l'écran immédiatement ;
+  ///  - si l'utilisateur écoutait l'ancien direct → bascule AUTOMATIQUE sur
+  ///    le nouveau (ou arrêt propre si plus aucun direct).
+  Future<void> refreshLive() async {
+    try {
+      final res = await RequestService().get('/blowmusic/live');
+      final raw = res.data?['data']?['live'];
+      final next = raw is Map ? Map<String, dynamic>.from(raw) : null;
+      final oldId = liveStream.value?['id'];
+      final newId = next?['id'];
+      if (oldId == newId) return;
+
+      liveStream.value = next;
+      if (isPlayingLive.value) {
+        if (next == null) {
+          await stopLive();
+        } else {
+          await playLive();
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> stopLive() async {
+    await videoPlayerController?.pause();
+    await videoPlayerController?.dispose();
+    videoPlayerController = null;
+    isPlayingLive.value = false;
+    isPlaying.value = false;
+    playbackState.value = BmPlaybackState.idle;
+  }
 
   Future<void> loadHome() async {
     isLoading.value = true;
@@ -149,10 +194,10 @@ class BlowMusicController extends GetxController {
 
     // Déterminer si le flux est susceptible d'être une vidéo / HLS
     final lowerUrl = resolvedUrl.toLowerCase();
+    final liveIsAudio = isLiveStream && liveStream.value?['media_type'] == 'audio';
     isVideo.value =
-        lowerUrl.contains('.m3u8') ||
-        lowerUrl.contains('.mp4') ||
-        isLiveStream; // Les Lives sont traités comme potentiellement vidéo
+        !liveIsAudio &&
+        (lowerUrl.contains('.m3u8') || lowerUrl.contains('.mp4') || isLiveStream);
 
     try {
       videoPlayerController = VideoPlayerController.networkUrl(
@@ -245,26 +290,15 @@ class BlowMusicController extends GetxController {
     }
   }
 
-  /// Passer/Quitter le plein écran
+  /// Plein écran : remplit tout l'écran (voir LiveFullscreenPage).
   void toggleFullScreen(BuildContext context) {
-    if (videoPlayerController == null ||
-        !videoPlayerController!.value.isInitialized)
-      return;
-
-    isFullScreen.value = !isFullScreen.value;
-
-    if (isFullScreen.value) {
-      Get.to(
-        () => const FullscreenVideoPage(),
-        transition: Transition.fade,
-        fullscreenDialog: true,
-      );
-    } else {
-      if (Get.isDialogOpen == true ||
-          Get.currentRoute.contains('FullscreenVideoPage')) {
-        Get.back();
-      }
-    }
+    final c = videoPlayerController;
+    if (c == null || !c.value.isInitialized) return;
+    Get.to(
+      () => LiveFullscreenPage(controller: c, title: liveStream.value?['title']?.toString() ?? 'Direct', isLive: isPlayingLive.value),
+      transition: Transition.fade,
+      fullscreenDialog: true,
+    );
   }
 
   Future<void> switchToGrandPublic() async {
@@ -274,6 +308,7 @@ class BlowMusicController extends GetxController {
 
   @override
   void onClose() {
+    _livePoll?.cancel();
     videoPlayerController?.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);

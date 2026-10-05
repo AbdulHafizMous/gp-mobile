@@ -6,6 +6,9 @@
 // utilisateurs actuels.
 
 import 'package:get_storage/get_storage.dart';
+import 'package:grand_public_v2/app/data/models/user.dart';
+import 'package:grand_public_v2/app/globals/index.dart';
+import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 
 enum AppMode { grandPublic, blowMusic, gameZ }
@@ -56,5 +59,25 @@ class AppModeService {
   /// doit être reproposé À CHAQUE FOIS quand plus d'un module est actif —
   /// ce n'est PAS un choix figé une fois pour toutes. Reste directement sur
   /// Grand Public si un seul module est actif (comportement actuel conservé).
-  static String get postAuthRoute => hasMultipleModules ? '/module-choice' : homeRoute;
+  ///
+  /// Profil d'audience incomplet (naissance / genre / profession) → écran
+  /// bloquant /complete-profile AVANT toute destination (il renvoie ensuite
+  /// ici une fois complété).
+  static String get postAuthRoute {
+    final u = activeUser.value;
+    if (u.id != 0 && u.needsAudienceProfile) return '/complete-profile';
+    return hasMultipleModules ? '/module-choice' : homeRoute;
+  }
+
+  /// Variante asynchrone : recharge l'utilisateur (/auth/me) pour connaître
+  /// l'état réel du profil, puis renvoie la bonne route. À utiliser juste
+  /// après une connexion / à l'ouverture de l'app (activeUser pas encore chargé).
+  static Future<String> resolvePostAuthRoute() async {
+    try {
+      final res = await RequestService().get('/auth/me');
+      final data = res.data?['data']?['user'];
+      if (data is Map<String, dynamic>) activeUser.value = User.fromJson(data);
+    } catch (_) {}
+    return postAuthRoute;
+  }
 }

@@ -19,6 +19,8 @@ import 'package:grand_public_v2/app/modules/blowmusic/bindings/blowmusic_binding
 import 'package:grand_public_v2/app/modules/blowmusic/views/blowmusic_home_view.dart';
 import 'package:grand_public_v2/app/modules/gamez/bindings/gamez_binding.dart';
 import 'package:grand_public_v2/app/modules/gamez/views/gamez_home_view.dart';
+import 'package:grand_public_v2/app/modules/complete_profile/bindings/complete_profile_binding.dart';
+import 'package:grand_public_v2/app/modules/complete_profile/views/complete_profile_view.dart';
 import 'package:grand_public_v2/app/modules/module_choice/bindings/module_choice_binding.dart';
 import 'package:grand_public_v2/app/modules/module_choice/views/module_choice_view.dart';
 
@@ -213,6 +215,11 @@ class AppPages {
       name: _Paths.GAMEZ_HOME,
       page: () => const GameZHomeView(),
       binding: GameZBinding(),
+    ),
+    GetPage(
+      name: _Paths.COMPLETE_PROFILE,
+      page: () => const CompleteProfileView(),
+      binding: CompleteProfileBinding(),
     ),
     GetPage(
       name: _Paths.MODULE_CHOICE,

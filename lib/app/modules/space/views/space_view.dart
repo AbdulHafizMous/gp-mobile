@@ -1,6 +1,7 @@
 // lib/app/modules/space/views/space_view.dart
 
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/components/live_section.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/modules/videos/views/videos_view.dart';
 import 'package:grand_public_v2/app/data/models/space_model.dart';
@@ -731,6 +732,12 @@ class _CategoryContentView extends StatelessWidget {
                 ),
               ),
             ),
+
+            // ── Section LIVE (uniquement si la catégorie a un live actif) ──
+            if (updatedCat.live != null)
+              SliverToBoxAdapter(
+                child: LiveSection(key: ValueKey('live-${updatedCat.live!['id']}'), live: updatedCat.live!),
+              ),
 
             if (updatedCat.videos.isEmpty)
               SliverFillRemaining(

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:country_pickers/country.dart';
+import 'package:grand_public_v2/app/components/audience_fields.dart';
 import 'package:country_pickers/country_pickers.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
@@ -25,6 +26,8 @@ class RegisterController extends GetxController {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
+  final audience = AudienceFormState();
 
   final selectedCountry = ValueNotifier<Country>(
     CountryPickerUtils.getCountryByIsoCode('BJ'),
@@ -124,6 +127,7 @@ class RegisterController extends GetxController {
           'password': passwordController.text,
           'password_confirmation': passwordController.text,
           'terms': true,
+          ...audience.toPayload(),
         },
       );
 
@@ -195,6 +199,7 @@ class RegisterController extends GetxController {
           'phone': fullPhone,
           'country_code': selectedCountry.value.isoCode,
           'email': emailController.text.trim(),
+          ...audience.toPayload(),
         },
       );
 

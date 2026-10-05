@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/components/live_fullscreen_page.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
 
@@ -175,123 +178,209 @@ class _LiveTab extends StatelessWidget {
     return Obx(() {
       final live = ctrl.liveStream.value;
       if (live == null) {
-        return const EmptyStateWidget(
-            icon: Icons.podcasts_outlined, message: 'Pas de direct en cours pour le moment.');
+        return RefreshIndicator(
+          onRefresh: ctrl.refreshLive,
+          child: ListView(children: const [
+            SizedBox(height: 120),
+            EmptyStateWidget(icon: Icons.podcasts_outlined, message: 'Pas de direct en cours pour le moment.'),
+          ]),
+        );
       }
 
       final state = ctrl.playbackState.value;
-      final isThisLivePlaying = ctrl.isPlayingLive.value;
-      final vController = ctrl.videoPlayerController;
+      final isThis = ctrl.isPlayingLive.value;
+      final v = ctrl.videoPlayerController;
+      final isAudio = live['media_type'] == 'audio';
+      final isRadio = live['kind'] == 'radio';
+      final playing = isThis && ctrl.isPlaying.value;
+      final showVideo = isThis && v != null && v.value.isInitialized && ctrl.isVideo.value;
 
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Affichage du Lecteur Vidéo si le flux est actif et contient de la vidéo
-            if (isThisLivePlaying &&
-                vController != null &&
-                vController.value.isInitialized &&
-                ctrl.isVideo.value)
-              Container(
-                width: double.infinity,
-                height: 220,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      AspectRatio(
-                        aspectRatio: vController.value.aspectRatio,
-                        child: VideoPlayer(vController),
-                      ),
-                      // Contrôles superposés sur la vidéo
-                      Positioned(
-                        bottom: 8,
-                        right: 8,
-                        child: IconButton(
-                          icon: const Icon(Icons.fullscreen_rounded, color: Colors.white, size: 28),
-                          onPressed: () => ctrl.toggleFullScreen(context),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              // Fallback visuel Audio / Podcast
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: accent.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.podcasts_rounded, color: accent, size: 64),
-              ),
-
-            const SizedBox(height: 16),
-            Text(
-              live['title']?.toString() ?? 'Direct',
-              style: TextStyle(color: fg, fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+      return RefreshIndicator(
+        onRefresh: ctrl.refreshLive,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(children: [
+            // ── Scène : vidéo ou visuel audio animé ──────────────────────────
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 350),
+              child: showVideo
+                  ? _VideoStage(key: const ValueKey('v'), ctrl: ctrl, v: v)
+                  : _AudioStage(key: ValueKey('a${live['id']}'), accent: accent, playing: playing, radio: isRadio, audio: isAudio),
             ),
-            if (live['now_playing_title'] != null)
+            const SizedBox(height: 18),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const LiveBadge(),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(color: accent.withOpacity(.12), borderRadius: BorderRadius.circular(8)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(isRadio ? Icons.radio_rounded : (isAudio ? Icons.headphones_rounded : Icons.videocam_rounded), size: 14, color: accent),
+                  const SizedBox(width: 4),
+                  Text(isRadio ? 'Radio' : (isAudio ? 'Audio' : 'Vidéo'), style: TextStyle(color: accent, fontSize: 11, fontWeight: FontWeight.w700)),
+                ]),
+              ),
+            ]),
+            const SizedBox(height: 12),
+            Text(live['title']?.toString() ?? 'Direct',
+                style: TextStyle(color: fg, fontSize: 22, fontWeight: FontWeight.w800), textAlign: TextAlign.center),
+            if ((live['description'] ?? '').toString().isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  'En cours : ${live['now_playing_title']}',
-                  style: TextStyle(color: fg.withOpacity(0.6), fontSize: 14),
-                ),
+                child: Text(live['description'].toString(), style: TextStyle(color: fg.withOpacity(.6), fontSize: 13), textAlign: TextAlign.center),
               ),
-
-            const SizedBox(height: 24),
-
-            // État des boutons de contrôles
-            if (isThisLivePlaying && state == BmPlaybackState.loading)
+            if (live['now_playing_title'] != null && live['now_playing_title'].toString().isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.music_note_rounded, size: 16, color: accent),
+                  const SizedBox(width: 4),
+                  Flexible(child: Text(live['now_playing_title'].toString(), style: TextStyle(color: fg.withOpacity(.75), fontSize: 14))),
+                ]),
+              ),
+            const SizedBox(height: 22),
+            if (isThis && state == BmPlaybackState.loading)
               const CircularProgressIndicator()
-            else if (isThisLivePlaying && state == BmPlaybackState.error)
-              Column(
-                children: [
-                  Text('Impossible de lire ce flux direct pour le moment.',
-                      style: TextStyle(color: Colors.red.shade400, fontSize: 13)),
-                  const SizedBox(height: 10),
-                  ElevatedButton.icon(
-                    onPressed: ctrl.playLive,
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('Réessayer'),
-                  ),
-                ],
-              )
+            else if (isThis && state == BmPlaybackState.error)
+              Column(children: [
+                Text('Impossible de lire ce flux pour le moment.', style: TextStyle(color: Colors.red.shade400, fontSize: 13)),
+                const SizedBox(height: 10),
+                ElevatedButton.icon(onPressed: ctrl.playLive, icon: const Icon(Icons.refresh_rounded), label: const Text('Réessayer')),
+              ])
             else
-              ElevatedButton.icon(
-                onPressed: (isThisLivePlaying && ctrl.isPlaying.value)
-                    ? ctrl.togglePlayPause
-                    : ctrl.playLive,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: accent,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(40),
+                  gradient: LinearGradient(colors: [accent, Color.lerp(accent, const Color(0xFF7C3AED), .55)!]),
+                  boxShadow: [BoxShadow(color: accent.withOpacity(.4), blurRadius: 20, offset: const Offset(0, 8))],
                 ),
-                icon: Icon(
-                  (isThisLivePlaying && ctrl.isPlaying.value)
-                      ? Icons.pause_rounded
-                      : Icons.play_arrow_rounded,
-                  color: Colors.white,
-                  size: 28,
-                ),
-                label: Text(
-                  (isThisLivePlaying && ctrl.isPlaying.value) ? 'Mettre en pause' : 'Lancer le Direct',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                child: ElevatedButton.icon(
+                  onPressed: playing ? ctrl.togglePlayPause : ctrl.playLive,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
+                  ),
+                  icon: Icon(playing ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white, size: 30),
+                  label: Text(playing ? 'Pause' : (isThis ? 'Reprendre' : 'Écouter le direct'),
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
                 ),
               ),
-          ],
+          ]),
         ),
       );
     });
+  }
+}
+
+class _VideoStage extends StatelessWidget {
+  final BlowMusicController ctrl;
+  final VideoPlayerController v;
+  const _VideoStage({super.key, required this.ctrl, required this.v});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(.35), blurRadius: 24, offset: const Offset(0, 10))],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: AspectRatio(
+          aspectRatio: v.value.aspectRatio > 0 ? v.value.aspectRatio : 16 / 9,
+          child: Stack(fit: StackFit.expand, children: [
+            Container(color: Colors.black, child: VideoPlayer(v)),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.center, colors: [Color(0xAA000000), Colors.transparent]),
+              ),
+            ),
+            Positioned(
+              right: 4,
+              bottom: 2,
+              child: IconButton(
+                icon: const Icon(Icons.fullscreen_rounded, color: Colors.white, size: 30, shadows: [Shadow(blurRadius: 6, color: Colors.black87)]),
+                onPressed: () => ctrl.toggleFullScreen(context),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// Visuel audio : disque dégradé + ondes animées (équaliseur) pendant la lecture.
+class _AudioStage extends StatefulWidget {
+  final Color accent;
+  final bool playing, radio, audio;
+  const _AudioStage({super.key, required this.accent, required this.playing, required this.radio, required this.audio});
+
+  @override
+  State<_AudioStage> createState() => _AudioStageState();
+}
+
+class _AudioStageState extends State<_AudioStage> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final a = widget.accent;
+    return SizedBox(
+      height: 220,
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (_, __) => Stack(alignment: Alignment.center, children: [
+          for (var i = 0; i < 3; i++)
+            Builder(builder: (_) {
+              final t = widget.playing ? ((_c.value + i / 3) % 1.0) : 0.0;
+              return Opacity(
+                opacity: widget.playing ? (1 - t) * .35 : .12,
+                child: Container(
+                  width: 120 + t * 100,
+                  height: 120 + t * 100,
+                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: a, width: 2)),
+                ),
+              );
+            }),
+          Container(
+            width: 128,
+            height: 128,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(colors: [a, const Color(0xFF7C3AED), const Color(0xFFE11D48)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              boxShadow: [BoxShadow(color: a.withOpacity(.45), blurRadius: 28, spreadRadius: 2)],
+            ),
+            child: Transform.rotate(
+              angle: widget.playing ? _c.value * 6.283 * .15 : 0,
+              child: Icon(widget.radio ? Icons.radio_rounded : (widget.audio ? Icons.graphic_eq_rounded : Icons.podcasts_rounded), color: Colors.white, size: 62),
+            ),
+          ),
+          // Équaliseur
+          Positioned(
+            bottom: 6,
+            child: Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
+              for (var i = 0; i < 14; i++)
+                Container(
+                  width: 5,
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  height: widget.playing ? 6 + 26 * (0.5 + 0.5 * math.sin((_c.value * 6.283 * 2) + i * .9)).abs() : 6,
+                  decoration: BoxDecoration(color: a.withOpacity(.8), borderRadius: BorderRadius.circular(3)),
+                ),
+            ]),
+          ),
+        ]),
+      ),
+    );
   }
 }
 

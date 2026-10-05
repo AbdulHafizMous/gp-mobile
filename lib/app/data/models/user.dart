@@ -13,6 +13,8 @@ class User {
   final String? birthday;
   final String? city;
   final String? gender;
+  final String? profession;
+  final bool needsAudienceProfile;
   final String? description;
   final String? lookingForGender;
   final String? fcmToken;
@@ -39,6 +41,8 @@ class User {
     this.birthday,
     this.city,
     this.gender,
+    this.profession,
+    this.needsAudienceProfile = false,
     this.description,
     this.lookingForGender,
     this.fcmToken,
@@ -118,6 +122,8 @@ class User {
       birthday: json['birthday']?.toString(),
       city: json['city']?.toString(),
       gender: json['gender']?.toString(),
+      profession: json['profession']?.toString(),
+      needsAudienceProfile: _parseBool(json['needs_audience_profile']),
       description: json['description']?.toString(),
       lookingForGender: json['looking_for_gender']?.toString(),
       fcmToken: json['fcm_token']?.toString(),
@@ -146,6 +152,8 @@ class User {
       'birthday': birthday,
       'city': city,
       'gender': gender,
+      'profession': profession,
+      'needs_audience_profile': needsAudienceProfile,
       'description': description,
       'looking_for_gender': lookingForGender,
       'fcm_token': fcmToken,
@@ -172,6 +180,8 @@ class User {
     String? birthday,
     String? city,
     String? gender,
+    String? profession,
+    bool? needsAudienceProfile,
     String? description,
     String? lookingForGender,
     String? fcmToken,
@@ -196,6 +206,8 @@ class User {
       birthday: birthday ?? this.birthday,
       city: city ?? this.city,
       gender: gender ?? this.gender,
+      profession: profession ?? this.profession,
+      needsAudienceProfile: needsAudienceProfile ?? this.needsAudienceProfile,
       description: description ?? this.description,
       lookingForGender: lookingForGender ?? this.lookingForGender,
       fcmToken: fcmToken ?? this.fcmToken,

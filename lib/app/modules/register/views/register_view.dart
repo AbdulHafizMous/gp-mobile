@@ -4,6 +4,7 @@ import 'package:country_pickers/country.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/components/audience_fields.dart';
 import 'package:grand_public_v2/app/components/country_picker.dart';
 import 'package:grand_public_v2/app/components/primary_button.dart';
 import 'package:grand_public_v2/app/components/primary_loading_button.dart';
@@ -250,6 +251,10 @@ class RegisterView extends GetView<RegisterController> {
                           },
                         ),
 
+                        const SizedBox(height: 16),
+
+                        // ── Profil d'audience (obligatoire) ───────────
+                        AudienceFields(state: controller.audience, dark: context.isDark),
                         const SizedBox(height: 16),
 
                         // ── Password (masqué en mode social) ──────────

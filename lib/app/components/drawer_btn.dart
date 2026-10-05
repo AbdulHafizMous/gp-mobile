@@ -19,6 +19,7 @@ class DrawerBtn extends StatelessWidget {
     this.flutterIcon,
     this.callback,
     this.accentColor,
+    this.keepIconColors = false,
   });
 
   final String title;
@@ -35,6 +36,9 @@ class DrawerBtn extends StatelessWidget {
   /// lisible sur fond blanc — pour Club, passer GPTheme.clubOnColor (pas
   /// clubColor, trop clair). Défaut : rouge "main" (Espaces / items fixes).
   final Color? accentColor;
+
+  /// true : l'asset garde ses couleurs d'origine (logos Blow Music / GameZ).
+  final bool keepIconColors;
 
   @override
   Widget build(BuildContext context) {
@@ -55,8 +59,8 @@ class DrawerBtn extends StatelessWidget {
           children: [
             // ── Icône (Flutter icon prioritaire, sinon asset PNG) ────────
             SizedBox(
-              width: 24,
-              height: 24,
+              width: keepIconColors ? 26 : 24,
+              height: keepIconColors ? 26 : 24,
               child: flutterIcon != null
                   ? Icon(
                       flutterIcon,
@@ -65,9 +69,9 @@ class DrawerBtn extends StatelessWidget {
                     )
                   : Image.asset(
                       icon,
-                      width: 20,
-                      height: 20,
-                      color: !isDark ? lightColor : Colors.white,
+                      width: keepIconColors ? 26 : 20,
+                      height: keepIconColors ? 26 : 20,
+                      color: keepIconColors ? null : (!isDark ? lightColor : Colors.white),
                     ),
             ),
 
