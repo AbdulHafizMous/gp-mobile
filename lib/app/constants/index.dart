@@ -23,7 +23,7 @@ const FEEX_SHOP_ID = "68499e0e4e10d69c0dbfd22d";
 // nommée FEEX_API_KEY (résidu d'une intégration FeexPay antérieure, jamais
 // renommée lors du passage à KKiaPay, puis à Moneroo) — clarifié ici.
 //
-// ⚠️ Moneroo ne fournit qu'UNE seule clé API (pas de séparation publique/
+// Moneroo ne fournit qu'UNE seule clé API (pas de séparation publique/
 // privée comme KKiaPay) — c'est celle-ci, utilisée ici uniquement pour le
 // widget de paiement in-app (Android/non-iOS). La vérification du paiement
 // est de toute façon toujours refaite côté serveur avec la clé secrète
@@ -36,7 +36,7 @@ const MONEROO_API_KEY = "90366b50372111f189b307c79e518cc5";
 // PAYWALL : paiement natif in-app vs redirection web
 // true  -> paiement externalisé (redirection vers grandpublic.bj)
 // false -> paiement natif dans l'app (FeexPay)
-// ⚠️ Voir note importante envoyée en chat : à elle seule, cette bascule
+// Voir note importante envoyée en chat : à elle seule, cette bascule
 // ne règle PAS le rejet Apple Guideline 3.1.1. Ne PAS activer `false`
 // sur un build iOS destiné à l'App Store tant que ce point n'est pas
 // clarifié avec Apple (IAP requis, ou fonctionnalité retirée sur iOS).
@@ -58,6 +58,23 @@ const String REVENUECAT_IOS_API_KEY = "appl_PWZcuaTWEDfdfWQSLjWXOpPqTCy";
 // À repasser à false une fois la review Apple validée.
 // ══════════════════════════════════════════════════════════════════════════
 const bool skipMediaOnIos = true;
+
+// ══════════════════════════════════════════════════════════════════════════
+// SOUMISSION APP STORE AVEC MÉDIAS MAIS SANS PAIEMENTS (iOS uniquement)
+// Indépendant de `skipMediaOnIos` : permet de soumettre une version qui
+// contient les médias mais ni abonnements, ni packs, ni achats de vidéos.
+// true  -> sur iOS : menu Premium masqué, aucun écran/bouton de paiement,
+//          tous les points d'entrée d'achat sont bloqués.
+// false -> comportement normal (RevenueCat sur iOS).
+// Android / Web ne sont JAMAIS concernés.
+// ══════════════════════════════════════════════════════════════════════════
+const bool skipPaymentsOnIos = true;
+
+bool get shouldSkipPayments =>
+    skipPaymentsOnIos && !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
+const String paymentsUnavailableMessage =
+    "Les achats ne sont pas disponibles dans cette version de l'application.";
 
 bool isPlatformiOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 

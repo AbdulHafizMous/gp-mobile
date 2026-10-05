@@ -277,6 +277,10 @@ class VideosController extends GetxController {
     required SpaceVideo video,
     required VoidCallback onPurchaseSuccess,
   }) {
+    if (shouldSkipPayments) {
+      Get.snackbar('Indisponible', paymentsUnavailableMessage);
+      return Future.value();
+    }
     if (!kIsWeb && Platform.isIOS) {
       return _purchaseVideoWithRevenueCat(
         context: context,

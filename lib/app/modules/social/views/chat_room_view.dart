@@ -1423,12 +1423,15 @@ class _BubbleContent extends StatelessWidget {
               color: isMe ? Colors.white70 : Colors.grey.shade600,
             ),
             const SizedBox(width: 6),
-            Text(
-              message.displayContent,
-              style: TextStyle(
-                color: isMe ? Colors.white70 : Colors.grey.shade600,
-                fontSize: 13,
-                fontStyle: FontStyle.italic,
+            Flexible(
+              child: Text(
+                message.displayContent,
+                softWrap: true,
+                style: TextStyle(
+                  color: isMe ? Colors.white70 : Colors.grey.shade600,
+                  fontSize: 13,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ),
           ],

@@ -4,6 +4,7 @@ import 'package:country_pickers/country.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/components/app_field.dart';
 import 'package:grand_public_v2/app/components/audience_fields.dart';
 import 'package:grand_public_v2/app/components/country_picker.dart';
 import 'package:grand_public_v2/app/components/primary_button.dart';
@@ -99,188 +100,98 @@ class RegisterView extends GetView<RegisterController> {
 
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Form(
-                    key: controller.formKey,
-                    child: Column(
-                      children: [
-                        // ── Nom et prénoms ────────────────────────────
-                        Container(
-                          constraints: BoxConstraints(minHeight: 50),
-                          child: TextFormField(
-                            controller: controller.nameController,
-                            textCapitalization: TextCapitalization.words,
-                            style: TextStyle(
-                              color: context.isDark ? Colors.black : null,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Veuillez saisir votre nom complet';
-                              }
-                              if (value.trim().split(' ').length < 2) {
-                                return 'Veuillez saisir votre nom ET prénom(s)';
-                              }
-                              return null;
-                            },
-                            decoration: const InputDecoration(
-                              hintText: 'Nom et prénom(s)',
-                              prefixIcon: Icon(Icons.person_outline),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+                  child: Column(
+                    children: [
+                      AppStepper(
+                        labels: const ['Compte', 'Profil'],
+                        current: controller.step.value,
+                        color: Colors.white,
+                        onColor: GPTheme.primaryColor,
+                      ),
+                      const SizedBox(height: 22),
 
-                        // ── Email (non modifiable en mode social) ─────
-                        Container(
-                          constraints: BoxConstraints(minHeight: 50),
-                          child: TextFormField(
-                            controller: controller.emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            readOnly:
-                                (isSocial && !controller.canChangeMail.value),
-                            style: TextStyle(
-                              color: context.isDark ? Colors.black : null,
-                              fontWeight:
-                                  (isSocial && !controller.canChangeMail.value)
-                                  ? FontWeight.w300
-                                  : null,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Veuillez saisir votre email';
-                              }
-                              if (!RegExp(
-                                r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-                              ).hasMatch(value.trim())) {
-                                return 'Email invalide';
-                              }
-                              return null;
-                            },
-                            decoration: InputDecoration(
-                              hintText: 'Adresse email',
-                              prefixIcon: const Icon(Icons.mail_outline),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // ── Téléphone avec indicatif ──────────────────
-                        ValueListenableBuilder<Country>(
-                          valueListenable: controller.selectedCountry,
-                          builder: (_, country, _) {
-                            return Container(
-                              constraints: BoxConstraints(minHeight: 50),
-                              child: Row(
-                                children: [
-                                  // Country picker
-                                  // CountryPickerWidget(
-                                  //   selectedCountry: country,
-                                  //   onChanged: (c) =>
-                                  //       controller.selectedCountry.value = c,
-                                  // ),
-                                  // Phone number input
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: controller.phoneController,
-                                      keyboardType: TextInputType.phone,
-                                      style: TextStyle(
-                                        color: context.isDark
-                                            ? Colors.black
-                                            : null,
-                                      ),
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly,
-                                        SimplePhoneFormatter(),
-                                      ],
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return "Veuillez saisir votre téléphone";
-                                        }
-                                        if (value.length < 6) {
-                                          return "Numéro invalide";
-                                        }
-                                        return null;
-                                      },
-                                      decoration: InputDecoration(
-                                        hintText: "Téléphone",
-                                        prefixIcon: CountryPickerWidget(
-                                          selectedCountry: country,
-                                          onChanged: (c) =>
-                                              controller.selectedCountry.value =
-                                                  c,
-                                        ),
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              const BorderRadius.horizontal(
-                                                right: Radius.circular(30),
-                                                left: Radius.circular(30),
-                                              ),
-                                          borderSide: BorderSide(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.2,
-                                            ),
-                                          ),
-                                        ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              const BorderRadius.horizontal(
-                                                right: Radius.circular(30),
-                                                left: Radius.circular(30),
-                                              ),
-                                          borderSide: BorderSide(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.2,
-                                            ),
-                                          ),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              const BorderRadius.horizontal(
-                                                right: Radius.circular(30),
-                                                left: Radius.circular(30),
-                                              ),
-                                          borderSide: const BorderSide(
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // ── Profil d'audience (obligatoire) ───────────
-                        AudienceFields(state: controller.audience, dark: context.isDark),
-                        const SizedBox(height: 16),
-
-                        // ── Password (masqué en mode social) ──────────
-                        if (!isSocial) ...[
-                          Obx(
-                            () => Container(
-                              constraints: BoxConstraints(minHeight: 50),
-                              child: TextFormField(
-                                controller: controller.passwordController,
-                                obscureText: controller.isObscure.value,
+                      // ── ÉTAPE 1 : informations du compte ──────────────
+                      Visibility(
+                        visible: controller.step.value == 0,
+                        maintainState: true,
+                        child: Form(
+                          key: controller.formKey,
+                          child: Column(
+                            children: [
+                              AppField(
+                                controller: controller.nameController,
+                                hint: 'Nom et prénom(s)',
+                                icon: Icons.person_outline,
+                                capitalization: TextCapitalization.words,
                                 validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Veuillez saisir un mot de passe';
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Veuillez saisir votre nom complet';
                                   }
-                                  if (value.length < 8) {
-                                    return 'Minimum 8 caractères';
+                                  if (value.trim().split(' ').length < 2) {
+                                    return 'Veuillez saisir votre nom ET prénom(s)';
                                   }
                                   return null;
                                 },
-                                decoration: InputDecoration(
-                                  hintText: 'Mot de passe',
-                                  prefixIcon: const Icon(Icons.lock_outline),
-                                  suffixIcon: IconButton(
-                                    onPressed: () =>
-                                        controller.isObscure.value =
-                                            !controller.isObscure.value,
+                              ),
+                              const SizedBox(height: 16),
+                              AppField(
+                                controller: controller.emailController,
+                                hint: 'Adresse email',
+                                icon: Icons.mail_outline,
+                                keyboardType: TextInputType.emailAddress,
+                                readOnly: (isSocial && !controller.canChangeMail.value),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Veuillez saisir votre email';
+                                  }
+                                  if (!RegExp(
+                                    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                                  ).hasMatch(value.trim())) {
+                                    return 'Email invalide';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              ValueListenableBuilder<Country>(
+                                valueListenable: controller.selectedCountry,
+                                builder: (_, country, _) => AppField(
+                                  controller: controller.phoneController,
+                                  hint: 'Téléphone',
+                                  keyboardType: TextInputType.phone,
+                                  prefix: CountryPickerWidget(
+                                    selectedCountry: country,
+                                    onChanged: (c) => controller.selectedCountry.value = c,
+                                  ),
+                                  formatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    SimplePhoneFormatter(),
+                                  ],
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Veuillez saisir votre téléphone';
+                                    }
+                                    if (value.length < 6) return 'Numéro invalide';
+                                    return null;
+                                  },
+                                ),
+                              ),
+                              if (!isSocial) ...[
+                                const SizedBox(height: 16),
+                                AppField(
+                                  controller: controller.passwordController,
+                                  hint: 'Mot de passe',
+                                  icon: Icons.lock_outline,
+                                  obscure: controller.isObscure.value,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Veuillez saisir un mot de passe';
+                                    }
+                                    if (value.length < 8) return 'Minimum 8 caractères';
+                                    return null;
+                                  },
+                                  suffix: IconButton(
+                                    onPressed: () => controller.isObscure.value = !controller.isObscure.value,
                                     icon: Icon(
                                       controller.isObscure.value
                                           ? Icons.visibility_off_outlined
@@ -288,31 +199,53 @@ class RegisterView extends GetView<RegisterController> {
                                     ),
                                   ),
                                 ),
-                              ),
-                            ),
+                              ],
+                            ],
                           ),
-                          const SizedBox(height: 30),
-                        ] else
-                          const SizedBox(height: 14),
-
-                        // ── Bouton principal ──────────────────────────
-                        Obx(
-                          () => !controller.isLoading.value
-                              ? PrimaryButton(
-                                  text: isSocial ? 'FINALISER' : "S'INSCRIRE",
-                                  callback: isSocial
-                                      ? controller.completeSocialProfile
-                                      : controller.register,
-                                )
-                              : const PrimaryLoadingButton(),
                         ),
-                      ],
-                    ),
+                      ),
+
+                      // ── ÉTAPE 2 : profil d'audience ───────────────────
+                      Visibility(
+                        visible: controller.step.value == 1,
+                        maintainState: true,
+                        child: Form(
+                          key: controller.formKey2,
+                          child: AudienceFields(state: controller.audience),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+
+                      // ── Boutons ───────────────────────────────────────
+                      if (controller.step.value == 0)
+                        PrimaryButton(text: 'CONTINUER', callback: controller.nextStep)
+                      else
+                        Obx(
+                          () => controller.isLoading.value
+                              ? const PrimaryLoadingButton()
+                              : Column(
+                                  children: [
+                                    PrimaryButton(
+                                      text: isSocial ? 'FINALISER' : "S'INSCRIRE",
+                                      callback: isSocial
+                                          ? controller.completeSocialProfile
+                                          : controller.register,
+                                    ),
+                                    TextButton.icon(
+                                      onPressed: controller.previousStep,
+                                      icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 18),
+                                      label: const Text('Retour',
+                                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                    ],
                   ),
                 ),
 
                 // ── Social buttons (masqués en mode complétion) ───────
-                if (!isSocial) ...[
+                if (!isSocial && controller.step.value == 0) ...[
                   const SizedBox(height: 20),
                   const Text(
                     'Ou',

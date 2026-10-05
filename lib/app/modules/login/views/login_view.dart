@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:country_pickers/country.dart';
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/components/app_field.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/country_picker.dart';
@@ -208,11 +209,7 @@ class LoginView extends GetView<LoginController> {
                                           controller:
                                               controller.phoneController,
                                           keyboardType: TextInputType.phone,
-                                          style: TextStyle(
-                                            color: context.isDark
-                                                ? Colors.black
-                                                : null,
-                                          ),
+                                          style: AppFieldStyle.textStyle,
                                           inputFormatters: [
                                             FilteringTextInputFormatter
                                                 .digitsOnly,
@@ -238,41 +235,7 @@ class LoginView extends GetView<LoginController> {
                                                           .value =
                                                       c,
                                             ),
-                                            border: OutlineInputBorder(
-                                              borderRadius:
-                                                  const BorderRadius.horizontal(
-                                                    right: Radius.circular(30),
-                                                    left: Radius.circular(30),
-                                                  ),
-                                              borderSide: BorderSide(
-                                                color: Colors.white.withValues(
-                                                  alpha: 0.2,
-                                                ),
-                                              ),
-                                            ),
-                                            enabledBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  const BorderRadius.horizontal(
-                                                    right: Radius.circular(30),
-                                                    left: Radius.circular(30),
-                                                  ),
-                                              borderSide: BorderSide(
-                                                color: Colors.white.withValues(
-                                                  alpha: 0.2,
-                                                ),
-                                              ),
-                                            ),
-                                            focusedBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  const BorderRadius.horizontal(
-                                                    right: Radius.circular(30),
-                                                    left: Radius.circular(30),
-                                                  ),
-                                              borderSide: const BorderSide(
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
+                                                                                                                                                                              ),
                                         ),
                                       ),
                                     ],
@@ -287,9 +250,7 @@ class LoginView extends GetView<LoginController> {
                               child: TextFormField(
                                 controller: controller.emailController,
                                 keyboardType: TextInputType.emailAddress,
-                                style: TextStyle(
-                                  color: context.isDark ? Colors.black : null,
-                                ),
+                                style: AppFieldStyle.textStyle,
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return "Veuillez saisir votre email";
@@ -320,17 +281,12 @@ class LoginView extends GetView<LoginController> {
                           child: TextFormField(
                             controller: controller.passwordController,
                             obscureText: controller.isObscure.value,
-                            style: TextStyle(
-                              color: context.isDark ? Colors.black : null,
-                            ),
+                            style: AppFieldStyle.textStyle,
                             validator: (value) => value!.isEmpty
                                 ? "Veuillez renseigner le mot de passe"
                                 : null,
                             decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              hintText: "Mot de passe",
+                                                            hintText: "Mot de passe",
                               prefixIcon: const Icon(Icons.lock_outline),
                               suffixIcon: IconButton(
                                 onPressed: () {

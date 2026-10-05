@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/components/app_field.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/primary_button.dart';
 import 'package:grand_public_v2/app/components/primary_loading_button.dart';
@@ -86,9 +87,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                     TextFormField(
                       controller: controller.emailController,
                       keyboardType: TextInputType.emailAddress,
-                       style: TextStyle(
-                              color: context.isDark ? Colors.black : null,
-                            ),
+                       style: AppFieldStyle.textStyle,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Veuillez saisir votre email';

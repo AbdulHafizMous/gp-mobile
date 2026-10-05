@@ -33,6 +33,10 @@ class CrushPurchaseController extends GetxController {
     required BuildContext context,
     required MessageCreditPack pack,
   }) {
+    if (shouldSkipPayments) {
+      Get.snackbar('Indisponible', paymentsUnavailableMessage);
+      return Future.value();
+    }
     if (!kIsWeb && Platform.isIOS) {
       return _purchaseWithRevenueCat(context: context, pack: pack);
     }

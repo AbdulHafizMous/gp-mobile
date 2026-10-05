@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/components/app_field.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/primary_button.dart';
 import 'package:grand_public_v2/app/components/primary_loading_button.dart';
@@ -87,9 +88,7 @@ class ResetPasswordView extends GetView<ResetPasswordController> {
                       () => TextFormField(
                         controller: controller.passwordController,
                         obscureText: controller.isObscureNew.value,
-                         style: TextStyle(
-                              color: context.isDark ? Colors.black : null,
-                            ),
+                         style: AppFieldStyle.textStyle,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Veuillez saisir un nouveau mot de passe';
@@ -121,9 +120,7 @@ class ResetPasswordView extends GetView<ResetPasswordController> {
                       () => TextFormField(
                         controller: controller.confirmController,
                         obscureText: controller.isObscureConfirm.value,
-                         style: TextStyle(
-                              color: context.isDark ? Colors.black : null,
-                            ),
+                         style: AppFieldStyle.textStyle,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Veuillez confirmer votre mot de passe';

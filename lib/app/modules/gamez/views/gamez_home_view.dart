@@ -123,6 +123,18 @@ FaIconData gzIcon(String name) => switch (name) {
       'bird' => FontAwesomeIcons.dove,
       'target' => FontAwesomeIcons.bullseye,
       'hash' => FontAwesomeIcons.hashtag,
+      'crown' => FontAwesomeIcons.chess,
+      'ghost' => FontAwesomeIcons.ghost,
+      'flame' => FontAwesomeIcons.fire,
+      'brick-wall' => FontAwesomeIcons.tableCellsLarge,
+      'rocket' => FontAwesomeIcons.rocket,
+      'layers' => FontAwesomeIcons.layerGroup,
+      'circle-dot' => FontAwesomeIcons.circleDot,
+      'bomb' => FontAwesomeIcons.bomb,
+      'spell-check' => FontAwesomeIcons.spellCheck,
+      'footprints' => FontAwesomeIcons.shoePrints,
+      'gem' => FontAwesomeIcons.gem,
+      'ping-pong' => FontAwesomeIcons.tableTennisPaddleBall,
       _ => FontAwesomeIcons.gamepad,
     };
 
@@ -146,7 +158,7 @@ Widget _gameBadge(GzGame g, {double size = 48}) => Container(
         borderRadius: BorderRadius.circular(size * .3),
         boxShadow: [BoxShadow(color: g.accent.withOpacity(.35), blurRadius: 12, offset: const Offset(0, 5))],
       ),
-      child: Center(child: FaIcon(gzIcon(g.icon) as FaIconData?, color: Colors.white, size: size * .42)),
+      child: Center(child: FaIcon(gzIcon(g.icon), color: Colors.white, size: size * .42)),
     );
 
 void playGame(GzGame g) => Get.to(() => GameZGameView(game: g), transition: Transition.downToUp);
@@ -242,7 +254,7 @@ class _GameCard extends StatelessWidget {
             Row(children: [
               Icon(Icons.emoji_events_rounded, size: 14, color: game.accent),
               const SizedBox(width: 4),
-              Text(game.myBest > 0 ? 'Record ${game.myBest}' : 'Pas encore joué', style: TextStyle(color: fg.withOpacity(.55), fontSize: 12, fontWeight: FontWeight.w600)),
+              Flexible(child: Text(game.myBest > 0 ? 'Record ${game.myBest}' : 'Pas encore joué', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg.withOpacity(.55), fontSize: 12, fontWeight: FontWeight.w600))),
             ]),
           ]),
         ),
@@ -276,15 +288,16 @@ class _RecentTile extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(game.name, style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 15)),
+                  Text(game.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 15)),
                   const SizedBox(height: 3),
                   Text('${ago(data['last_played_at'])} · ${data['sessions']} partie${(data['sessions'] ?? 0) > 1 ? 's' : ''} · ${fmtDuration((data['total_duration_seconds'] ?? 0) as int)}',
+                      maxLines: 2, overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: fg.withOpacity(.55), fontSize: 12)),
                   const SizedBox(height: 4),
-                  Row(children: [
+                  Wrap(spacing: 12, runSpacing: 4, children: [
                     _mini(Icons.emoji_events_rounded, '${data['best_score']}', game.accent),
-                    if (last != null) ...[const SizedBox(width: 12), _mini(Icons.flag_rounded, '$last', fg.withOpacity(.6))],
-                    if (data['last_level'] != null) ...[const SizedBox(width: 12), _mini(Icons.tune_rounded, '${data['last_level']}', fg.withOpacity(.6))],
+                    if (last != null) _mini(Icons.flag_rounded, '$last', fg.withOpacity(.6)),
+                    if (data['last_level'] != null) _mini(Icons.tune_rounded, '${data['last_level']}', fg.withOpacity(.6)),
                   ]),
                 ]),
               ),
@@ -301,7 +314,7 @@ class _RecentTile extends StatelessWidget {
     );
   }
 
-  Widget _mini(IconData i, String t, Color c) => Row(children: [
+  Widget _mini(IconData i, String t, Color c) => Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(i, size: 13, color: c),
         const SizedBox(width: 3),
         Text(t, style: TextStyle(color: c, fontSize: 12, fontWeight: FontWeight.w700)),
@@ -337,8 +350,8 @@ void _showGameSheet(BuildContext context, GzGame g) {
               const SizedBox(width: 14),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(g.name, style: TextStyle(color: fg, fontSize: 22, fontWeight: FontWeight.w900)),
-                  if ((g.description ?? '').isNotEmpty) Text(g.description!, style: TextStyle(color: fg.withOpacity(.6), fontSize: 13)),
+                  Text(g.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontSize: 22, fontWeight: FontWeight.w900)),
+                  if ((g.description ?? '').isNotEmpty) Text(g.description!, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg.withOpacity(.6), fontSize: 13)),
                 ]),
               ),
             ]),
@@ -361,7 +374,7 @@ void _showGameSheet(BuildContext context, GzGame g) {
             else if (d == null)
               Text('Statistiques indisponibles.', style: TextStyle(color: fg.withOpacity(.5)))
             else ...[
-              Wrap(spacing: 10, runSpacing: 10, children: [
+              _StatGrid(children: [
                 _stat('Record', '${mine?['best_score'] ?? 0}', Icons.emoji_events_rounded, g.accent, fg, isDark),
                 _stat('Moyenne', '${mine?['avg_score'] ?? 0}', Icons.show_chart_rounded, g.accent, fg, isDark),
                 _stat('Parties', '${mine?['plays'] ?? 0}', Icons.sports_esports_rounded, g.accent, fg, isDark),
@@ -395,15 +408,47 @@ void _showGameSheet(BuildContext context, GzGame g) {
   );
 }
 
+/// Grille de cartes de stats : 2 par ligne, chacune prend exactement la moitié
+/// de la largeur disponible (jamais de largeur fixe -> pas de vide ni d'overflow).
+class _StatGrid extends StatelessWidget {
+  final List<Widget> children;
+  const _StatGrid({required this.children});
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (_, c) {
+          const gap = 10.0;
+          final w = (c.maxWidth - gap) / 2;
+          return Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: [for (final ch in children) SizedBox(width: w, child: ch)],
+          );
+        },
+      );
+}
+
 Widget _stat(String l, String v, IconData i, Color a, Color fg, bool dark) => Container(
-      width: 104,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(color: dark ? const Color(0xFF211F29) : const Color(0xFFF4F2EC), borderRadius: BorderRadius.circular(16)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(i, size: 18, color: a),
-        const SizedBox(height: 6),
-        Text(v, style: TextStyle(color: fg, fontWeight: FontWeight.w900, fontSize: 18)),
-        Text(l, style: TextStyle(color: fg.withOpacity(.55), fontSize: 11, fontWeight: FontWeight.w600)),
+      child: Row(children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(color: a.withOpacity(.16), borderRadius: BorderRadius.circular(10)),
+          child: Icon(i, size: 19, color: a),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(v, maxLines: 1, style: TextStyle(color: fg, fontWeight: FontWeight.w900, fontSize: 18)),
+            ),
+            Text(l, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg.withOpacity(.55), fontSize: 11, fontWeight: FontWeight.w600)),
+          ]),
+        ),
       ]),
     );
 
@@ -432,12 +477,12 @@ class _ProfileTab extends StatelessWidget {
                 boxShadow: [BoxShadow(color: accent.withOpacity(.35), blurRadius: 20, offset: const Offset(0, 10))],
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Row(children: [Icon(Icons.toll_rounded, color: Colors.black87), SizedBox(width: 8), Text('Mon solde GCoin', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w700))]),
+                const Row(children: [Icon(Icons.toll_rounded, color: Colors.black87), SizedBox(width: 8), Flexible(child: Text('Mon solde GCoin', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w700)))]),
                 const SizedBox(height: 8),
                 TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0, end: c.gcoinBalance.value.toDouble()),
                   duration: const Duration(milliseconds: 700),
-                  builder: (_, v, __) => Text('${v.round()}', style: const TextStyle(color: Colors.black, fontSize: 44, fontWeight: FontWeight.w900)),
+                  builder: (_, v, __) => FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('${v.round()}', maxLines: 1, style: const TextStyle(color: Colors.black, fontSize: 44, fontWeight: FontWeight.w900))),
                 ),
                 const SizedBox(height: 6),
                 Row(children: [
@@ -503,8 +548,8 @@ class _ProfileTab extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(game != null ? '${game.name}${t['score'] != null ? ' · ${t['score']} pts' : ''}' : '${t['label']}', style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 14)),
-                        Text('${t['label']} · ${ago(t['created_at'])}', style: TextStyle(color: fg.withOpacity(.5), fontSize: 12)),
+                        Text(game != null ? '${game.name}${t['score'] != null ? ' · ${t['score']} pts' : ''}' : '${t['label']}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 14)),
+                        Text('${t['label']} · ${ago(t['created_at'])}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg.withOpacity(.5), fontSize: 12)),
                       ]),
                     ),
                     Text('${pos ? '+' : ''}$amt', style: TextStyle(color: pos ? const Color(0xFF16A34A) : Colors.red, fontWeight: FontWeight.w900, fontSize: 17)),
@@ -574,8 +619,8 @@ class _LeaderboardTab extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('Votre position', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w800)),
-                    Text('sur ${c.lbTotal.value} joueur${c.lbTotal.value > 1 ? 's' : ''}', style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                    const Text('Votre position', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w800)),
+                    Text('sur ${c.lbTotal.value} joueur${c.lbTotal.value > 1 ? 's' : ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.black54, fontSize: 12)),
                   ]),
                 ),
                 Text(isGame ? '${c.lbMe.value!['best_score']} pts' : '${c.lbMe.value!['points']} pts', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 18)),
@@ -679,7 +724,7 @@ class _LbRowState extends State<_LbRow> {
                     Row(mainAxisSize: MainAxisSize.min, children: [
                       Icon(d.$1, size: 14, color: widget.fg.withOpacity(.5)),
                       const SizedBox(width: 4),
-                      Text(d.$2, style: TextStyle(color: widget.fg.withOpacity(.7), fontSize: 12, fontWeight: FontWeight.w600)),
+                      Text(d.$2, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: widget.fg.withOpacity(.7), fontSize: 12, fontWeight: FontWeight.w600)),
                     ]),
                 ]),
               ),

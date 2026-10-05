@@ -9,11 +9,16 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/data/models/message_credit_pack_model.dart';
 import 'package:grand_public_v2/app/modules/social/controllers/crush_purchase_controller.dart';
 import 'package:grand_public_v2/app/services/crush_quota_service.dart';
 
 Future<void> showCrushPacksSheet(BuildContext context) async {
+  if (shouldSkipPayments) {
+    Get.snackbar('Indisponible', paymentsUnavailableMessage);
+    return;
+  }
   final quotaService = CrushQuotaService.to;
   await quotaService.loadPacks();
 

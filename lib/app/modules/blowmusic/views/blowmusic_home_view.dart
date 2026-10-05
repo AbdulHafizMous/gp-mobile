@@ -140,7 +140,10 @@ class _HomeTab extends StatelessWidget {
                 itemCount: recent.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemBuilder: (_, i) => Chip(
-                  label: Text(recent[i]['title'] ?? '', style: const TextStyle(fontSize: 12)),
+                  label: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 180),
+                    child: Text(recent[i]['title'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+                  ),
                 ),
               ),
             ),
@@ -224,11 +227,12 @@ class _LiveTab extends StatelessWidget {
             ]),
             const SizedBox(height: 12),
             Text(live['title']?.toString() ?? 'Direct',
+                maxLines: 2, overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: fg, fontSize: 22, fontWeight: FontWeight.w800), textAlign: TextAlign.center),
             if ((live['description'] ?? '').toString().isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: Text(live['description'].toString(), style: TextStyle(color: fg.withOpacity(.6), fontSize: 13), textAlign: TextAlign.center),
+                child: Text(live['description'].toString(), maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg.withOpacity(.6), fontSize: 13), textAlign: TextAlign.center),
               ),
             if (live['now_playing_title'] != null && live['now_playing_title'].toString().isNotEmpty)
               Padding(
@@ -236,7 +240,7 @@ class _LiveTab extends StatelessWidget {
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.music_note_rounded, size: 16, color: accent),
                   const SizedBox(width: 4),
-                  Flexible(child: Text(live['now_playing_title'].toString(), style: TextStyle(color: fg.withOpacity(.75), fontSize: 14))),
+                  Flexible(child: Text(live['now_playing_title'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg.withOpacity(.75), fontSize: 14))),
                 ]),
               ),
             const SizedBox(height: 22),
@@ -428,18 +432,33 @@ class _TrackTile extends StatelessWidget {
   final Color fg;
   const _TrackTile({required this.track, required this.accent, required this.fg});
 
+  Widget _coverFallback() => Container(
+        color: accent.withOpacity(0.15),
+        child: Icon(Icons.music_note_rounded, color: accent, size: 22),
+      );
+
   @override
   Widget build(BuildContext context) {
     final ctrl = Get.find<BlowMusicController>();
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(
-        backgroundColor: accent.withOpacity(0.15),
-        child: Icon(Icons.music_note_rounded, color: accent, size: 20),
+      leading: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: (track.coverUrl != null && track.coverUrl!.isNotEmpty)
+              ? Image.network(
+                  track.coverUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _coverFallback(),
+                )
+              : _coverFallback(),
+        ),
       ),
       title: Text(track.title, style: TextStyle(color: fg, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: track.artistName != null
-          ? Text(track.artistName!, style: TextStyle(color: fg.withOpacity(0.5), fontSize: 12))
+          ? Text(track.artistName!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg.withOpacity(0.5), fontSize: 12))
           : null,
       trailing: Icon(Icons.play_circle_fill_rounded, color: accent, size: 32),
       onTap: () => ctrl.playTrack(track),

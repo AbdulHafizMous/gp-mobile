@@ -8,6 +8,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:grand_public_v2/app/components/drawer_btn.dart';
+import 'package:grand_public_v2/app/components/drawer_parts.dart';
+import 'package:grand_public_v2/app/data/models/user.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/notifs/controllers/notifs_controller.dart';
@@ -48,147 +51,77 @@ class ModuleDrawer extends StatelessWidget {
     Get.offAllNamed(route);
   }
 
+  /// Un bouton identique à ceux du drawer Grand Public (DrawerBtn).
+  Widget _btn({String title = '', IconData? icon, String? asset, bool keepColors = false, required VoidCallback onTap}) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: DrawerBtn(
+          title: title,
+          flutterIcon: icon,
+          icon: asset ?? 'assets/images/profile.png',
+          keepIconColors: keepColors,
+          accentColor: accentColor,
+          callback: () {
+            Get.back();
+            onTap();
+          },
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Drawer(
-      backgroundColor: isDark ? const Color(0xFF0A0A0A) : accentColor,
-      width: MediaQuery.of(context).size.width * 0.72,
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          // ── En-tête profil (même principe que Grand Public) ────────────
-          GestureDetector(
-            onTap: () => Get.toNamed('/profile'),
-            child: Container(
-              color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-              padding: const EdgeInsets.only(top: 30, left: 6, right: 6),
-              child: Column(
-                children: [
-                  Container(
-                    width: 100,
-                    height: 100,
-                    margin: const EdgeInsets.only(bottom: 8),
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: isDark ? Colors.white12 : Colors.black12),
-                    child: ClipOval(
-                      child: (activeUser.value.hasAvatar)
-                          ? Image.network(
-                              activeUser.value.avatarUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => ColorFiltered(
-                                colorFilter: ColorFilter.mode(accentColor, BlendMode.srcIn),
-                                child: Image.asset('assets/images/profile.png', fit: BoxFit.cover),
-                              ),
-                            )
-                          : ColorFiltered(
-                              colorFilter: ColorFilter.mode(accentColor, BlendMode.srcIn),
-                              child: Image.asset('assets/images/profile.png', fit: BoxFit.cover),
-                            ),
-                    ),
-                  ),
-                  Text(
-                    activeUser.value.name,
-                    style: TextStyle(fontSize: 18, fontFamily: 'gotham_book', fontWeight: FontWeight.bold, color: isDark ? Colors.white : accentColor),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    activeUser.value.email,
-                    style: TextStyle(fontSize: 13, color: isDark ? Colors.white54 : accentColor.withOpacity(0.7)),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
+    return DrawerShell(
+      color: accentColor,
+      children: [
+        // ── En-tête profil : STRICTEMENT celui de Grand Public ─────────
+        DrawerProfileHeader(onTap: () => Get.toNamed('/profile'), accentColor: accentColor),
+        const SizedBox(height: 20),
 
-          // ── Menu variable (les onglets du module) ──────────────────────
+        // ── Menu variable (onglets du module) ──────────────────────────
+        DrawerSectionLabel(title: moduleName),
+        const SizedBox(height: 10),
+        if (variableItems.isEmpty)
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
-            child: Text(
-              moduleName.toUpperCase(),
-              style: TextStyle(color: isDark ? Colors.white : Colors.white, fontSize: 10.5, fontWeight: FontWeight.w700, letterSpacing: 1.4),
-            ),
-          ),
-          const SizedBox(height: 6),
-          ...variableItems.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: ListTile(
-                  leading: Icon(item.icon, color: isDark ? accentColor : Colors.white),
-                  title: Text(item.title, style: TextStyle(color: isDark ? Colors.white : Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-                  onTap: () {
-                    Get.back();
-                    item.onTap();
-                  },
-                ),
-              )),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: Divider(color: isDark ? Colors.white12 : Colors.white38),
-          ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Text('Aucun menu disponible', style: TextStyle(color: isDark ? Theme.of(context).hintColor : Colors.white.withAlpha(130), fontSize: 13)),
+          )
+        else
+          ...variableItems.map((item) => _btn(title: item.title, icon: item.icon, onTap: item.onTap)),
+        const DrawerSep(),
 
-          // ── Menu fixe (comme Premium/Liens/À propos de Grand Public) ───
-          ListTile(
-            leading: Icon(Icons.notifications_none_rounded, color: isDark ? accentColor : Colors.white),
-            title: Text('Notifications', style: TextStyle(color: isDark ? Colors.white : Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-            onTap: () {
-              Get.back();
-              openModuleNotifications(moduleName == 'Blow Music' ? 'blowmusic' : moduleName == 'GameZ' ? 'gamez' : 'all');
-            },
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-            child: Text('CHANGER DE MODULE', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10.5, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
-          ),
-          if (moduleName != 'Grand Public')
-            _fixedItem(context, 'assets/images/icon.png', 'Grand Public', () => _switchTo(AppMode.grandPublic, '/home'), isDark),
-          if (isBlowMusicActivated && moduleName != 'Blow Music')
-            _fixedItem(context, LOGO_BLOWMUSIC_NAV, 'Blow Music', () => _switchTo(AppMode.blowMusic, '/blowmusic/home'), isDark),
-          if (isGameZActivated && moduleName != 'GameZ')
-            _fixedItem(context, LOGO_GAMEZ_NAV, 'GameZ', () => _switchTo(AppMode.gameZ, '/gamez/home'), isDark),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: Divider(color: isDark ? Colors.white12 : Colors.white38),
-          ),
-          ListTile(
-            leading: Icon(Icons.logout_rounded, color: isDark ? accentColor : Colors.white),
-            title: Text('Déconnexion', style: TextStyle(color: isDark ? Colors.white : Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-            onTap: () {
-              GetStorage().remove('token');
-              GetStorage().write('isLogged', false);
+        // ── Menu fixe (comme Premium/Liens/À propos de Grand Public) ───
+        _btn(
+          title: 'Notifications',
+          icon: Icons.notifications_none_rounded,
+          onTap: () => openModuleNotifications(moduleName == 'Blow Music' ? 'blowmusic' : moduleName == 'GameZ' ? 'gamez' : 'all'),
+        ),
+        if (moduleName != 'Grand Public')
+          _btn(title: 'Grand Public', asset: LOGO_PIXEL, keepColors: true, onTap: () => _switchTo(AppMode.grandPublic, '/home')),
+        if (isBlowMusicActivated && moduleName != 'Blow Music')
+          _btn(title: 'Blow Music', asset: LOGO_BLOWMUSIC_NAV, keepColors: true, onTap: () => _switchTo(AppMode.blowMusic, '/blowmusic/home')),
+        if (isGameZActivated && moduleName != 'GameZ')
+          _btn(title: 'GameZ', asset: LOGO_GAMEZ_NAV, keepColors: true, onTap: () => _switchTo(AppMode.gameZ, '/gamez/home')),
+        const DrawerSep(),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: DrawerBtn(
+            title: 'Déconnexion',
+            flutterIcon: Icons.logout_rounded,
+            accentColor: accentColor,
+            callback: () {
+              activeUser.value = User.empty();
+              GetStorage().erase();
               Get.offAllNamed('/login');
             },
           ),
-          const SizedBox(height: 20),
+        ),
+        const SizedBox(height: 20),
 
-          // ── Logo du module en bas (comme Grand Public) ─────────────────
-          Center(
-            child: Image.asset(
-              moduleLogo,
-              height: 60,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-            ),
-          ),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _fixedItem(BuildContext context, String logo, String title, VoidCallback onTap, bool isDark) {
-    return ListTile(
-      leading: SizedBox(
-        width: 24,
-        height: 24,
-        child: Image.asset(logo, fit: BoxFit.contain, errorBuilder: (_, __, ___) => Icon(Icons.apps_rounded, color: isDark ? accentColor : Colors.white)),
-      ),
-      title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-      onTap: () {
-        Get.back();
-        onTap();
-      },
+        // ── Logo du module en bas (même conteneur que Grand Public) ────
+        DrawerLogo(asset: moduleLogo),
+        const SizedBox(height: 20),
+      ],
     );
   }
 }

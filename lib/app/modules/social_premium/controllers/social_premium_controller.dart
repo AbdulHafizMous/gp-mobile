@@ -116,6 +116,10 @@ class SocialPremiumController extends GetxController {
     required BuildContext context,
     required Subscription plan,
   }) {
+    if (shouldSkipPayments) {
+      Get.snackbar('Indisponible', paymentsUnavailableMessage);
+      return Future.value();
+    }
     if (!kIsWeb && Platform.isIOS) {
       return _subscribeWithRevenueCat(context: context, plan: plan);
     }

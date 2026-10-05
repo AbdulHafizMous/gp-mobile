@@ -262,6 +262,7 @@ class HomeController extends GetxController {
         (route.startsWith('/home/spaces') || route == '/social-premium')) {
       return;
     }
+    if (shouldSkipPayments && route == '/social-premium') return;
 
     if (_isExternalRoute(route)) {
       Get.toNamed(route, parameters: params.map((k, v) => MapEntry(k, '$v')));

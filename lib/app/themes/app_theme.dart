@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/components/app_field.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 
 class GPTheme {
@@ -127,30 +128,7 @@ class GPTheme {
           ),
         ),
       ),
-      inputDecorationTheme: const InputDecorationTheme(
-        labelStyle: TextStyle(color: Colors.black, fontSize: 12),
-        fillColor: Colors.white,
-        filled: true,
-        errorStyle: TextStyle(color: Colors.white, fontSize: 12),
-        iconColor: Colors.white,
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(50)),
-          borderSide: BorderSide(color: Colors.white),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(50)),
-          borderSide: BorderSide(color: Colors.white),
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(50)),
-          borderSide: BorderSide(color: Colors.white),
-        ),
-        outlineBorder: BorderSide(
-          color: Colors.white,
-          width: 1,
-          style: BorderStyle.solid,
-        ),
-      ),
+      inputDecorationTheme: AppFieldStyle.theme,
     );
   }
 
@@ -207,30 +185,7 @@ class GPTheme {
           ),
         ),
       ),
-      inputDecorationTheme: const InputDecorationTheme(
-        labelStyle: TextStyle(color: Colors.black, fontSize: 12),
-        fillColor: Colors.white,
-        filled: true,
-        errorStyle: TextStyle(color: Colors.white, fontSize: 12),
-        iconColor: Colors.white,
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(50)),
-          borderSide: BorderSide(color: Colors.white),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(50)),
-          borderSide: BorderSide(color: Colors.white),
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(50)),
-          borderSide: BorderSide(color: Colors.white),
-        ),
-        outlineBorder: BorderSide(
-          color: Colors.white,
-          width: 1,
-          style: BorderStyle.solid,
-        ),
-      ),
+      inputDecorationTheme: AppFieldStyle.theme,
     );
   }
 }

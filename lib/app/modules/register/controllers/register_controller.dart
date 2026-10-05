@@ -37,7 +37,9 @@ class RegisterController extends GetxController {
   final isLoading = false.obs;
   final isSocialLoading = false.obs;
   final canChangeMail = false.obs;
-  final formKey = GlobalKey<FormState>();
+  final formKey = GlobalKey<FormState>(); // étape 1 (compte)
+  final formKey2 = GlobalKey<FormState>(); // étape 2 (profil d'audience)
+  final step = 0.obs;
   final registerMode = RegisterMode.normal.obs;
 
   String? _socialToken;
@@ -87,10 +89,34 @@ class RegisterController extends GetxController {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
+  // STEPPER (2 étapes)
+  // ══════════════════════════════════════════════════════════════════════════
+  void nextStep() {
+    if (formKey.currentState?.validate() ?? false) step.value = 1;
+  }
+
+  void previousStep() {
+    if (step.value > 0) step.value = 0;
+  }
+
+  /// Valide les 2 étapes ; renvoie à l'étape fautive le cas échéant.
+  bool _validateAll() {
+    if (!(formKey.currentState?.validate() ?? false)) {
+      step.value = 0;
+      return false;
+    }
+    if (!(formKey2.currentState?.validate() ?? false)) {
+      step.value = 1;
+      return false;
+    }
+    return true;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
   // REGISTER NORMAL
   // ══════════════════════════════════════════════════════════════════════════
   Future<void> register() async {
-    if (!formKey.currentState!.validate()) return;
+    if (!_validateAll()) return;
     isLoading.value = true;
 
     try {
@@ -162,7 +188,7 @@ class RegisterController extends GetxController {
   // COMPLÉTION PROFIL SOCIAL
   // ══════════════════════════════════════════════════════════════════════════
   Future<void> completeSocialProfile() async {
-    if (!formKey.currentState!.validate()) return;
+    if (!_validateAll()) return;
     isLoading.value = true;
 
     try {
