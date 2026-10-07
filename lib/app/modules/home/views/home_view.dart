@@ -1,6 +1,6 @@
 // lib/app/modules/home/views/home_view.dart
 //
-// Coquille de la section Grand Public — allégée : tout le détail (AppBar,
+// Coquille de la section Grandpublic — allégée : tout le détail (AppBar,
 // drawer, bottom bar, transition) a été extrait dans
 // lib/app/modules/home/widgets/ pour rester lisible et réutilisable.
 
@@ -35,7 +35,9 @@ class HomeView extends GetView<HomeController> {
           ),
         ),
       ),
-      drawer: Obx(() => HomeDrawer(activeSectionIndex: controller.activeSectionIndex)),
+      drawer: Obx(
+        () => HomeDrawer(activeSectionIndex: controller.activeSectionIndex),
+      ),
       body: Obx(
         () => Column(
           children: [
@@ -45,13 +47,19 @@ class HomeView extends GetView<HomeController> {
             if (controller.activeSectionIndex == 0 && !controller.canPop)
               const AdBannerWidget(screen: 'home'),
             Expanded(
-              child: AnimatedBody(routeKey: controller.currentRoute, child: controller.currentPage),
+              child: AnimatedBody(
+                routeKey: controller.currentRoute,
+                child: controller.currentPage,
+              ),
             ),
           ],
         ),
       ),
       bottomNavigationBar: Obx(
-        () => SectionsBottomBar(activeIndex: controller.activeSectionIndex, onTap: controller.goToSection),
+        () => SectionsBottomBar(
+          activeIndex: controller.activeSectionIndex,
+          onTap: controller.goToSection,
+        ),
       ),
     );
   }

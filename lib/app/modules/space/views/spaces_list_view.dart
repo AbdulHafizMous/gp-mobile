@@ -73,7 +73,7 @@ class _SpacesListViewState extends State<SpacesListView> {
         _spaces = [
           SpaceModel(
             id: 1,
-            title: 'Grand Public Bénin',
+            title: 'Grandpublic Bénin',
             description: 'Le meilleur des contenus vidéo du Bénin.',
             logoUrl:
                 'http://192.168.100.19:8000/storage/spaces/LOjChoOVIMVa1xzPiWmObIsuqnyH4Fh551hBXFzE.jpg',

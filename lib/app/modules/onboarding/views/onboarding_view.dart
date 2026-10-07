@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
-
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/primary_button.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
@@ -9,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../controllers/onboarding_controller.dart';
 
 /// Écran d'accueil (fond "wall_start"). Le choix du module (Grandpublic /
-/// Blow Music / GameZ) se fait maintenant APRÈS la connexion — voir
+/// Blowmusic / GameZ) se fait maintenant APRÈS la connexion — voir
 /// lib/app/modules/module_choice/. Cet écran ne fait donc plus que mener
 /// au login, quel que soit le nombre de modules actifs.
 class OnboardingView extends GetView<OnboardingController> {
@@ -24,25 +22,28 @@ class OnboardingView extends GetView<OnboardingController> {
 
   Widget _buildCguNotice() {
     return Padding(
-      padding: const EdgeInsets.only(top: 14),
-      child: RichText(
-        textAlign: TextAlign.center,
-        text: TextSpan(
-          style: const TextStyle(color: Colors.white70, fontSize: 11.5),
-          children: [
-            const TextSpan(text: 'En continuant, vous acceptez nos '),
-            TextSpan(
-              text: 'Conditions Générales d\'Utilisation',
+      padding: const EdgeInsets.only(top: 15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            'En continuant, vous acceptez nos',
+            style: TextStyle(color: Colors.white70, fontSize: 11.5),
+          ),
+          InkWell(
+            onTap: _openCgu,
+            child: Text(
+              'Conditions Générales d\'Utilisation',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
                 decoration: TextDecoration.underline,
+                fontSize: 10.5,
               ),
-              recognizer: TapGestureRecognizer()..onTap = _openCgu,
             ),
-            const TextSpan(text: '.'),
-          ],
-        ),
+          ),
+          Text('.', style: TextStyle(color: Colors.white70, fontSize: 11.5)),
+        ],
       ),
     );
   }

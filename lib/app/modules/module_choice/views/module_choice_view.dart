@@ -21,16 +21,16 @@ class ModuleChoiceView extends GetView<ModuleChoiceController> {
     final modules = <_ModuleCardData>[
       _ModuleCardData(
         mode: AppMode.grandPublic,
-        title: 'Grand Public',
+        title: 'Grandpublic',
         subtitle: 'Social, Club, Media & Bizz',
-        color: const Color(0xFF23232E),
+        color: GPTheme.primaryColor,
         icon: Icons.public_rounded,
-        logo: LOGO_NAV,
+        logo: LOGO,
       ),
       if (isBlowMusicActivated)
         _ModuleCardData(
           mode: AppMode.blowMusic,
-          title: 'Blow Music',
+          title: 'Blowmusic',
           subtitle: 'Radio live, playlists & musique',
           color: GPTheme.primaryColor,
           icon: Icons.graphic_eq_rounded,
@@ -41,7 +41,8 @@ class ModuleChoiceView extends GetView<ModuleChoiceController> {
           mode: AppMode.gameZ,
           title: 'GameZ',
           subtitle: 'Jeux, classements & récompenses',
-          color: GPTheme.clubColor,
+          color: GPTheme.primaryColor,
+          // textColor: Colors.black,
           icon: Icons.sports_esports_rounded,
           logo: LOGO_GAMEZ,
         ),
@@ -50,10 +51,15 @@ class ModuleChoiceView extends GetView<ModuleChoiceController> {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          image: DecorationImage(image: AssetImage('assets/images/wall_start.png'), fit: BoxFit.cover),
+          image: DecorationImage(
+            image: AssetImage('assets/images/wall_start.png'),
+            fit: BoxFit.cover,
+          ),
         ),
         child: Container(
-          color: Colors.black.withOpacity(0.55), // lisibilité du texte sur la photo
+          color: Colors.black.withOpacity(
+            0.55,
+          ), // lisibilité du texte sur la photo
           child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 22),
@@ -62,26 +68,42 @@ class ModuleChoiceView extends GetView<ModuleChoiceController> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Text(
-                    'Bienvenue 👋',
+                    'Bienvenue !',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   const Text(
                     'Que voulez-vous ouvrir ?',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                   const SizedBox(height: 32),
-                  ...modules.map((m) => Padding(
-                        padding: const EdgeInsets.only(bottom: 18),
-                        child: _ModuleCard(data: m, onTap: () => controller.choose(m.mode)),
-                      )),
+                  ...modules.map(
+                    (m) => Padding(
+                      padding: const EdgeInsets.only(bottom: 18),
+                      child: _ModuleCard(
+                        data: m,
+                        onTap: () => controller.choose(m.mode),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   Text(
                     'Vous pourrez changer de module à tout moment depuis le menu.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.6),
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -98,6 +120,7 @@ class _ModuleCardData {
   final String title;
   final String subtitle;
   final Color color;
+  Color textColor;
   final IconData icon;
   final String? logo;
   _ModuleCardData({
@@ -107,6 +130,8 @@ class _ModuleCardData {
     required this.color,
     required this.icon,
     this.logo,
+    // ignore: unused_element_parameter
+    this.textColor = Colors.white,
   });
 }
 
@@ -130,7 +155,11 @@ class _ModuleCard extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
-            BoxShadow(color: data.color.withOpacity(0.35), blurRadius: 18, offset: const Offset(0, 10)),
+            BoxShadow(
+              color: data.color.withOpacity(0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
           ],
         ),
         child: Row(
@@ -147,7 +176,8 @@ class _ModuleCard extends StatelessWidget {
                   ? Image.asset(
                       data.logo!,
                       fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Icon(data.icon, color: Colors.white, size: 30),
+                      errorBuilder: (_, __, ___) =>
+                          Icon(data.icon, color: Colors.white, size: 30),
                     )
                   : Icon(data.icon, color: Colors.white, size: 30),
             ),
@@ -158,17 +188,28 @@ class _ModuleCard extends StatelessWidget {
                 children: [
                   Text(
                     data.title,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 19),
+                    style: TextStyle(
+                      color: data.textColor,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 19,
+                    ),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     data.subtitle,
-                    style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12.5),
+                    style: TextStyle(
+                      color: data.textColor.withOpacity(0.9),
+                      fontSize: 12.5,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 16),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: data.textColor,
+              size: 16,
+            ),
           ],
         ),
       ),

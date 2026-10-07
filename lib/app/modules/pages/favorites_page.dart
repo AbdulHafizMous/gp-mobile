@@ -279,7 +279,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
         ppvPrice: 500,
         canRead: true,
         isSaved: true,
-        spaceName: 'Grand Public Bénin',
+        spaceName: 'Grandpublic Bénin',
         categoryName: 'Event',
       ),
       SpaceVideo(
@@ -296,7 +296,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
         isPremium: false,
         canRead: true,
         isSaved: true,
-        spaceName: 'Grand Public Bénin',
+        spaceName: 'Grandpublic Bénin',
         categoryName: 'Portrait',
       ),
       SpaceVideo(
@@ -314,7 +314,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
         ppvPrice: 500,
         canRead: false,
         isSaved: true,
-        spaceName: 'Grand Public Bénin',
+        spaceName: 'Grandpublic Bénin',
         categoryName: 'Portrait',
       ),
     ];

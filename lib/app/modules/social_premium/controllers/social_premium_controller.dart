@@ -250,15 +250,44 @@ class SocialPremiumController extends GetxController {
       );
 
       if (paymentId != null && context.mounted) {
-        await _doSubscribeBackend(
-          context: context,
-          plan: plan,
-          transactionId: paymentId,
-          metadata: {'gateway': 'moneroo'},
-        );
+        await _confirmMonerooPayment(context: context, plan: plan, paymentId: paymentId);
       }
     } on DioException catch (e) {
       ApiErrorHelper.showError(e);
+    }
+  }
+
+  /// Vérifie le paiement côté serveur (qui active l'abonnement et envoie la
+  /// notification), avec quelques essais si Moneroo est encore en attente.
+  Future<void> _confirmMonerooPayment({
+    required BuildContext context,
+    required Subscription plan,
+    required String paymentId,
+  }) async {
+    isSubscribing.value = true;
+    String reason = "Le paiement n'a pas pu être vérifié.";
+    try {
+      for (var i = 0; i < 4; i++) {
+        try {
+          final res = await RequestService().post(
+            '/subscriptions/${plan.id}/confirm',
+            data: {'payment_id': paymentId},
+          );
+          if (res.statusCode == 200 || res.statusCode == 201) {
+            await _refreshActiveUser();
+            await fetchMySubscriptions();
+            if (context.mounted) _showPaymentSuccessDialog(context, plan);
+            return;
+          }
+        } on DioException catch (e) {
+          reason = e.response?.data?['message']?.toString() ?? reason;
+          if (e.response?.statusCode != 422) break;
+        }
+        await Future.delayed(const Duration(seconds: 2));
+      }
+      if (context.mounted) _showPaymentFailedDialog(context, reason);
+    } finally {
+      isSubscribing.value = false;
     }
   }
 

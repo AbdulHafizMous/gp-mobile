@@ -67,7 +67,7 @@ class LinkifiedText extends StatelessWidget {
     final uri = Uri.tryParse(rawUrl);
     if (uri == null) return;
 
-    // Lien de partage GRAND PUBLIC (https://grandpublic.bj/m/{type}/{id})
+    // Lien de partage GRANDPUBLIC (https://grandpublic.bj/m/{type}/{id})
     // → navigation directe dans l'app plutôt qu'un aller-retour navigateur.
     if (uri.host == Uri.parse(kShareHost).host) {
       await AppLinkRouter.routeFromUri(uri);

@@ -70,8 +70,8 @@ const bool skipMediaOnIos = true;
 // ══════════════════════════════════════════════════════════════════════════
 const bool skipPaymentsOnIos = true;
 
-bool get shouldSkipPayments =>
-    skipPaymentsOnIos && !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+bool get shouldSkipPayments => true;
+    // skipPaymentsOnIos && !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
 const String paymentsUnavailableMessage =
     "Les achats ne sont pas disponibles dans cette version de l'application.";
@@ -82,7 +82,7 @@ bool isPlatformiOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 /// doit JAMAIS masquer quoi que ce soit sur Android/Web — uniquement sur
 /// iOS, quelle que soit la valeur de `skipMediaOnIos`.
 // const bool shouldSkipMedia = true;
-// 
+//
 bool get shouldSkipMedia =>
     skipMediaOnIos && !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
@@ -97,24 +97,25 @@ const bool isDebuggingIap = true;
 // ══════════════════════════════════════════════════════════════════════════
 // BLOWMUSIC — double application
 // ──────────────────────────────────────────────────────────────────────────
-// true  -> l'écran d'accueil (wall_start) propose un choix "Grand Public"
-//          / "Blow Music". Blow Music démarre alors sur sa propre coquille
+// true  -> l'écran d'accueil (wall_start) propose un choix "Grandpublic"
+//          / "Blowmusic". Blowmusic démarre alors sur sa propre coquille
 //          (logo, thème, menus dédiés) tout en partageant le même compte,
-//          la même session et la même API backend que Grand Public.
+//          la même session et la même API backend que Grandpublic.
 // false -> comportement actuel inchangé : un seul bouton "Démarrer" qui
 //          mène directement au login Grandpublic (aucun écran de choix).
 // ══════════════════════════════════════════════════════════════════════════
-const bool isBlowMusicActivated = true;
-// Logos / identité visuelle dédiés à Blow Music (à remplacer par les vrais
+const bool isBlowMusicActivated = false;
+// Logos / identité visuelle dédiés à Blowmusic (à remplacer par les vrais
 // assets une fois livrés par le design : assets/images/blowmusic_*.png).
-const String LOGO_BLOWMUSIC = 'assets/images/logo_new_pixel.png';
-const String LOGO_BLOWMUSIC_NAV = 'assets/images/logo_pixel.png';
+const String LOGO_BLOWMUSIC = 'assets/images/Icone_B_blanc.png';
+const String LOGO_BLOWMUSIC_NAV = 'assets/images/Logo_B3_blanc.png';
+const String LOGO_BLOWMUSIC_NAV_LIGHT = 'assets/images/Logo_B3.png';
 
 // Clé utilisée dans GetStorage pour retenir quelle application l'utilisateur
 // a choisie ('grandpublic' | 'blowmusic'). Voir AppModeService.
 const String kAppModeStorageKey = 'app_mode';
 
 // GameZ — jeux HTML5 embarqués via WebView, à côté de BlowMusic.
-const bool isGameZActivated = true;
-const String LOGO_GAMEZ = 'assets/images/logo_gp_club.png';
-const String LOGO_GAMEZ_NAV = 'assets/images/logo_gp_club.png';
+const bool isGameZActivated = false;
+const String LOGO_GAMEZ = 'assets/images/Icone_Y2.png';
+const String LOGO_GAMEZ_NAV = 'assets/images/Logo_Y2.png';

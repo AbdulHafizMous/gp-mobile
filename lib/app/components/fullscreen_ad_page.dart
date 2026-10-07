@@ -14,7 +14,7 @@ import 'package:video_player/video_player.dart';
 /// Récupère et affiche la prochaine pub plein écran s'il y en a une.
 /// Ne bloque jamais l'app : silencieux en cas d'échec/absence de pub.
 /// Ne s'affiche qu'UNE fois par session app (peu importe le module ouvert
-/// en premier — Grand Public, Blow Music ou GameZ appellent tous cette
+/// en premier — Grandpublic, Blowmusic ou GameZ appellent tous cette
 /// même fonction à leur démarrage).
 bool _adShownThisSession = false;
 
@@ -95,7 +95,10 @@ class _FullscreenAdPageState extends State<_FullscreenAdPage> {
 
   void _trackImpression({bool clicked = false}) {
     if (widget.adId == null) return;
-    RequestService().post('/ads/${widget.adId}/impression', data: {'clicked': clicked});
+    RequestService().post(
+      '/ads/${widget.adId}/impression',
+      data: {'clicked': clicked},
+    );
   }
 
   Future<void> _openCta() async {
@@ -121,48 +124,114 @@ class _FullscreenAdPageState extends State<_FullscreenAdPage> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (widget.mediaType == 'video' && _video != null && _video!.value.isInitialized)
-              FittedBox(fit: BoxFit.cover, child: SizedBox(width: _video!.value.size.width, height: _video!.value.size.height, child: VideoPlayer(_video!)))
+            if (widget.mediaType == 'video' &&
+                _video != null &&
+                _video!.value.isInitialized)
+              FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: _video!.value.size.width,
+                  height: _video!.value.size.height,
+                  child: VideoPlayer(_video!),
+                ),
+              )
             else if (widget.mediaUrl != null)
-              Image.network(widget.mediaUrl!, fit: BoxFit.cover, width: double.infinity, height: double.infinity)
+              Image.network(
+                widget.mediaUrl!,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+              )
             else
               Container(color: Colors.grey.shade900),
             Positioned(
-              left: 0, right: 0, bottom: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
               child: Container(
                 padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black87])),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Colors.black87],
+                  ),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Sponsorisé par ${widget.advertiserName}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                    Text(
+                      'Sponsorisé par ${widget.advertiserName}',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(widget.title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
-                    if (widget.body != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(widget.body!, style: const TextStyle(color: Colors.white70, fontSize: 13))),
+                    Text(
+                      widget.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    if (widget.body != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          widget.body!,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
                     if (widget.ctaLabel != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 14),
-                        child: ElevatedButton(onPressed: _openCta, child: Text(widget.ctaLabel!)),
+                        child: ElevatedButton(
+                          onPressed: _openCta,
+                          child: Text(widget.ctaLabel!),
+                        ),
                       ),
                   ],
                 ),
               ),
             ),
             Positioned(
-              top: 12, right: 12,
+              top: 12,
+              right: 12,
               child: _secondsLeft > 0
                   ? Container(
-                      width: 34, height: 34, alignment: Alignment.center,
-                      decoration: BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
-                      child: Text('$_secondsLeft', style: const TextStyle(color: Colors.white)),
+                      width: 34,
+                      height: 34,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.black45,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '$_secondsLeft',
+                        style: const TextStyle(color: Colors.white),
+                      ),
                     )
                   : InkWell(
                       onTap: () => Get.back(),
                       child: Container(
-                        width: 34, height: 34, alignment: Alignment.center,
-                        decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
-                        child: const Icon(Icons.close, color: Colors.white, size: 20),
+                        width: 34,
+                        height: 34,
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                          color: Colors.black45,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
             ),

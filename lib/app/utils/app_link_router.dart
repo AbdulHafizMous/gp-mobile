@@ -21,7 +21,11 @@ import 'package:grand_public_v2/app/services/dio.services.dart';
 class AppLinkRouter {
   /// [type] : media | promotion | club | partner | listing | channel |
   ///          chat_private | chat_channel
-  static Future<void> route(String type, {String? id, Map<String, dynamic>? extra}) async {
+  static Future<void> route(
+    String type, {
+    String? id,
+    Map<String, dynamic>? extra,
+  }) async {
     try {
       switch (type) {
         case 'media':
@@ -68,8 +72,9 @@ class AppLinkRouter {
             return;
           }
           await chatCtrl.loadPrivateConversations();
-          final conv = chatCtrl.privateConversations
-              .firstWhereOrNull((c) => c.id.toString() == convId.toString());
+          final conv = chatCtrl.privateConversations.firstWhereOrNull(
+            (c) => c.id.toString() == convId.toString(),
+          );
           if (conv != null) {
             await chatCtrl.openPrivateConversation(conv);
             Get.to(() => ChatRoomView(privateConv: conv));
@@ -78,12 +83,15 @@ class AppLinkRouter {
           }
           break;
 
-        // ── Modules Blow Music / GameZ : bascule de module + bon onglet ──
+        // ── Modules Blowmusic / GameZ : bascule de module + bon onglet ──
         case 'bm_track':
         case 'bm_live':
         case 'bm_playlist':
           await AppModeService.setMode(AppMode.blowMusic);
-          Get.offAllNamed('/blowmusic/home', arguments: {'tab': type == 'bm_live' ? 'live' : 'library'});
+          Get.offAllNamed(
+            '/blowmusic/home',
+            arguments: {'tab': type == 'bm_live' ? 'live' : 'library'},
+          );
           break;
 
         case 'gz_game':
@@ -93,7 +101,7 @@ class AppLinkRouter {
           Get.offAllNamed('/gamez/home', arguments: {'tab': 0});
           break;
 
-        // Live Grand Public : retour à l'accueil, la section Live apparaît
+        // Live Grandpublic : retour à l'accueil, la section Live apparaît
         // d'elle-même (polling) dans la catégorie concernée.
         case 'live':
           await AppModeService.setMode(AppMode.grandPublic);
@@ -123,11 +131,18 @@ class AppLinkRouter {
 
   /// Route à partir des données `data` d'un `RemoteMessage` FCM (ou d'un
   /// payload de notification locale).
-  static Future<void> routeFromNotificationData(Map<String, dynamic> data) async {
+  static Future<void> routeFromNotificationData(
+    Map<String, dynamic> data,
+  ) async {
     final type = data['type']?.toString();
     if (type == null) return;
-    final id = data['media_id'] ?? data['promotion_id'] ?? data['partner_id'] ??
-        data['listing_id'] ?? data['channel_id'] ?? data['conversation_id'];
+    final id =
+        data['media_id'] ??
+        data['promotion_id'] ??
+        data['partner_id'] ??
+        data['listing_id'] ??
+        data['channel_id'] ??
+        data['conversation_id'];
     await route(type, id: id?.toString(), extra: data);
   }
 }

@@ -115,7 +115,7 @@ class _GameZGameViewState extends State<GameZGameView> {
         body: SafeArea(
           child: Column(children: [
             SizedBox(
-              height: 44,
+              height: 40,
               child: Row(children: [
                 IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70, size: 18), onPressed: _leave),
                 Expanded(

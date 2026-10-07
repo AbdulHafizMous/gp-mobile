@@ -29,7 +29,7 @@ class SpaceController extends GetxController {
   /// Loading par catégorie (id → true/false)
   final categoryLoading = <int, bool>{}.obs;
 
-    final isSingleColumn = false.obs;
+  final isSingleColumn = false.obs;
   void toggleLayout() => isSingleColumn.value = !isSingleColumn.value;
 
   // ── Paramètres de route ────────────────────────────────────────────────────
@@ -52,7 +52,10 @@ class SpaceController extends GetxController {
     selectedCategoryIndex.value = initialCategoryIndex;
     loadSpace();
     // Réactivité du live : l'admin peut démarrer / couper un live à tout moment.
-    _livePoll = Timer.periodic(const Duration(seconds: 20), (_) => refreshLive());
+    _livePoll = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) => refreshLive(),
+    );
   }
 
   Timer? _livePoll;
@@ -110,13 +113,13 @@ class SpaceController extends GetxController {
       }
 
       // Charger les médias de la catégorie initiale dès l'ouverture
-      if (space.value != null &&
-          space.value!.categories.isNotEmpty) {
+      if (space.value != null && space.value!.categories.isNotEmpty) {
         final safeIndex = initialCategoryIndex.clamp(
-            0, space.value!.categories.length - 1);
+          0,
+          space.value!.categories.length - 1,
+        );
         selectedCategoryIndex.value = safeIndex;
-        await loadCategoryMedias(
-            space.value!.categories[safeIndex].id);
+        await loadCategoryMedias(space.value!.categories[safeIndex].id);
       }
     } catch (e) {
       debugPrint('SpaceController.loadSpace error: $e');
@@ -142,8 +145,9 @@ class SpaceController extends GetxController {
         final videos = _mockVideosForCategory(categoryId);
         _applyCategoryVideos(categoryId, videos);
       } else {
-        final r = await RequestService()
-            .get('/media-categories/$categoryId?per_page=50');
+        final r = await RequestService().get(
+          '/media-categories/$categoryId?per_page=50',
+        );
 
         final data = r.data['data'] as Map<String, dynamic>;
         final mediasJson = data['medias'] as List<dynamic>? ?? [];
@@ -156,7 +160,9 @@ class SpaceController extends GetxController {
 
       _loadedCategoryIds.add(categoryId);
     } catch (e) {
-      debugPrint('SpaceController.loadCategoryMedias error (cat=$categoryId): $e');
+      debugPrint(
+        'SpaceController.loadCategoryMedias error (cat=$categoryId): $e',
+      );
     } finally {
       categoryLoading[categoryId] = false;
     }
@@ -167,12 +173,10 @@ class SpaceController extends GetxController {
     final current = space.value;
     if (current == null) return;
 
-    final catIndex =
-        current.categories.indexWhere((c) => c.id == categoryId);
+    final catIndex = current.categories.indexWhere((c) => c.id == categoryId);
     if (catIndex == -1) return;
 
-    final updatedCat =
-        current.categories[catIndex].copyWithVideos(videos);
+    final updatedCat = current.categories[catIndex].copyWithVideos(videos);
     space.value = current.withUpdatedCategory(updatedCat);
   }
 
@@ -200,18 +204,23 @@ class SpaceController extends GetxController {
   SpaceModel _mockSpace() {
     return SpaceModel(
       id: spaceId > 0 ? spaceId : 1,
-      title: 'Grand Public Bénin',
+      title: 'Grandpublic Bénin',
       description: 'Le meilleur des contenus vidéo du Bénin.',
       logoUrl: null,
       previewVideoUrl: null,
       isActive: true,
       categories: [
         SpaceCategory(
-            id: 1, title: 'Portrait', description: 'Portraits inspirants'),
+          id: 1,
+          title: 'Portrait',
+          description: 'Portraits inspirants',
+        ),
         SpaceCategory(
-            id: 2, title: 'Event', description: 'Les grands événements'),
-        SpaceCategory(
-            id: 3, title: 'Music', description: 'Clips et concerts'),
+          id: 2,
+          title: 'Event',
+          description: 'Les grands événements',
+        ),
+        SpaceCategory(id: 3, title: 'Music', description: 'Clips et concerts'),
       ],
     );
   }

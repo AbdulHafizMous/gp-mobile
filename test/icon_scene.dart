@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Page de présentation des propositions d'icônes pour chaque menu
-/// de l'application Grand Public.
+/// de l'application Grandpublic.
 /// A utiliser uniquement pour capture d'écran / choix d'équipe.
 class IconSceneScreen extends StatelessWidget {
   const IconSceneScreen({super.key});
@@ -11,7 +11,7 @@ class IconSceneScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
-        title: const Text('Propositions d\'icônes — Grand Public'),
+        title: const Text('Propositions d\'icônes — Grandpublic'),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         centerTitle: true,
@@ -184,17 +184,16 @@ class _IconSection extends StatelessWidget {
             padding: const EdgeInsets.only(left: 16),
             child: Text(
               subtitle,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
             ),
           ),
           const SizedBox(height: 16),
           Wrap(
             spacing: 12,
             runSpacing: 12,
-            children: icons.map((opt) => _IconTile(opt: opt, color: color)).toList(),
+            children: icons
+                .map((opt) => _IconTile(opt: opt, color: color))
+                .toList(),
           ),
         ],
       ),

@@ -1,8 +1,8 @@
 // lib/app/modules/home/widgets/home_drawer.dart
 //
 // Extrait de home_view.dart (fichier devenu trop lourd) — drawer dynamique
-// de Grand Public : profil, menus de la section active, menus fixes
-// (Premium/Liens/À propos/Blow Music/GameZ), déconnexion.
+// de Grandpublic : profil, menus de la section active, menus fixes
+// (Premium/Liens/À propos/Blowmusic/GameZ), déconnexion.
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -44,64 +44,74 @@ class HomeDrawer extends StatelessWidget {
     return DrawerShell(
       color: sectionColor,
       children: [
-          DrawerProfileHeader(onTap: () => ctrl.navigateTo('/profile'), accentColor: linkColor),
-          const SizedBox(height: 20),
-          DrawerSectionLabel(
-            icon: section.icon,
-            title: section.title,
-            lightColor: SectionHelper.index == 2 ? Colors.black : null,
-          ),
-          const SizedBox(height: 10),
-          if (dynamicItems.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Text(
-                'Aucun menu disponible',
-                style: TextStyle(color: isDark ? context.subtleText : Colors.white.withAlpha(130), fontSize: 13),
-              ),
-            )
-          else
-            ...dynamicItems.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: DrawerBtn(
-                  title: item.title,
-                  icon: _dynamicIcon(item),
-                  flutterIcon: item.icon,
-                  callback: () => ctrl.navigateTo(item.route ?? ''),
-                  accentColor: linkColor,
-                ),
+        DrawerProfileHeader(
+          onTap: () => ctrl.navigateTo('/profile'),
+          accentColor: linkColor,
+        ),
+        const SizedBox(height: 20),
+        DrawerSectionLabel(
+          icon: section.icon,
+          title: section.title,
+          lightColor: SectionHelper.index == 2 ? Colors.black : null,
+        ),
+        const SizedBox(height: 10),
+        if (dynamicItems.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Text(
+              'Aucun menu disponible',
+              style: TextStyle(
+                color: isDark
+                    ? context.subtleText
+                    : Colors.white.withAlpha(130),
+                fontSize: 13,
               ),
             ),
-          const DrawerSep(),
-          ...fixedDrawerItems.map(
+          )
+        else
+          ...dynamicItems.map(
             (item) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: DrawerBtn(
                 title: item.title,
-                icon: _fixedIcon(item.route),
-                keepIconColors: item.route == '/blowmusic/home' || item.route == '/gamez/home',
+                icon: _dynamicIcon(item),
+                flutterIcon: item.icon,
                 callback: () => ctrl.navigateTo(item.route ?? ''),
                 accentColor: linkColor,
               ),
             ),
           ),
-          const DrawerSep(),
-          Padding(
+        const DrawerSep(),
+        ...fixedDrawerItems.map(
+          (item) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: DrawerBtn(
-              title: 'Déconnexion',
-              flutterIcon: Icons.logout_rounded,
-              callback: () => Get.find<HomeController>().logout(),
+              title: item.title,
+              icon: _fixedIcon(item.route),
+              keepIconColors:
+                  item.route == '/blowmusic/home' ||
+                  item.route == '/gamez/home',
+              callback: () => ctrl.navigateTo(item.route ?? ''),
               accentColor: linkColor,
             ),
           ),
-          const SizedBox(height: 20),
-          DrawerLogo(
-            asset: GPTheme.logoForSection(activeSectionIndex),
-            onTap: () => ctrl.goToSection(0, showToast: false),
+        ),
+        const DrawerSep(),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: DrawerBtn(
+            title: 'Déconnexion',
+            flutterIcon: Icons.logout_rounded,
+            callback: () => Get.find<HomeController>().logout(),
+            accentColor: linkColor,
           ),
-          const SizedBox(height: 20),
+        ),
+        const SizedBox(height: 20),
+        DrawerLogo(
+          asset: GPTheme.logoForSection(activeSectionIndex),
+          onTap: () => ctrl.goToSection(0, showToast: false),
+        ),
+        const SizedBox(height: 20),
       ],
     );
   }
@@ -117,9 +127,9 @@ class HomeDrawer extends StatelessWidget {
       case '/social-about':
         return 'assets/icons/info.png';
       case '/blowmusic/home':
-        return LOGO_BLOWMUSIC_NAV;
+        return LOGO_BLOWMUSIC;
       case '/gamez/home':
-        return LOGO_GAMEZ_NAV;
+        return LOGO_GAMEZ;
       default:
         return 'assets/icons/portrait.png';
     }

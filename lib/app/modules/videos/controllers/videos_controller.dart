@@ -99,8 +99,9 @@ class VideosController extends GetxController {
       isLiked: !wasLiked,
       isDisliked: false,
       likesCount: wasLiked ? video.likesCount - 1 : video.likesCount + 1,
-      dislikesCount:
-          video.isDisliked ? video.dislikesCount - 1 : video.dislikesCount,
+      dislikesCount: video.isDisliked
+          ? video.dislikesCount - 1
+          : video.dislikesCount,
     );
     try {
       if (!useMock) {
@@ -120,8 +121,9 @@ class VideosController extends GetxController {
     currentVideo.value = video.copyWith(
       isDisliked: !wasDisliked,
       isLiked: false,
-      dislikesCount:
-          wasDisliked ? video.dislikesCount - 1 : video.dislikesCount + 1,
+      dislikesCount: wasDisliked
+          ? video.dislikesCount - 1
+          : video.dislikesCount + 1,
       likesCount: video.isLiked ? video.likesCount - 1 : video.likesCount,
     );
     try {
@@ -162,8 +164,7 @@ class VideosController extends GetxController {
         comments.value = _mockComments(videoId);
         return;
       }
-      final response =
-          await RequestService().get('/videos/$videoId/comments');
+      final response = await RequestService().get('/videos/$videoId/comments');
       if (response.statusCode == 200) {
         final data = response.data['data'] as List<dynamic>;
         comments.value = data
@@ -193,8 +194,9 @@ class VideosController extends GetxController {
           createdAt: 'À l\'instant',
         );
         if (replyingTo.value != null) {
-          final parentIdx =
-              comments.indexWhere((c) => c.id == replyingTo.value!.id);
+          final parentIdx = comments.indexWhere(
+            (c) => c.id == replyingTo.value!.id,
+          );
           if (parentIdx != -1) {
             final parent = comments[parentIdx];
             comments[parentIdx] = VideoComment(
@@ -213,8 +215,9 @@ class VideosController extends GetxController {
         } else {
           comments.insert(0, newComment);
           if (currentVideo.value != null) {
-            currentVideo.value = currentVideo.value!
-                .copyWith(commentsCount: currentVideo.value!.commentsCount + 1);
+            currentVideo.value = currentVideo.value!.copyWith(
+              commentsCount: currentVideo.value!.commentsCount + 1,
+            );
           }
         }
         commentController.clear();
@@ -225,21 +228,27 @@ class VideosController extends GetxController {
         'content': text,
         if (replyingTo.value != null) 'parent_id': replyingTo.value!.id,
       };
-      final response =
-          await RequestService().post('/videos/$videoId/comments', data: body);
+      final response = await RequestService().post(
+        '/videos/$videoId/comments',
+        data: body,
+      );
       if (response.statusCode == 201) {
         final data = response.data['data'] as Map<String, dynamic>;
         comments.insert(0, VideoComment.fromJson(data));
         commentController.clear();
         replyingTo.value = null;
         if (currentVideo.value != null) {
-          currentVideo.value = currentVideo.value!
-              .copyWith(commentsCount: currentVideo.value!.commentsCount + 1);
+          currentVideo.value = currentVideo.value!.copyWith(
+            commentsCount: currentVideo.value!.commentsCount + 1,
+          );
         }
       }
     } catch (e) {
-      ToastHelper.showToast('Impossible de publier le commentaire.',
-          backgroundColor: Colors.red, textColor: Colors.white);
+      ToastHelper.showToast(
+        'Impossible de publier le commentaire.',
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
     } finally {
       isPostingComment.value = false;
     }
@@ -251,8 +260,9 @@ class VideosController extends GetxController {
     final comment = comments[idx];
     comments[idx] = comment.copyWith(
       isLiked: !comment.isLiked,
-      likesCount:
-          comment.isLiked ? comment.likesCount - 1 : comment.likesCount + 1,
+      likesCount: comment.isLiked
+          ? comment.likesCount - 1
+          : comment.likesCount + 1,
     );
     try {
       if (!useMock) await RequestService().post('/comments/$commentId/like');
@@ -323,7 +333,10 @@ class VideosController extends GetxController {
     try {
       final products = await Purchases.getProducts([appleProductId]);
       if (products.isEmpty) {
-        _showPurchaseFailedDialog(context, 'Produit introuvable sur l\'App Store.');
+        _showPurchaseFailedDialog(
+          context,
+          'Produit introuvable sur l\'App Store.',
+        );
         return;
       }
 
@@ -375,7 +388,8 @@ class VideosController extends GetxController {
       final data = res.data?['data'];
       final checkoutUrl = data?['checkout_url']?.toString();
       final returnUrlPrefix = data?['return_url_prefix']?.toString();
-      if (checkoutUrl == null || returnUrlPrefix == null || !context.mounted) return;
+      if (checkoutUrl == null || returnUrlPrefix == null || !context.mounted)
+        return;
 
       final paymentId = await openMonerooWebviewPayment(
         context,
@@ -393,7 +407,10 @@ class VideosController extends GetxController {
         );
       }
     } on DioException catch (e) {
-      _showPurchaseFailedDialog(context, 'Le paiement Moneroo a échoué. Réessayez.');
+      _showPurchaseFailedDialog(
+        context,
+        'Le paiement Moneroo a échoué. Réessayez.',
+      );
       debugPrint('Moneroo PPV init error: $e');
     }
   }
@@ -417,7 +434,8 @@ class VideosController extends GetxController {
 
       if (response.statusCode == 200) {
         currentVideo.value =
-            currentVideo.value?.copyWith(canRead: true) ?? video.copyWith(canRead: true);
+            currentVideo.value?.copyWith(canRead: true) ??
+            video.copyWith(canRead: true);
         if (context.mounted) {
           _showPurchaseSuccessDialog(context, video);
           onSuccess();
@@ -428,13 +446,17 @@ class VideosController extends GetxController {
         if (context.mounted) _showPurchaseFailedDialog(context, message);
       }
     } on DioException catch (e) {
-      final reason = e.response?.data?['message']?.toString() ??
+      final reason =
+          e.response?.data?['message']?.toString() ??
           e.message ??
           'Erreur réseau';
       if (context.mounted) _showPurchaseFailedDialog(context, reason);
     } catch (e) {
       if (context.mounted) {
-        _showPurchaseFailedDialog(context, 'Une erreur inattendue est survenue.');
+        _showPurchaseFailedDialog(
+          context,
+          'Une erreur inattendue est survenue.',
+        );
       }
     } finally {
       isPurchasing.value = false;
@@ -454,14 +476,21 @@ class VideosController extends GetxController {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                  color: Colors.green.shade50, shape: BoxShape.circle),
-              child: Icon(Icons.check_circle_rounded,
-                  color: Colors.green.shade600, size: 48),
+                color: Colors.green.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.check_circle_rounded,
+                color: Colors.green.shade600,
+                size: 48,
+              ),
             ),
             const SizedBox(height: 16),
-            const Text('Accès débloqué !',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center),
+            const Text(
+              'Accès débloqué !',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 8),
             Text(
               'Vous pouvez maintenant regarder "${video.title}".',
@@ -478,7 +507,8 @@ class VideosController extends GetxController {
                 backgroundColor: Colors.green.shade600,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               onPressed: () => Navigator.of(ctx).pop(),
               child: const Text('Regarder maintenant'),
@@ -501,18 +531,27 @@ class VideosController extends GetxController {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                  color: Colors.red.shade50, shape: BoxShape.circle),
-              child: Icon(Icons.cancel_rounded,
-                  color: Colors.red.shade600, size: 48),
+                color: Colors.red.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.cancel_rounded,
+                color: Colors.red.shade600,
+                size: 48,
+              ),
             ),
             const SizedBox(height: 16),
-            const Text('Paiement échoué',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center),
+            const Text(
+              'Paiement échoué',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 8),
-            Text(reason,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey.shade700)),
+            Text(
+              reason,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade700),
+            ),
           ],
         ),
         actions: [
@@ -523,7 +562,8 @@ class VideosController extends GetxController {
                 backgroundColor: Colors.red.shade600,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               onPressed: () => Navigator.of(ctx).pop(),
               child: const Text('Réessayer plus tard'),
@@ -663,11 +703,11 @@ class VideosController extends GetxController {
       ),
       SpaceVideo(
         id: 2,
-        title: 'Grand Public Event – Exclusivité Premium',
+        title: 'Grandpublic Event – Exclusivité Premium',
         description: 'Contenu réservé aux abonnés premium.',
         thumbnail: 'https://img.youtube.com/vi/R_HVJUUtNMc/maxresdefault.jpg',
         videoUrl: 'https://www.youtube.com/watch?v=R_HVJUUtNMc',
-          youtubeId: "3shs6DYjXtY",
+        youtubeId: "3shs6DYjXtY",
         views: 45000,
         likesCount: 3200,
         dislikesCount: 5,
@@ -684,7 +724,7 @@ class VideosController extends GetxController {
         final ytId = ytIds[rand.nextInt(ytIds.length)];
         return SpaceVideo(
           id: i + 3,
-          title: 'Vidéo Grand Public #${i + 3}',
+          title: 'Vidéo Grandpublic #${i + 3}',
           description: 'Description de la vidéo ${i + 3}',
           thumbnail: 'https://img.youtube.com/vi/$ytId/maxresdefault.jpg',
           videoUrl: 'https://www.youtube.com/watch?v=$ytId',
@@ -732,7 +772,7 @@ class VideosController extends GetxController {
         videoId: videoId,
         userId: 11,
         userName: 'Aïcha Koffi',
-        content: 'Incroyable ! Merci Grand Public pour ce contenu de qualité.',
+        content: 'Incroyable ! Merci Grandpublic pour ce contenu de qualité.',
         likesCount: 15,
         isLiked: true,
         createdAt: 'Il y a 12 minutes',

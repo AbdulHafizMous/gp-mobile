@@ -56,7 +56,9 @@ Future<void> _initRevenueCat() async {
       configuration.appUserID = userId;
       IapDebugLogger.log('appUserID configuré : $userId');
     } else {
-      IapDebugLogger.log('appUserID non défini (utilisateur anonyme RevenueCat)');
+      IapDebugLogger.log(
+        'appUserID non défini (utilisateur anonyme RevenueCat)',
+      );
     }
 
     await Purchases.configure(configuration);
@@ -101,8 +103,8 @@ Future<void> main() async {
   // HomeController est utilisé par des écrans partagés entre TOUS les
   // modules (Profil, Notifications...) : on l'enregistre une fois pour
   // toutes ici, sinon Get.find<HomeController>() plante quand ces écrans
-  // sont ouverts depuis Blow Music ou GameZ (qui n'utilisent pas le shell
-  // Grand Public).
+  // sont ouverts depuis Blowmusic ou GameZ (qui n'utilisent pas le shell
+  // Grandpublic).
   Get.put(HomeController(), permanent: true);
 
   // 4bis. RevenueCat (Apple IAP — Guideline 3.1.1). iOS uniquement :
@@ -113,7 +115,9 @@ Future<void> main() async {
   if (!kIsWeb && Platform.isIOS) {
     await _initRevenueCat();
   } else {
-    IapDebugLogger.log('RevenueCat NON initialisé (pas iOS) — normal sur Android.');
+    IapDebugLogger.log(
+      'RevenueCat NON initialisé (pas iOS) — normal sur Android.',
+    );
   }
 
   // 5. Notifications (Done in Main Page Ctrl)

@@ -24,7 +24,8 @@ class MonerooWebviewPaymentPage extends StatefulWidget {
   });
 
   @override
-  State<MonerooWebviewPaymentPage> createState() => _MonerooWebviewPaymentPageState();
+  State<MonerooWebviewPaymentPage> createState() =>
+      _MonerooWebviewPaymentPageState();
 }
 
 class _MonerooWebviewPaymentPageState extends State<MonerooWebviewPaymentPage> {
@@ -59,12 +60,17 @@ class _MonerooWebviewPaymentPageState extends State<MonerooWebviewPaymentPage> {
     _finished = true;
 
     final uri = Uri.tryParse(url);
-    final paymentId = uri?.queryParameters['payment_id'];
-    final status = uri?.queryParameters['status']; // succès/échec si Moneroo le fournit
+    // Moneroo ajoute `paymentId` + `paymentStatus` à la return_url (on
+    // accepte aussi les variantes snake_case par sécurité).
+    final q = uri?.queryParameters ?? const <String, String>{};
+    final paymentId = q['paymentId'] ?? q['payment_id'] ?? q['id'];
+    final status = (q['paymentStatus'] ?? q['payment_status'] ?? q['status'])
+        ?.toLowerCase();
 
     Navigator.of(context).pop({
       'payment_id': paymentId,
-      'cancelled': status == 'cancelled' || status == 'failed',
+      'cancelled':
+          status == 'cancelled' || status == 'failed' || paymentId == null,
     });
   }
 
@@ -76,7 +82,7 @@ class _MonerooWebviewPaymentPageState extends State<MonerooWebviewPaymentPage> {
         appBar: AppBar(
           title: const Text('Paiement sécurisé'),
           leading: IconButton(
-            icon: const Icon(Icons.close),
+            icon: const Icon(Icons.close, color: Colors.black),
             onPressed: () => Navigator.of(context).pop(null),
           ),
         ),

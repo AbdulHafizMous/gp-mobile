@@ -206,7 +206,9 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     _stack.add(_sectionDest(shouldSkipMedia ? 1 : 0));
-    WidgetsBinding.instance.addPostFrameCallback((_) => maybeShowFullscreenAd());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => maybeShowFullscreenAd(),
+    );
 
     final pending = _box.read<int>('_pendingSection');
     if (pending != null && pending >= 0 && pending < sections.length) {
@@ -247,10 +249,12 @@ class HomeController extends GetxController {
   void navigateTo(String route, {Map<String, dynamic> params = const {}}) {
     _closeDrawer();
 
-    // Changement de module (Grand Public / Blow Music / GameZ) depuis le
+    // Changement de module (Grandpublic / Blowmusic / GameZ) depuis le
     // drawer : on fixe le mode ET on redémarre proprement sur son shell.
     if (route == '/blowmusic/home' || route == '/gamez/home') {
-      final mode = route == '/blowmusic/home' ? AppMode.blowMusic : AppMode.gameZ;
+      final mode = route == '/blowmusic/home'
+          ? AppMode.blowMusic
+          : AppMode.gameZ;
       AppModeService.setMode(mode);
       Get.offAllNamed(route);
       return;

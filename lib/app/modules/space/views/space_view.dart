@@ -1,11 +1,14 @@
 // lib/app/modules/space/views/space_view.dart
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import 'package:grand_public_v2/app/components/live_section.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:grand_public_v2/app/modules/videos/views/videos_view.dart';
+import 'package:grand_public_v2/app/components/vinyl_disc.dart';
 import 'package:grand_public_v2/app/data/models/space_model.dart';
 import 'package:grand_public_v2/app/modules/space/controllers/space_controller.dart';
+import 'package:grand_public_v2/app/modules/videos/views/videos_view.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 import 'package:video_player/video_player.dart';
@@ -170,14 +173,12 @@ class _SpaceBodyState extends State<_SpaceBody> with TickerProviderStateMixin {
               onPressed: Get.back,
             ),
             actions: [
-              // Switch layout
               Obx(
                 () => _LayoutToggleButton(
                   isSingleColumn: _ctrl.isSingleColumn.value,
                   onToggle: _ctrl.toggleLayout,
                 ),
               ),
-
               if (updatedSpace.hasPreviewVideo) ...[
                 IconButton(
                   icon: Container(
@@ -286,7 +287,7 @@ class _LayoutToggleButton extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PREVIEW VIDEO DIALOG (inchangé)
+// PREVIEW VIDEO DIALOG
 // ─────────────────────────────────────────────────────────────────────────────
 class _PreviewVideoDialog extends StatefulWidget {
   final String videoUrl;
@@ -305,6 +306,7 @@ class _PreviewVideoDialogState extends State<_PreviewVideoDialog> {
     super.initState();
     _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
       ..initialize().then((_) {
+        if (!mounted) return;
         setState(() => _isReady = true);
         _controller!.play();
       });
@@ -397,7 +399,7 @@ class _PreviewVideoDialogState extends State<_PreviewVideoDialog> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HERO HEADER (inchangé)
+// HERO HEADER
 // ─────────────────────────────────────────────────────────────────────────────
 class _SpaceHeroHeader extends StatelessWidget {
   final SpaceModel space;
@@ -601,7 +603,7 @@ class _HeroBadge extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CATEGORY TAB BAR (inchangé)
+// CATEGORY TAB BAR
 // ─────────────────────────────────────────────────────────────────────────────
 class _CategoryTabBar extends StatelessWidget {
   final TabController tabController;
@@ -687,56 +689,65 @@ class _CategoryContentView extends StatelessWidget {
         return const Center(child: CircularProgressIndicator());
       }
 
+      final hasDescription = updatedCat.description.trim().isNotEmpty;
+
       return RefreshIndicator(
         color: GPTheme.primaryColor,
         onRefresh: () => ctrl.reloadCategory(category.id),
         child: CustomScrollView(
           slivers: [
-            // Description banner
-            SliverToBoxAdapter(
-              child: Container(
-                margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  color: context.cardSurface.withValues(alpha: 0.2),
-                  border: Border.all(
-                    color: context.isDark
-                        ? GPTheme.primaryColor.withValues(alpha: 0.2)
-                        : Colors.white.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accentColor,
-                      ),
+            // Description : affichée uniquement si elle existe
+            if (hasDescription)
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    color: context.cardSurface.withValues(alpha: 0.2),
+                    border: Border.all(
+                      color: context.isDark
+                          ? GPTheme.primaryColor.withValues(alpha: 0.2)
+                          : Colors.white.withValues(alpha: 0.2),
+                      width: 1,
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        updatedCat.description,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          height: 1.45,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: accentColor,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          updatedCat.description,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            height: 1.45,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
+              )
+            else
+              const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
-            // ── Section LIVE (uniquement si la catégorie a un live actif) ──
+            // Section LIVE (uniquement si la catégorie a un live actif)
             if (updatedCat.live != null)
               SliverToBoxAdapter(
-                child: LiveSection(key: ValueKey('live-${updatedCat.live!['id']}'), live: updatedCat.live!),
+                child: _LiveCard(
+                  key: ValueKey('live-${updatedCat.live!['id']}'),
+                  live: Map<String, dynamic>.from(updatedCat.live as Map),
+                  accent: accentColor,
+                ),
               ),
 
             if (updatedCat.videos.isEmpty)
@@ -764,7 +775,6 @@ class _CategoryContentView extends StatelessWidget {
                 ),
               )
             else if (isSingle)
-              // ── VUE LISTE (1 colonne) ─────────────────────────────
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
                 sliver: SliverList(
@@ -781,7 +791,6 @@ class _CategoryContentView extends StatelessWidget {
                 ),
               )
             else
-              // ── VUE GRILLE (2 colonnes) ───────────────────────────
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
                 sliver: SliverGrid(
@@ -805,6 +814,854 @@ class _CategoryContentView extends StatelessWidget {
         ),
       );
     });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LIVE CARD — vidéo (HLS…) ou audio (mp3, aac, radio…)
+// Badge EN DIRECT en haut à gauche, type de flux en haut à droite.
+// Un seul bouton lecture/pause. Bouton plein écran en mode vidéo.
+// "Réessayer" uniquement en cas d'erreur.
+// ─────────────────────────────────────────────────────────────────────────────
+class _LiveCard extends StatefulWidget {
+  final Map<String, dynamic> live;
+  final Color accent;
+  const _LiveCard({super.key, required this.live, required this.accent});
+
+  @override
+  State<_LiveCard> createState() => _LiveCardState();
+}
+
+class _LiveCardState extends State<_LiveCard>
+    with SingleTickerProviderStateMixin {
+  // Clés possibles de l'URL du flux dans la map `live` (adapte si besoin)
+  static const _streamKeys = [
+    'stream_url',
+    'hls_url',
+    'playback_url',
+    'audio_url',
+    'video_url',
+    'url',
+    'stream',
+    'source',
+  ];
+
+  VideoPlayerController? _c;
+  bool _loading = false;
+  bool _error = false;
+  bool _playing = false;
+  bool _inFullscreen = false;
+  int _gen = 0; // protège contre les initialisations concurrentes
+
+  late final AnimationController _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _anim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+  }
+
+  Map<String, dynamic> get _live => widget.live;
+
+  String get _url {
+    for (final k in _streamKeys) {
+      final v = _live[k]?.toString().trim() ?? '';
+      if (v.isNotEmpty) return v;
+    }
+    return '';
+  }
+
+  bool get _isRadio => _live['kind']?.toString() == 'radio';
+
+  bool get _isAudio {
+    final mt = _live['media_type']?.toString().toLowerCase();
+    if (mt == 'audio') return true;
+    if (mt == 'video') return false;
+    if (_isRadio) return true;
+    final path = (Uri.tryParse(_url)?.path ?? '').toLowerCase();
+    return path.endsWith('.mp3') ||
+        path.endsWith('.aac') ||
+        path.endsWith('.ogg') ||
+        path.endsWith('.m4a') ||
+        path.endsWith('.opus');
+  }
+
+  String get _cover {
+    for (final k in ['cover', 'cover_url', 'thumbnail', 'image', 'logo']) {
+      final v = _live[k]?.toString() ?? '';
+      if (v.isNotEmpty) return v;
+    }
+    return '';
+  }
+
+  String get _title {
+    final t = _live['title']?.toString().trim() ?? '';
+    return t.isEmpty ? 'Direct' : t;
+  }
+
+  String get _description => (_live['description'] ?? '').toString().trim();
+
+  String get _nowPlaying =>
+      (_live['now_playing_title'] ?? '').toString().trim();
+
+  // ── Lecture ────────────────────────────────────────────────────────────────
+  Future<void> _start() async {
+    final url = _url;
+    if (url.isEmpty) {
+      if (mounted) setState(() => _error = true);
+      return;
+    }
+
+    final gen = ++_gen;
+    await _releaseController();
+    if (!mounted || gen != _gen) return;
+    setState(() {
+      _loading = true;
+      _error = false;
+    });
+
+    final controller = VideoPlayerController.networkUrl(
+      Uri.parse(url),
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: false),
+    );
+    _c = controller;
+
+    try {
+      await controller.initialize();
+      if (!mounted || gen != _gen) return;
+      controller.addListener(_onTick);
+      await controller.setVolume(1);
+      await controller.play();
+      if (!mounted || gen != _gen) return;
+      setState(() {
+        _loading = false;
+        _playing = true;
+      });
+      _anim.repeat();
+    } catch (_) {
+      if (!mounted || gen != _gen) return;
+      await _releaseController();
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = true;
+        _playing = false;
+      });
+    }
+  }
+
+  void _onTick() {
+    final c = _c;
+    if (c == null || !mounted) return;
+    final v = c.value;
+    if (v.hasError) {
+      _releaseController();
+      setState(() {
+        _error = true;
+        _playing = false;
+        _loading = false;
+      });
+      _anim.stop();
+      return;
+    }
+    if (v.isPlaying != _playing) {
+      setState(() => _playing = v.isPlaying);
+      if (v.isPlaying) {
+        _anim.repeat();
+      } else {
+        _anim.stop();
+      }
+    }
+  }
+
+  Future<void> _releaseController() async {
+    final c = _c;
+    _c = null;
+    if (c == null) return;
+    c.removeListener(_onTick);
+    try {
+      await c.dispose();
+    } catch (_) {}
+  }
+
+  Future<void> _toggle() async {
+    if (_loading) return;
+    final c = _c;
+    if (c == null || !c.value.isInitialized) {
+      await _start();
+      return;
+    }
+    if (c.value.isPlaying) {
+      await c.pause();
+    } else {
+      await c.play();
+    }
+  }
+
+  // ── Plein écran (vidéo uniquement) ─────────────────────────────────────────
+  // Réutilise le même controller : pas de rechargement du flux, la lecture
+  // continue de la carte vers le plein écran et inversement.
+  Future<void> _openFullscreen() async {
+    final c = _c;
+    if (c == null || !c.value.isInitialized || _inFullscreen) return;
+    _inFullscreen = true;
+
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    await SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    if (!mounted) {
+      _inFullscreen = false;
+      return;
+    }
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => _LiveFullscreenPage(controller: c, title: _title),
+      ),
+    );
+
+    // Retour : on restaure l'UI système et l'orientation portrait
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    await SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+    ]);
+    _inFullscreen = false;
+  }
+
+  @override
+  void dispose() {
+    _gen++;
+    final c = _c;
+    _c = null;
+    c?.removeListener(_onTick);
+    c?.dispose();
+    _anim.dispose();
+    super.dispose();
+  }
+
+  // ── UI ─────────────────────────────────────────────────────────────────────
+  @override
+  Widget build(BuildContext context) {
+    final isAudio = _isAudio;
+    final accent = widget.accent;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        color: context.isDark ? const Color(0xFF1B1722) : Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Scène + badges en coin ────────────────────────────────
+            Stack(
+              children: [
+                isAudio ? _audioStage(accent) : _videoStage(accent),
+                Positioned(top: 10, left: 10, child: _liveCornerBadge()),
+                Positioned(top: 10, right: 10, child: _typeChip()),
+              ],
+            ),
+
+            // ── Infos + contrôle ──────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: context.primaryText,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (_description.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        _description,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: context.subtleText,
+                          fontSize: 12.5,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  if (_nowPlaying.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.music_note_rounded,
+                            size: 16,
+                            color: accent,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              _nowPlaying,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: context.primaryText.withValues(
+                                  alpha: 0.75,
+                                ),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (isAudio) ...[
+                    const SizedBox(height: 14),
+                    _audioButton(accent),
+                  ],
+                  if (_error) ...[const SizedBox(height: 10), _errorRow()],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Badge EN DIRECT (coin haut-gauche)
+  Widget _liveCornerBadge() => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+    decoration: BoxDecoration(
+      color: Colors.red.shade600,
+      borderRadius: BorderRadius.circular(8),
+      boxShadow: [
+        BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 6),
+      ],
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          margin: const EdgeInsets.only(right: 5),
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+          ),
+        ),
+        const Text(
+          'EN DIRECT',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.6,
+            color: Colors.white,
+          ),
+        ),
+      ],
+    ),
+  );
+
+  // Type de flux (coin haut-droit)
+  Widget _typeChip() {
+    final isAudio = _isAudio;
+    final icon = _isRadio
+        ? Icons.radio_rounded
+        : (isAudio ? Icons.headphones_rounded : Icons.videocam_rounded);
+    final label = _isRadio ? 'Radio' : (isAudio ? 'Audio' : 'Vidéo');
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: Colors.white),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Scène VIDÉO
+  Widget _videoStage(Color accent) {
+    final c = _c;
+    final ready = c != null && c.value.isInitialized;
+    final ratio = ready && c.value.aspectRatio > 0
+        ? c.value.aspectRatio
+        : 16 / 9;
+
+    return AspectRatio(
+      aspectRatio: ratio,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(color: Colors.black),
+          if (!ready && _cover.isNotEmpty)
+            Opacity(
+              opacity: 0.6,
+              child: Image.network(
+                _cover,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+          if (ready) VideoPlayer(c),
+          // dégradé haut pour la lisibilité des badges
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.center,
+                colors: [Color(0x99000000), Colors.transparent],
+              ),
+            ),
+          ),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _toggle,
+            child: Center(
+              child: _loading
+                  ? const SizedBox(
+                      width: 34,
+                      height: 34,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.6,
+                      ),
+                    )
+                  : AnimatedOpacity(
+                      opacity: _playing ? 0 : 1,
+                      duration: const Duration(milliseconds: 200),
+                      child: Container(
+                        width: 62,
+                        height: 62,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withValues(alpha: 0.55),
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 38,
+                        ),
+                      ),
+                    ),
+            ),
+          ),
+          // Bouton plein écran (coin bas-droit, au-dessus du GestureDetector)
+          if (ready)
+            Positioned(
+              bottom: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: _openFullscreen,
+                child: Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.55),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.fullscreen_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // Scène AUDIO : vinyle + ondes + équaliseur (inspiré de Blowmusic)
+  Widget _audioStage(Color accent) {
+    return Container(
+      height: 210,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color.lerp(accent, Colors.black, 0.45)!,
+            const Color(0xFF0B0810),
+          ],
+        ),
+      ),
+      child: AnimatedBuilder(
+        animation: _anim,
+        builder: (_, __) => Stack(
+          alignment: Alignment.center,
+          children: [
+            for (var i = 0; i < 3; i++)
+              Builder(
+                builder: (_) {
+                  final t = _playing ? ((_anim.value + i / 3) % 1.0) : 0.0;
+                  return Opacity(
+                    opacity: _playing ? (1 - t) * 0.35 : 0.12,
+                    child: Container(
+                      width: 110 + t * 90,
+                      height: 110 + t * 90,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: accent, width: 2),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            VinylDisc(
+              size: 120,
+              playing: _playing,
+              accent: accent,
+              coverUrl: _cover.isNotEmpty ? _cover : null,
+              fallbackIcon: _isRadio
+                  ? Icons.radio_rounded
+                  : Icons.graphic_eq_rounded,
+            ),
+            Positioned(
+              bottom: 8,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  for (var i = 0; i < 14; i++)
+                    Container(
+                      width: 5,
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      height: _playing
+                          ? 6 +
+                                22 *
+                                    (0.5 +
+                                            0.5 *
+                                                math.sin(
+                                                  _anim.value * 6.283 * 2 +
+                                                      i * 0.9,
+                                                ))
+                                        .abs()
+                          : 6,
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _audioButton(Color accent) {
+    final label = _loading
+        ? 'Connexion…'
+        : (_playing ? 'Pause' : 'Écouter le direct');
+    return Center(
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(40),
+          gradient: LinearGradient(
+            colors: [accent, Color.lerp(accent, const Color(0xFF7C3AED), .55)!],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: accent.withValues(alpha: 0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: ElevatedButton.icon(
+          onPressed: _loading ? null : _toggle,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            disabledBackgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(40),
+            ),
+          ),
+          icon: _loading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2.2,
+                  ),
+                )
+              : Icon(
+                  _playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+          label: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _errorRow() => Row(
+    children: [
+      Icon(Icons.error_outline_rounded, size: 16, color: Colors.red.shade400),
+      const SizedBox(width: 6),
+      Expanded(
+        child: Text(
+          'Impossible de lire ce flux pour le moment.',
+          style: TextStyle(color: Colors.red.shade400, fontSize: 12.5),
+        ),
+      ),
+      TextButton(
+        onPressed: _start,
+        child: Text(
+          'Réessayer',
+          style: TextStyle(color: widget.accent, fontWeight: FontWeight.w800),
+        ),
+      ),
+    ],
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LIVE FULLSCREEN — réutilise le controller de la carte (pas de rechargement)
+// ─────────────────────────────────────────────────────────────────────────────
+class _LiveFullscreenPage extends StatefulWidget {
+  final VideoPlayerController controller;
+  final String title;
+  const _LiveFullscreenPage({required this.controller, required this.title});
+
+  @override
+  State<_LiveFullscreenPage> createState() => _LiveFullscreenPageState();
+}
+
+class _LiveFullscreenPageState extends State<_LiveFullscreenPage> {
+  bool _showControls = true;
+
+  VideoPlayerController get _c => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _c.addListener(_onUpdate);
+    _autoHide();
+  }
+
+  @override
+  void dispose() {
+    _c.removeListener(_onUpdate);
+    super.dispose();
+  }
+
+  void _onUpdate() {
+    if (!mounted) return;
+    // Si le flux est tombé (la carte libère le controller), on ferme
+    if (_c.value.hasError) {
+      Navigator.of(context).maybePop();
+      return;
+    }
+    setState(() {});
+  }
+
+  void _autoHide() {
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted && _c.value.isPlaying) {
+        setState(() => _showControls = false);
+      }
+    });
+  }
+
+  void _toggleControls() {
+    setState(() => _showControls = !_showControls);
+    if (_showControls) _autoHide();
+  }
+
+  void _togglePlay() {
+    _c.value.isPlaying ? _c.pause() : _c.play();
+    _autoHide();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final v = _c.value;
+    final ratio = v.isInitialized && v.aspectRatio > 0 ? v.aspectRatio : 16 / 9;
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _toggleControls,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Center(
+              child: AspectRatio(aspectRatio: ratio, child: VideoPlayer(_c)),
+            ),
+            AnimatedOpacity(
+              opacity: _showControls ? 1 : 0,
+              duration: const Duration(milliseconds: 200),
+              child: IgnorePointer(
+                ignoring: !_showControls,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color(0xAA000000),
+                            Colors.transparent,
+                            Colors.transparent,
+                            Color(0xAA000000),
+                          ],
+                          stops: [0, 0.3, 0.7, 1],
+                        ),
+                      ),
+                    ),
+                    // Titre + EN DIRECT
+                    Positioned(
+                      top: 16,
+                      left: 20,
+                      right: 70,
+                      child: SafeArea(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade600,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'EN DIRECT',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.6,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                widget.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Quitter le plein écran
+                    Positioned(
+                      top: 12,
+                      right: 16,
+                      child: SafeArea(
+                        child: IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.fullscreen_exit_rounded,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Play / pause
+                    Center(
+                      child: GestureDetector(
+                        onTap: _togglePlay,
+                        child: Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black.withValues(alpha: 0.55),
+                          ),
+                          child: Icon(
+                            v.isPlaying
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                            color: Colors.white,
+                            size: 44,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (v.isBuffering)
+              const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -899,7 +1756,6 @@ Widget _lockBadge() => Container(
   child: const Icon(Icons.lock_rounded, color: Colors.white70, size: 12),
 );
 
-// ── Stat pill (vue, commentaires) — toujours visible, même à 0 ───────────────
 class _StatPill extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -924,15 +1780,14 @@ class _StatPill extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// INLINE PREVIEW — appui long : lance la vidéo (avec son) sans contrôles,
-// dans le cadre de la miniature. Relâcher revient à l'image fixe.
-// Double-tap : like avec animation cœur. Tap simple : ouvre le détail.
+// INLINE PREVIEW — appui long : preview avec son. Double-tap : like.
+// Tap simple : ouvre le détail.
 // ─────────────────────────────────────────────────────────────────────────────
 class _ThumbnailInteractive extends StatefulWidget {
   final SpaceVideo video;
   final Color accent;
   final BorderRadius borderRadius;
-  final List<Widget> overlayBadges; // badges positionnés par l'appelant
+  final List<Widget> overlayBadges;
 
   const _ThumbnailInteractive({
     required this.video,
@@ -996,7 +1851,7 @@ class _ThumbnailInteractiveState extends State<_ThumbnailInteractive>
       try {
         await controller.initialize();
         if (!mounted || !_isPreviewing) return;
-        await controller.setVolume(1); // son activé, comme demandé
+        await controller.setVolume(1);
         await controller.play();
         setState(() => _isPreviewLoading = false);
       } catch (_) {
@@ -1046,8 +1901,7 @@ class _ThumbnailInteractiveState extends State<_ThumbnailInteractive>
     try {
       await RequestService().post('/videos/${widget.video.id}/like');
     } catch (_) {
-      // Best-effort : le like sera de toute façon reflété au prochain
-      // chargement de la page depuis le backend.
+      // Best-effort
     }
   }
 
@@ -1074,7 +1928,6 @@ class _ThumbnailInteractiveState extends State<_ThumbnailInteractive>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // ── Image fixe (toujours en fond, sous la preview) ──────────
             Image.network(
               widget.video.thumbnail,
               fit: BoxFit.cover,
@@ -1109,7 +1962,6 @@ class _ThumbnailInteractiveState extends State<_ThumbnailInteractive>
               ),
             ),
 
-            // ── Preview vidéo par-dessus, uniquement en appui long ──────
             if (_isPreviewing &&
                 _nativeCtrl != null &&
                 _nativeCtrl!.value.isInitialized)
@@ -1123,7 +1975,6 @@ class _ThumbnailInteractiveState extends State<_ThumbnailInteractive>
               ),
             if (_isPreviewing && _ytCtrl != null)
               IgnorePointer(
-                // les gestes restent gérés par le GestureDetector parent
                 child: YoutubePlayer(
                   controller: _ytCtrl!,
                   showVideoProgressIndicator: false,
@@ -1133,7 +1984,6 @@ class _ThumbnailInteractiveState extends State<_ThumbnailInteractive>
                 ),
               ),
 
-            // ── Spinner pendant le chargement de la preview ─────────────
             if (_isPreviewing && _isPreviewLoading)
               Container(
                 color: Colors.black.withValues(alpha: 0.35),
@@ -1149,7 +1999,6 @@ class _ThumbnailInteractiveState extends State<_ThumbnailInteractive>
                 ),
               ),
 
-            // ── Bouton play (masqué pendant la preview) ─────────────────
             if (!_isPreviewing)
               Center(
                 child: Container(
@@ -1167,7 +2016,6 @@ class _ThumbnailInteractiveState extends State<_ThumbnailInteractive>
                 ),
               ),
 
-            // ── Cœur d'animation double-tap ──────────────────────────────
             if (_showHeart)
               Center(
                 child: ScaleTransition(
@@ -1194,7 +2042,6 @@ class _ThumbnailInteractiveState extends State<_ThumbnailInteractive>
                 ),
               ),
 
-            // Badges fournis par l'appelant (LIVE, PREMIUM, vues, verrou…)
             ...widget.overlayBadges,
           ],
         ),
@@ -1235,7 +2082,6 @@ class _VideoCardGrid extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Thumbnail ───────────────────────────────────────────
           Expanded(
             flex: 5,
             child: _ThumbnailInteractive(
@@ -1249,7 +2095,6 @@ class _VideoCardGrid extends StatelessWidget {
                   Positioned(top: 6, left: 6, child: _liveBadge()),
                 if (video.isPremium && !video.isLiveNow)
                   Positioned(top: 6, right: 6, child: _premiumBadge()),
-
                 if (!video.canRead)
                   Positioned(
                     bottom: 6,
@@ -1286,7 +2131,6 @@ class _VideoCardGrid extends StatelessWidget {
                       ),
                     ),
                   ),
-
                 Positioned(
                   bottom: 6,
                   left: 6,
@@ -1323,8 +2167,6 @@ class _VideoCardGrid extends StatelessWidget {
               ],
             ),
           ),
-
-          // ── Infos texte ─────────────────────────────────────────
           Expanded(
             flex: 4,
             child: Padding(
@@ -1332,7 +2174,6 @@ class _VideoCardGrid extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Titre
                   Text(
                     video.title,
                     maxLines: 2,
@@ -1344,8 +2185,6 @@ class _VideoCardGrid extends StatelessWidget {
                       height: 1.3,
                     ),
                   ),
-
-                  // Description ellipsée
                   if (video.description != null &&
                       video.description!.isNotEmpty) ...[
                     const SizedBox(height: 3),
@@ -1360,10 +2199,7 @@ class _VideoCardGrid extends StatelessWidget {
                       ),
                     ),
                   ],
-
                   const Spacer(),
-
-                  // Stats + date — toujours affichées, même à 0
                   Row(
                     children: [
                       _StatPill(
@@ -1398,7 +2234,6 @@ class _VideoCardGrid extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VIDEO CARD — VUE LISTE (1 colonne)
-// Thumbnail 16:9 à gauche, toutes les infos à droite
 // ─────────────────────────────────────────────────────────────────────────────
 class _VideoCardList extends StatelessWidget {
   final SpaceVideo video;
@@ -1429,7 +2264,6 @@ class _VideoCardList extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Thumbnail 16:9 ────────────────────────────────────
           SizedBox(
             width: 130,
             height: 115,
@@ -1482,8 +2316,6 @@ class _VideoCardList extends StatelessWidget {
               ],
             ),
           ),
-
-          // ── Infos droite ───────────────────────────────────────
           Expanded(
             child: GestureDetector(
               onTap: () => Get.to(() => VideosView(videoId: video.id)),
@@ -1493,7 +2325,6 @@ class _VideoCardList extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Titre
                     Text(
                       video.title,
                       maxLines: 2,
@@ -1505,8 +2336,6 @@ class _VideoCardList extends StatelessWidget {
                         height: 1.3,
                       ),
                     ),
-
-                    // Description
                     if (video.description != null &&
                         video.description!.isNotEmpty) ...[
                       const SizedBox(height: 4),
@@ -1521,10 +2350,7 @@ class _VideoCardList extends StatelessWidget {
                         ),
                       ),
                     ],
-
                     const SizedBox(height: 6),
-
-                    // Stats bas — toujours affichées, même à 0
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1536,9 +2362,7 @@ class _VideoCardList extends StatelessWidget {
                               color: context.subtleText,
                             ),
                           ),
-
                         const SizedBox(height: 4),
-
                         Wrap(
                           spacing: 8,
                           runSpacing: 4,

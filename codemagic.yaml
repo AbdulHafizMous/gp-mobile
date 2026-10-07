@@ -47,7 +47,7 @@ workflows:
     instance_type: mac_mini_m2
 
     integrations:
-      app_store_connect: Grand Public API Key
+      app_store_connect: Grandpublic API Key
 
     environment:
       flutter: stable
@@ -59,7 +59,7 @@ workflows:
       #   certificates:
       #     - "distribution"   # ← remplace par le nom exact Codemagic
       #   provisioning_profiles:
-      #     - "Grand Public Bénin Prod Provisioning Profile"
+      #     - "Grandpublic Bénin Prod Provisioning Profile"
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.maxafrica.gpbenin

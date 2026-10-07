@@ -77,7 +77,7 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 30),
 
-                // ── GRAND PUBLIC MEDIA ───────────────────────────────────
+                // ── GRANDPUBLIC MEDIA ───────────────────────────────────
                 Text(
                   "GRANDPUBLIC MEDIA",
                   style: TextStyle(
@@ -117,7 +117,7 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 30),
 
-                // ── GRAND PUBLIC SOCIAL ──────────────────────────────────
+                // ── GRANDPUBLIC SOCIAL ──────────────────────────────────
                 Text(
                   "GRANDPUBLIC SOCIAL",
                   style: TextStyle(
@@ -157,7 +157,7 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 30),
 
-                // ── GRAND PUBLIC CLUB ────────────────────────────────────
+                // ── GRANDPUBLIC CLUB ────────────────────────────────────
                 Text(
                   "GRANDPUBLIC CLUB",
                   style: TextStyle(
@@ -177,7 +177,7 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 SizedBox(height: 12),
                 Text(
-                  "Tu es dans GRAND PUBLIC, tu bénéficies de tous les meilleurs plans !",
+                  "Tu es dans GRANDPUBLIC, tu bénéficies de tous les meilleurs plans !",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
                 SizedBox(height: 12),

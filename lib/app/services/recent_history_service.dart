@@ -27,13 +27,27 @@ class RecentHistoryService {
     );
   }
 
-  // ── Blow Music ───────────────────────────────────────────────────────────
-  static void addRecentTrack({required int id, required String title, String? artist, String? cover}) =>
-      _push('bm_recent_tracks', {'id': id, 'title': title, 'artist': artist, 'cover': cover}, 'id');
-  static List<Map<String, dynamic>> get recentTracks => _read('bm_recent_tracks');
+  // ── Blowmusic ───────────────────────────────────────────────────────────
+  static void addRecentTrack({
+    required int id,
+    required String title,
+    String? artist,
+    String? cover,
+  }) => _push('bm_recent_tracks', {
+    'id': id,
+    'title': title,
+    'artist': artist,
+    'cover': cover,
+  }, 'id');
+  static List<Map<String, dynamic>> get recentTracks =>
+      _read('bm_recent_tracks');
 
   // ── GameZ ────────────────────────────────────────────────────────────────
-  static void addRecentGame({required int id, required String name, String? cover}) =>
+  static void addRecentGame({
+    required int id,
+    required String name,
+    String? cover,
+  }) =>
       _push('gz_recent_games', {'id': id, 'name': name, 'cover': cover}, 'id');
   static List<Map<String, dynamic>> get recentGames => _read('gz_recent_games');
 }

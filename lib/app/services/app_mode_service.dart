@@ -1,8 +1,8 @@
 // lib/app/services/app_mode_service.dart
 //
-// Centralise le choix "Grand Public" / "Blow Music" / "GameZ". Tant que
+// Centralise le choix "Grandpublic" / "Blowmusic" / "GameZ". Tant que
 // isBlowMusicActivated ET isGameZActivated sont à false, ce service se
-// comporte comme s'il n'y avait que Grand Public : rien ne change pour les
+// comporte comme s'il n'y avait que Grandpublic : rien ne change pour les
 // utilisateurs actuels.
 
 import 'package:get_storage/get_storage.dart';
@@ -23,11 +23,13 @@ class AppModeService {
   };
 
   /// Un choix de module est-il nécessaire (plus d'un module actif) ?
-  static bool get hasMultipleModules => isBlowMusicActivated || isGameZActivated;
+  static bool get hasMultipleModules =>
+      isBlowMusicActivated || isGameZActivated;
 
   static AppMode get current {
     final raw = GetStorage().read<String>(kAppModeStorageKey);
-    if (raw == _values[AppMode.blowMusic] && isBlowMusicActivated) return AppMode.blowMusic;
+    if (raw == _values[AppMode.blowMusic] && isBlowMusicActivated)
+      return AppMode.blowMusic;
     if (raw == _values[AppMode.gameZ] && isGameZActivated) return AppMode.gameZ;
     return AppMode.grandPublic;
   }
@@ -36,7 +38,8 @@ class AppModeService {
   static bool get isGameZ => current == AppMode.gameZ;
 
   /// L'utilisateur a-t-il déjà choisi un module au moins une fois ?
-  static bool get hasChosenMode => GetStorage().read<String>(kAppModeStorageKey) != null;
+  static bool get hasChosenMode =>
+      GetStorage().read<String>(kAppModeStorageKey) != null;
 
   static Future<void> setMode(AppMode mode) async {
     await GetStorage().write(kAppModeStorageKey, _values[mode]);
@@ -58,7 +61,7 @@ class AppModeService {
   /// chaque ouverture de l'app si déjà connecté : le choix de destination
   /// doit être reproposé À CHAQUE FOIS quand plus d'un module est actif —
   /// ce n'est PAS un choix figé une fois pour toutes. Reste directement sur
-  /// Grand Public si un seul module est actif (comportement actuel conservé).
+  /// Grandpublic si un seul module est actif (comportement actuel conservé).
   ///
   /// Profil d'audience incomplet (naissance / genre / profession) → écran
   /// bloquant /complete-profile AVANT toute destination (il renvoie ensuite

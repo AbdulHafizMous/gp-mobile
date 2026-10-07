@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/components/module_page_shell.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/interest_item.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
@@ -59,6 +60,22 @@ class _ProfileViewState extends State<ProfileView> {
 
   @override
   Widget build(BuildContext context) {
+    final body = _buildBody(context);
+    if (!isInModuleShell) return body;
+    // Ouvert depuis Blowmusic / GameZ : Scaffold + AppBar, et le retour
+    // système remonte d'abord les sous-pages du profil.
+    return Obx(
+      () => PopScope(
+        canPop: _ctrl.subPage.value == ProfileSubPage.main,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _ctrl.goBack();
+        },
+        child: ModulePageShell(title: 'Mon profil', child: body),
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
     return Obx(
       () => Scaffold(
         body: AnimatedSwitcher(
@@ -166,7 +183,9 @@ class _ProfileSubBar extends StatelessWidget {
                 child: Text(
                   'Annuler',
                   style: TextStyle(
-                    color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                    color: context.isDark
+                        ? SectionHelper.color
+                        : SectionHelper.colorAdjusted,
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -181,13 +200,17 @@ class _ProfileSubBar extends StatelessWidget {
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                            color: context.isDark
+                                ? SectionHelper.color
+                                : SectionHelper.colorAdjusted,
                           ),
                         )
                       : Text(
                           'Enregistrer',
                           style: TextStyle(
-                            color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                            color: context.isDark
+                                ? SectionHelper.color
+                                : SectionHelper.colorAdjusted,
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                           ),
@@ -205,7 +228,9 @@ class _ProfileSubBar extends StatelessWidget {
               child: Text(
                 title,
                 style: TextStyle(
-                  color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                  color: context.isDark
+                      ? SectionHelper.color
+                      : SectionHelper.colorAdjusted,
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0.5,
@@ -255,7 +280,11 @@ class _GpField extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: readOnly ? context.subtleText : context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+            color: readOnly
+                ? context.subtleText
+                : context.isDark
+                ? SectionHelper.color
+                : SectionHelper.colorAdjusted,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -272,7 +301,11 @@ class _GpField extends StatelessWidget {
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w500,
-            color: readOnly ? context.subtleText : context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+            color: readOnly
+                ? context.subtleText
+                : context.isDark
+                ? SectionHelper.color
+                : SectionHelper.colorAdjusted,
           ),
           decoration: InputDecoration(
             hintText: hint,
@@ -291,14 +324,18 @@ class _GpField extends StatelessWidget {
                       obscure
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
-                      color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                      color: context.isDark
+                          ? SectionHelper.color
+                          : SectionHelper.colorAdjusted,
                       size: 20,
                     ),
                   )
                 : maxLines == 1
                 ? Icon(
                     Icons.edit_outlined,
-                    color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                    color: context.isDark
+                        ? SectionHelper.color
+                        : SectionHelper.colorAdjusted,
                     size: 18,
                   )
                 : null,
@@ -317,18 +354,26 @@ class _GpField extends StatelessWidget {
               borderSide: BorderSide(
                 color: readOnly
                     ? Colors.grey.shade400
-                    : context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                    : context.isDark
+                    ? SectionHelper.color
+                    : SectionHelper.colorAdjusted,
                 width: 1.5,
               ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted),
+              borderSide: BorderSide(
+                color: context.isDark
+                    ? SectionHelper.color
+                    : SectionHelper.colorAdjusted,
+              ),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(
-                color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                color: context.isDark
+                    ? SectionHelper.color
+                    : SectionHelper.colorAdjusted,
                 width: 1.5,
               ),
             ),
@@ -361,7 +406,9 @@ class _GpDropdown extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+            color: context.isDark
+                ? SectionHelper.color
+                : SectionHelper.colorAdjusted,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -372,7 +419,9 @@ class _GpDropdown extends StatelessWidget {
           onChanged: onChanged,
           dropdownColor: isDark ? Colors.grey.shade900 : Colors.white,
           style: TextStyle(
-            color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+            color: context.isDark
+                ? SectionHelper.color
+                : SectionHelper.colorAdjusted,
             fontSize: 15,
             fontWeight: FontWeight.w500,
           ),
@@ -392,7 +441,9 @@ class _GpDropdown extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(
-                color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                color: context.isDark
+                    ? SectionHelper.color
+                    : SectionHelper.colorAdjusted,
                 width: 1.5,
               ),
             ),
@@ -472,13 +523,17 @@ class _ActionTile extends StatelessWidget {
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w500,
-          color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+          color: context.isDark
+              ? SectionHelper.color
+              : SectionHelper.colorAdjusted,
         ),
       ),
       trailing: Icon(
         Icons.arrow_forward_ios,
         size: 16,
-        color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+        color: context.isDark
+            ? SectionHelper.color
+            : SectionHelper.colorAdjusted,
       ),
     );
   }
@@ -502,7 +557,11 @@ class _MainProfilePage extends GetView<ProfileController> {
     return Obx(() {
       if (controller.isLoading.value) {
         return Center(
-          child: CircularProgressIndicator(color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted),
+          child: CircularProgressIndicator(
+            color: context.isDark
+                ? SectionHelper.color
+                : SectionHelper.colorAdjusted,
+          ),
         );
       }
       return SingleChildScrollView(
@@ -516,7 +575,9 @@ class _MainProfilePage extends GetView<ProfileController> {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w900,
-                color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                color: context.isDark
+                    ? SectionHelper.color
+                    : SectionHelper.colorAdjusted,
               ),
             ),
             const SizedBox(height: 20),
@@ -577,7 +638,9 @@ class _MainProfilePage extends GetView<ProfileController> {
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                                  color: context.isDark
+                                      ? SectionHelper.color
+                                      : SectionHelper.colorAdjusted,
                                 ),
                               ),
                               Text(
@@ -662,7 +725,9 @@ class _MainProfilePage extends GetView<ProfileController> {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
-                              color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                              color: context.isDark
+                                  ? SectionHelper.color
+                                  : SectionHelper.colorAdjusted,
                             ),
                           ),
                         ),
@@ -670,7 +735,9 @@ class _MainProfilePage extends GetView<ProfileController> {
                           () => Switch(
                             value: controller.isDark.value,
                             onChanged: (_) => controller.toggleTheme(),
-                            activeThumbColor: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                            activeThumbColor: context.isDark
+                                ? SectionHelper.color
+                                : SectionHelper.colorAdjusted,
                           ),
                         ),
                       ],
@@ -689,7 +756,9 @@ class _MainProfilePage extends GetView<ProfileController> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                  color: context.isDark
+                      ? SectionHelper.color
+                      : SectionHelper.colorAdjusted,
                 ),
               ),
             ),
@@ -710,7 +779,11 @@ class _MainProfilePage extends GetView<ProfileController> {
               child: OutlinedButton(
                 onPressed: controller.logout,
                 style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted),
+                  side: BorderSide(
+                    color: context.isDark
+                        ? SectionHelper.color
+                        : SectionHelper.colorAdjusted,
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -719,7 +792,9 @@ class _MainProfilePage extends GetView<ProfileController> {
                 child: Text(
                   'Se déconnecter',
                   style: TextStyle(
-                    color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                    color: context.isDark
+                        ? SectionHelper.color
+                        : SectionHelper.colorAdjusted,
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
                   ),
@@ -738,7 +813,11 @@ class _MainProfilePage extends GetView<ProfileController> {
                       ? null
                       : () => _confirmDeleteAccount(context),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted),
+                    side: BorderSide(
+                      color: context.isDark
+                          ? SectionHelper.color
+                          : SectionHelper.colorAdjusted,
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -750,13 +829,17 @@ class _MainProfilePage extends GetView<ProfileController> {
                           width: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                            color: context.isDark
+                                ? SectionHelper.color
+                                : SectionHelper.colorAdjusted,
                           ),
                         )
                       : Text(
                           'Supprimer mon compte',
                           style: TextStyle(
-                            color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                            color: context.isDark
+                                ? SectionHelper.color
+                                : SectionHelper.colorAdjusted,
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
                           ),
@@ -797,7 +880,9 @@ class _MainProfilePage extends GetView<ProfileController> {
             child: Text(
               'Supprimer définitivement',
               style: TextStyle(
-                color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                color: context.isDark
+                    ? SectionHelper.color
+                    : SectionHelper.colorAdjusted,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -881,7 +966,9 @@ class _EditInfoPage extends GetView<ProfileController> {
                               child: Text(
                                 'choisissez votre avatar...',
                                 style: TextStyle(
-                                  color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                                  color: context.isDark
+                                      ? SectionHelper.color
+                                      : SectionHelper.colorAdjusted,
                                   fontSize: 12,
                                   fontStyle: FontStyle.italic,
                                 ),
@@ -931,7 +1018,9 @@ class _EditInfoPage extends GetView<ProfileController> {
                           builder: (ctx, child) => Theme(
                             data: Theme.of(ctx).copyWith(
                               colorScheme: ColorScheme.light(
-                                primary: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                                primary: context.isDark
+                                    ? SectionHelper.color
+                                    : SectionHelper.colorAdjusted,
                                 onPrimary: Colors.white,
                               ),
                             ),
@@ -951,7 +1040,9 @@ class _EditInfoPage extends GetView<ProfileController> {
                           prefixIcon: Icon(
                             Icons.calendar_today_outlined,
                             size: 18,
-                            color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                            color: context.isDark
+                                ? SectionHelper.color
+                                : SectionHelper.colorAdjusted,
                           ),
                         ),
                       ),
@@ -983,7 +1074,9 @@ class _EditInfoPage extends GetView<ProfileController> {
                       prefixIcon: Icon(
                         Icons.location_on_outlined,
                         size: 18,
-                        color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                        color: context.isDark
+                            ? SectionHelper.color
+                            : SectionHelper.colorAdjusted,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -1096,7 +1189,11 @@ class _AvatarPickerPage extends GetView<ProfileController> {
           child: OutlinedButton.icon(
             onPressed: controller.pickAvatarFromGallery,
             style: OutlinedButton.styleFrom(
-              side: BorderSide(color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted),
+              side: BorderSide(
+                color: context.isDark
+                    ? SectionHelper.color
+                    : SectionHelper.colorAdjusted,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -1104,12 +1201,16 @@ class _AvatarPickerPage extends GetView<ProfileController> {
             ),
             icon: Icon(
               Icons.photo_library_outlined,
-              color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+              color: context.isDark
+                  ? SectionHelper.color
+                  : SectionHelper.colorAdjusted,
             ),
             label: Text(
               'Choisir depuis la galerie',
               style: TextStyle(
-                color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                color: context.isDark
+                    ? SectionHelper.color
+                    : SectionHelper.colorAdjusted,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1167,7 +1268,9 @@ class _AvatarPickerPage extends GetView<ProfileController> {
                             child: Center(
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                                color: context.isDark
+                                    ? SectionHelper.color
+                                    : SectionHelper.colorAdjusted,
                               ),
                             ),
                           )
@@ -1187,7 +1290,9 @@ class _AvatarPickerPage extends GetView<ProfileController> {
                                     height: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 1.5,
-                                      color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                                      color: context.isDark
+                                          ? SectionHelper.color
+                                          : SectionHelper.colorAdjusted,
                                       value: p.expectedTotalBytes != null
                                           ? p.cumulativeBytesLoaded /
                                                 p.expectedTotalBytes!
@@ -1245,7 +1350,11 @@ class _InterestsPage extends GetView<ProfileController> {
           child: Obx(() {
             if (controller.isInterestsLoading.value) {
               return Center(
-                child: CircularProgressIndicator(color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted),
+                child: CircularProgressIndicator(
+                  color: context.isDark
+                      ? SectionHelper.color
+                      : SectionHelper.colorAdjusted,
+                ),
               );
             }
             return SingleChildScrollView(
@@ -1330,7 +1439,11 @@ class _ManageSubscriptionsPageState extends State<_ManageSubscriptionsPage> {
           child: Obx(() {
             if (_premCtrl.isLoadingHistory.value) {
               return Center(
-                child: CircularProgressIndicator(color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted),
+                child: CircularProgressIndicator(
+                  color: context.isDark
+                      ? SectionHelper.color
+                      : SectionHelper.colorAdjusted,
+                ),
               );
             }
             final history = _premCtrl.subscriptionHistory;
@@ -1359,7 +1472,9 @@ class _ManageSubscriptionsPageState extends State<_ManageSubscriptionsPage> {
                       child: Text(
                         'Voir les plans disponibles',
                         style: TextStyle(
-                          color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                          color: context.isDark
+                              ? SectionHelper.color
+                              : SectionHelper.colorAdjusted,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1416,7 +1531,9 @@ class _ManageSubscriptionsPageState extends State<_ManageSubscriptionsPage> {
         icon: Icons.calendar_today_rounded,
         label: 'Total jours',
         value: '${_totalDays(history)} j',
-        color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+        color: context.isDark
+            ? SectionHelper.color
+            : SectionHelper.colorAdjusted,
       ),
       _StatItem(
         icon: Icons.star_rounded,
@@ -1721,7 +1838,9 @@ class _SubscriptionHistoryTile extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
-                          color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                          color: context.isDark
+                              ? SectionHelper.color
+                              : SectionHelper.colorAdjusted,
                         ),
                       ),
                     ),
@@ -1751,7 +1870,9 @@ class _SubscriptionHistoryTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                    color: context.isDark
+                        ? SectionHelper.color
+                        : SectionHelper.colorAdjusted,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -1910,7 +2031,9 @@ class _StatCard extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 13,
-                    color: context.isDark ? SectionHelper.color : SectionHelper.colorAdjusted,
+                    color: context.isDark
+                        ? SectionHelper.color
+                        : SectionHelper.colorAdjusted,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),

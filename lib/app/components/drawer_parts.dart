@@ -1,7 +1,7 @@
 // lib/app/components/drawer_parts.dart
 //
-// Éléments de drawer PARTAGÉS par Grand Public (home_drawer.dart) et les
-// modules Blow Music / GameZ (module_drawer.dart) : mêmes en-tête profil,
+// Éléments de drawer PARTAGÉS par Grandpublic (home_drawer.dart) et les
+// modules Blowmusic / GameZ (module_drawer.dart) : mêmes en-tête profil,
 // libellé de section, séparateur, coque (fond + largeur) et logo du bas.
 // Toute modification visuelle se fait ici et s'applique aux trois drawers.
 
@@ -26,41 +26,60 @@ class DrawerShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Drawer(
-        backgroundColor: _dark(context) ? DrawerStyle.darkBg : color,
-        width: MediaQuery.of(context).size.width * DrawerStyle.widthFactor,
-        child: ListView(padding: EdgeInsets.zero, children: children),
-      );
+    backgroundColor: _dark(context) ? DrawerStyle.darkBg : color,
+    width: MediaQuery.of(context).size.width * DrawerStyle.widthFactor,
+    child: ListView(padding: EdgeInsets.zero, children: children),
+  );
 }
 
 class DrawerSep extends StatelessWidget {
   const DrawerSep({super.key});
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Divider(color: _dark(context) ? Theme.of(context).dividerColor : Colors.white.withAlpha(130)),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+    child: Divider(
+      color: _dark(context)
+          ? Theme.of(context).dividerColor
+          : Colors.white.withAlpha(130),
+    ),
+  );
 }
 
 class DrawerSectionLabel extends StatelessWidget {
   final IconData? icon;
   final String title;
   final Color? lightColor; // couleur du libellé en mode clair
-  const DrawerSectionLabel({super.key, this.icon, required this.title, this.lightColor});
+  const DrawerSectionLabel({
+    super.key,
+    this.icon,
+    required this.title,
+    this.lightColor,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final c = _dark(context) ? Colors.white : (lightColor ?? Colors.white.withValues(alpha: 0.95));
+    final c = _dark(context)
+        ? Colors.white
+        : (lightColor ?? Colors.white.withValues(alpha: 0.95));
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
       child: Row(
         children: [
-          if (icon != null) ...[Icon(icon, size: 14, color: c), const SizedBox(width: 6)],
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: c),
+            const SizedBox(width: 6),
+          ],
           Flexible(
             child: Text(
               title.toUpperCase(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: c, fontSize: 10.5, fontWeight: FontWeight.w700, letterSpacing: 1.4),
+              style: TextStyle(
+                color: c,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.4,
+              ),
             ),
           ),
         ],
@@ -76,19 +95,25 @@ class DrawerLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => InkWell(
-        onTap: onTap,
-        child: Container(
-          height: DrawerStyle.logoHeight,
-          decoration: BoxDecoration(image: DecorationImage(image: AssetImage(asset))),
-        ),
-      );
+    onTap: onTap,
+    child: Container(
+      height: DrawerStyle.logoHeight,
+      decoration: BoxDecoration(
+        image: DecorationImage(image: AssetImage(asset)),
+      ),
+    ),
+  );
 }
 
 class DrawerProfileHeader extends StatelessWidget {
   final VoidCallback onTap;
   final Color accentColor;
 
-  const DrawerProfileHeader({super.key, required this.onTap, required this.accentColor});
+  const DrawerProfileHeader({
+    super.key,
+    required this.onTap,
+    required this.accentColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +125,7 @@ class DrawerProfileHeader extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        color: isDark ?  DrawerStyle.darkHeaderBg : Colors.white,
+        color: isDark ? DrawerStyle.darkHeaderBg : Colors.white,
         padding: const EdgeInsets.only(top: 30, left: 6, right: 6),
         child: Column(
           children: [
@@ -108,7 +133,10 @@ class DrawerProfileHeader extends StatelessWidget {
               width: 100,
               height: 100,
               margin: const EdgeInsets.only(bottom: 8),
-              decoration: BoxDecoration(shape: BoxShape.circle, color: isDark ? Colors.white12 : Colors.black12),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isDark ? Colors.white12 : Colors.black12,
+              ),
               child: ClipOval(
                 child: avatarUrl.isNotEmpty
                     ? Image.network(
@@ -123,7 +151,8 @@ class DrawerProfileHeader extends StatelessWidget {
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 value: progress.expectedTotalBytes != null
-                                    ? progress.cumulativeBytesLoaded / progress.expectedTotalBytes!
+                                    ? progress.cumulativeBytesLoaded /
+                                          progress.expectedTotalBytes!
                                     : null,
                                 valueColor: AlwaysStoppedAnimation(accentColor),
                               ),
@@ -131,13 +160,25 @@ class DrawerProfileHeader extends StatelessWidget {
                           );
                         },
                         errorBuilder: (_, _, _) => ColorFiltered(
-                          colorFilter: ColorFilter.mode(accentColor, BlendMode.srcIn),
-                          child: Image.asset('assets/images/profile.png', fit: BoxFit.cover),
+                          colorFilter: ColorFilter.mode(
+                            accentColor,
+                            BlendMode.srcIn,
+                          ),
+                          child: Image.asset(
+                            'assets/images/profile.png',
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       )
                     : ColorFiltered(
-                        colorFilter: ColorFilter.mode(accentColor, BlendMode.srcIn),
-                        child: Image.asset('assets/images/profile.png', fit: BoxFit.cover),
+                        colorFilter: ColorFilter.mode(
+                          accentColor,
+                          BlendMode.srcIn,
+                        ),
+                        child: Image.asset(
+                          'assets/images/profile.png',
+                          fit: BoxFit.cover,
+                        ),
                       ),
               ),
             ),
@@ -153,7 +194,12 @@ class DrawerProfileHeader extends StatelessWidget {
             ),
             Text(
               email,
-              style: TextStyle(fontSize: 13, color: isDark ? Theme.of(context).hintColor : accentColor.withOpacity(0.7)),
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark
+                    ? Theme.of(context).hintColor
+                    : accentColor.withOpacity(0.7),
+              ),
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 20),

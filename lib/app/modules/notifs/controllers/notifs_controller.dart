@@ -18,11 +18,24 @@ class NotifCategory {
 
 const List<NotifCategory> kNotifCategories = [
   NotifCategory('all', 'Toutes', []),
-  NotifCategory('club', 'Club', ['promo', 'promotion', 'promotion_reminder', 'partner']),
-  NotifCategory('social', 'Social', ['chat_channel', 'chat_private', 'dating_match']),
+  NotifCategory('club', 'Club', [
+    'promo',
+    'promotion',
+    'promotion_reminder',
+    'partner',
+  ]),
+  NotifCategory('social', 'Social', [
+    'chat_channel',
+    'chat_private',
+    'dating_match',
+  ]),
   NotifCategory('media', 'Media', ['media']),
   NotifCategory('account', 'Compte', ['subscription', 'campaign']),
-  NotifCategory('blowmusic', 'Blow Music', ['bm_track', 'bm_live', 'bm_playlist']),
+  NotifCategory('blowmusic', 'Blowmusic', [
+    'bm_track',
+    'bm_live',
+    'bm_playlist',
+  ]),
   NotifCategory('gamez', 'GameZ', ['gz_game', 'gz_reward', 'gz_record']),
 ];
 
@@ -59,7 +72,7 @@ class NotifsPageController extends GetxController {
 
   int _currentPage = 1;
 
-  /// Depuis Blow Music / GameZ, la page s'ouvre directement sur la catégorie
+  /// Depuis Blowmusic / GameZ, la page s'ouvre directement sur la catégorie
   /// du module (le Club continue de pré-sélectionner « club » lui-même).
   void preselectModuleCategory() {
     switch (AppModeService.current) {
@@ -70,7 +83,8 @@ class NotifsPageController extends GetxController {
         selectedCategory.value = 'gamez';
         break;
       case AppMode.grandPublic:
-        if (selectedCategory.value == 'blowmusic' || selectedCategory.value == 'gamez') {
+        if (selectedCategory.value == 'blowmusic' ||
+            selectedCategory.value == 'gamez') {
           selectedCategory.value = 'all';
         }
     }
@@ -237,7 +251,9 @@ class NotifsPageController extends GetxController {
     // Notifications de module : on bascule dans le module puis on ouvre le bon onglet.
     if (route.startsWith('/blowmusic') || route.startsWith('/gamez')) {
       final isBlow = route.startsWith('/blowmusic');
-      AppModeService.setMode(isBlow ? AppMode.blowMusic : AppMode.gameZ).then((_) {
+      AppModeService.setMode(isBlow ? AppMode.blowMusic : AppMode.gameZ).then((
+        _,
+      ) {
         Get.offAllNamed(route, arguments: notif.data);
       });
       return;

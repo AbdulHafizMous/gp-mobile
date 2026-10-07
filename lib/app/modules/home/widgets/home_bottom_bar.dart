@@ -1,7 +1,7 @@
 // lib/app/modules/home/widgets/home_bottom_bar.dart
 //
 // Extrait de home_view.dart (fichier devenu trop lourd) — barre de
-// navigation par sections (Social/Club/Media/Bizz) de Grand Public.
+// navigation par sections (Social/Club/Media/Bizz) de Grandpublic.
 
 import 'package:flutter/material.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
@@ -16,15 +16,26 @@ class SectionsBottomBar extends StatelessWidget {
   final int activeIndex;
   final ValueChanged<int> onTap;
 
-  const SectionsBottomBar({super.key, required this.activeIndex, required this.onTap});
+  const SectionsBottomBar({
+    super.key,
+    required this.activeIndex,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 85,
       decoration: BoxDecoration(
-        color: context.isDark ? const Color(0xFF0A0A0A) : GPTheme.colorForSection(activeIndex),
-        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08), width: 1)),
+        color: context.isDark
+            ? const Color(0xFF0A0A0A)
+            : GPTheme.colorForSection(activeIndex),
+        border: Border(
+          top: BorderSide(
+            color: Colors.white.withValues(alpha: 0.08),
+            width: 1,
+          ),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -50,7 +61,11 @@ class SectionsBottomBar extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: isSelected
-                  ? (activeIndex == 2 ? (context.isDark ? GPTheme.colorForSection(2) : Colors.black) : Colors.white)
+                  ? (activeIndex == 2
+                        ? (context.isDark
+                              ? GPTheme.colorForSection(2)
+                              : Colors.black)
+                        : Colors.white)
                   : Colors.transparent,
               shape: BoxShape.circle,
             ),

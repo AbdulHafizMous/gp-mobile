@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:grand_public_v2/app/components/live_fullscreen_page.dart';
@@ -25,6 +26,22 @@ class BmTrack {
       artistName = j['artist']?['name']?.toString(),
       coverUrl = j['cover_url']?.toString(),
       audioUrl = j['audio_url']?.toString() ?? '';
+}
+
+int _bmInt(dynamic v) => v is int ? v : int.tryParse('$v') ?? 0;
+
+class BmPlaylistInfo {
+  final int id;
+  String name;
+  int count;
+  bool isPublic;
+  bool hasTrack;
+  BmPlaylistInfo.fromJson(Map<String, dynamic> j)
+    : id = _bmInt(j['id']),
+      name = j['name']?.toString() ?? '',
+      count = _bmInt(j['items_count']),
+      isPublic = j['is_public'] == true || j['is_public'] == 1,
+      hasTrack = j['has_track'] == true;
 }
 
 class BlowMusicTab {
@@ -65,10 +82,33 @@ class BlowMusicController extends GetxController {
   final position = Duration.zero.obs;
   final duration = Duration.zero.obs;
 
+  // File de lecture, aléatoire, répétition (0 = off, 1 = tout, 2 = titre)
+  final queue = <BmTrack>[].obs;
+  final queueIndex = (-1).obs;
+  final shuffle = false.obs;
+  final repeatMode = 0.obs;
+  String? queueLabel;
+  final List<int> _history = [];
+  bool _endHandled = false;
+
+  // Favoris, playlists, bibliothèque paginée
+  final favoriteIds = <int>{}.obs;
+  final playlists = <BmPlaylistInfo>[].obs;
+  final playlistsLoading = false.obs;
+  final libraryTracks = <BmTrack>[].obs;
+  final libraryLoading = false.obs;
+  int _libPage = 1;
+  bool _libMore = true;
+  String _libSearch = '';
+  Timer? _libDebounce;
+
   @override
   void onInit() {
     super.onInit();
     loadHome();
+    loadFavorites();
+    loadPlaylists();
+    loadLibrary(reset: true);
     // Ouverture depuis une notification : onglet demandé (live / library…).
     final args = Get.arguments;
     if (args is Map && args['tab'] != null) {
@@ -110,10 +150,32 @@ class BlowMusicController extends GetxController {
     } catch (_) {}
   }
 
-  Future<void> stopLive() async {
-    await videoPlayerController?.pause();
-    await videoPlayerController?.dispose();
+  /// Détache d'abord le contrôleur de l'UI (VideoPlayer, plein écran), laisse
+  /// l'arbre se reconstruire, PUIS seulement le détruit : évite l'erreur
+  /// « used after being disposed » quand le flux change en pleine lecture.
+  Future<void> _releasePlayer() async {
+    final old = videoPlayerController;
+    if (old == null) return;
+    if (isFullScreen.value && (Get.key.currentState?.canPop() ?? false)) {
+      Get.back();
+      isFullScreen.value = false;
+    }
     videoPlayerController = null;
+    isVideo.value = false;
+    isPlaying.value = false;
+    position.value = Duration.zero;
+    duration.value = Duration.zero;
+    await Future.delayed(const Duration(milliseconds: 120));
+    try {
+      await old.pause();
+    } catch (_) {}
+    try {
+      await old.dispose();
+    } catch (_) {}
+  }
+
+  Future<void> stopLive() async {
+    await _releasePlayer();
     isPlayingLive.value = false;
     isPlaying.value = false;
     playbackState.value = BmPlaybackState.idle;
@@ -179,12 +241,8 @@ class BlowMusicController extends GetxController {
   Future<void> _initPlayer(String url, {required bool isLiveStream}) async {
     playbackState.value = BmPlaybackState.loading;
 
-    // Arrêter et détruire l'ancien contrôleur
-    if (videoPlayerController != null) {
-      await videoPlayerController!.pause();
-      await videoPlayerController!.dispose();
-      videoPlayerController = null;
-    }
+    // Arrêter et détruire l'ancien contrôleur (en douceur, voir _releasePlayer)
+    await _releasePlayer();
 
     final resolvedUrl = await _resolveStreamUrl(url);
     if (resolvedUrl == null) {
@@ -200,20 +258,35 @@ class BlowMusicController extends GetxController {
         (lowerUrl.contains('.m3u8') || lowerUrl.contains('.mp4') || isLiveStream);
 
     try {
-      videoPlayerController = VideoPlayerController.networkUrl(
+      final ctl = VideoPlayerController.networkUrl(
         Uri.parse(resolvedUrl),
         videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
       );
+      videoPlayerController = ctl;
 
-      await videoPlayerController!.initialize();
+      await ctl.initialize();
+      if (videoPlayerController != ctl) {
+        // Un autre flux a été lancé pendant l'initialisation.
+        await ctl.dispose();
+        return;
+      }
 
       // Écouteurs d'états
-      videoPlayerController!.addListener(() {
-        if (videoPlayerController == null) return;
-        final v = videoPlayerController!.value;
+      ctl.addListener(() {
+        if (videoPlayerController != ctl) return;
+        final v = ctl.value;
         isPlaying.value = v.isPlaying;
         position.value = v.position;
         duration.value = v.duration;
+
+        if (!isPlayingLive.value &&
+            !_endHandled &&
+            v.duration > Duration.zero &&
+            v.position >= v.duration - const Duration(milliseconds: 300)) {
+          _endHandled = true;
+          next(auto: true);
+          return;
+        }
 
         if (v.hasError) {
           playbackState.value = BmPlaybackState.error;
@@ -224,7 +297,7 @@ class BlowMusicController extends GetxController {
         }
       });
 
-      await videoPlayerController!.play();
+      await ctl.play();
       playbackState.value = BmPlaybackState.playing;
     } catch (e) {
       playbackState.value = BmPlaybackState.error;
@@ -232,7 +305,17 @@ class BlowMusicController extends GetxController {
   }
 
   /// Lancer la lecture d'un morceau
-  Future<void> playTrack(BmTrack track) async {
+  Future<void> playTrack(BmTrack track, {List<BmTrack>? queue, String? label}) async {
+    if (queue != null) {
+      this.queue.assignAll(queue);
+      queueLabel = label;
+      _history.clear();
+    } else if (!this.queue.any((t) => t.id == track.id)) {
+      this.queue.assignAll([track]);
+      queueLabel = null;
+    }
+    queueIndex.value = this.queue.indexWhere((t) => t.id == track.id);
+    _endHandled = false;
     currentTrack.value = track;
     isPlayingLive.value = false;
 
@@ -249,6 +332,211 @@ class BlowMusicController extends GetxController {
     }
   }
 
+  // ── File de lecture ──────────────────────────────────────────────────────
+  Future<void> next({bool auto = false}) async {
+    if (queue.isEmpty) return;
+    if (auto && repeatMode.value == 2) {
+      _endHandled = false;
+      await seekTo(Duration.zero);
+      await videoPlayerController?.play();
+      return;
+    }
+    int n;
+    if (shuffle.value && queue.length > 1) {
+      final r = math.Random();
+      do {
+        n = r.nextInt(queue.length);
+      } while (n == queueIndex.value);
+    } else {
+      n = queueIndex.value + 1;
+      if (n >= queue.length) {
+        if (repeatMode.value == 1 || !auto) {
+          n = 0;
+        } else {
+          await videoPlayerController?.pause();
+          await seekTo(Duration.zero);
+          playbackState.value = BmPlaybackState.paused;
+          return;
+        }
+      }
+    }
+    if (queueIndex.value >= 0) _history.add(queueIndex.value);
+    await playTrack(queue[n]);
+  }
+
+  Future<void> previous() async {
+    if (queue.length < 2 || position.value.inSeconds > 3) {
+      await seekTo(Duration.zero);
+      return;
+    }
+    final p = _history.isNotEmpty
+        ? _history.removeLast()
+        : (queueIndex.value - 1 + queue.length) % queue.length;
+    await playTrack(queue[p]);
+  }
+
+  void toggleShuffle() => shuffle.value = !shuffle.value;
+  void cycleRepeat() => repeatMode.value = (repeatMode.value + 1) % 3;
+
+  void removeFromQueue(int i) {
+    if (i < 0 || i >= queue.length || i == queueIndex.value) return;
+    queue.removeAt(i);
+    if (i < queueIndex.value) queueIndex.value--;
+  }
+
+  void reorderQueue(int oldI, int newI) {
+    if (newI > oldI) newI--;
+    final cur = currentTrack.value;
+    final t = queue.removeAt(oldI);
+    queue.insert(newI, t);
+    if (cur != null) queueIndex.value = queue.indexWhere((x) => x.id == cur.id);
+  }
+
+  // ── Favoris ──────────────────────────────────────────────────────────────
+  Future<void> loadFavorites() async {
+    try {
+      final res = await RequestService().get('/blowmusic/favorites');
+      final list = res.data?['data'];
+      if (list is List) {
+        favoriteIds.assignAll(list.map((j) => _bmInt(j['id'])));
+      }
+    } catch (_) {}
+  }
+
+  Future<void> toggleFavorite(BmTrack t) async {
+    final was = favoriteIds.contains(t.id);
+    was ? favoriteIds.remove(t.id) : favoriteIds.add(t.id);
+    try {
+      await RequestService().post('/blowmusic/tracks/${t.id}/favorite');
+    } catch (_) {
+      was ? favoriteIds.add(t.id) : favoriteIds.remove(t.id);
+    }
+  }
+
+  // ── Bibliothèque (recherche + pagination) ────────────────────────────────
+  void searchLibrary(String q) {
+    _libDebounce?.cancel();
+    _libDebounce = Timer(const Duration(milliseconds: 350), () {
+      _libSearch = q.trim();
+      loadLibrary(reset: true);
+    });
+  }
+
+  Future<void> loadLibrary({bool reset = false}) async {
+    if (libraryLoading.value) return;
+    if (reset) {
+      _libPage = 1;
+      _libMore = true;
+    }
+    if (!_libMore) return;
+    libraryLoading.value = true;
+    try {
+      final res = await RequestService().get(
+        '/blowmusic/tracks',
+        queryParameters: {'page': _libPage, if (_libSearch.isNotEmpty) 'search': _libSearch},
+      );
+      final d = res.data?['data'];
+      final rows = (d?['data'] as List<dynamic>? ?? []).map((j) => BmTrack.fromJson(j)).toList();
+      if (reset) libraryTracks.clear();
+      libraryTracks.addAll(rows);
+      _libMore = d?['next_page_url'] != null;
+      _libPage++;
+    } catch (_) {
+    } finally {
+      libraryLoading.value = false;
+    }
+  }
+
+  // ── Playlists ────────────────────────────────────────────────────────────
+  Future<void> loadPlaylists({int? forTrack}) async {
+    playlistsLoading.value = true;
+    try {
+      final res = await RequestService().get(
+        '/blowmusic/playlists',
+        queryParameters: {if (forTrack != null) 'track_id': forTrack},
+      );
+      final list = res.data?['data'];
+      if (list is List) {
+        playlists.assignAll(list.map((j) => BmPlaylistInfo.fromJson(Map<String, dynamic>.from(j))));
+      }
+    } catch (_) {
+    } finally {
+      playlistsLoading.value = false;
+    }
+  }
+
+  Future<BmPlaylistInfo?> createPlaylist(String name, {int? trackId}) async {
+    try {
+      final res = await RequestService().post(
+        '/blowmusic/playlists',
+        data: {'name': name, if (trackId != null) 'track_id': trackId},
+      );
+      final j = res.data?['data'];
+      if (j is Map) {
+        final p = BmPlaylistInfo.fromJson(Map<String, dynamic>.from(j));
+        playlists.insert(0, p);
+        return p;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<bool> renamePlaylist(BmPlaylistInfo p, String name) async {
+    try {
+      await RequestService().put('/blowmusic/playlists/${p.id}', data: {'name': name});
+      p.name = name;
+      playlists.refresh();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> deletePlaylist(BmPlaylistInfo p) async {
+    try {
+      await RequestService().delete('/blowmusic/playlists/${p.id}');
+      playlists.removeWhere((x) => x.id == p.id);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> addToPlaylist(BmPlaylistInfo p, BmTrack t) async {
+    try {
+      await RequestService().post('/blowmusic/playlists/${p.id}/tracks', data: {'track_id': t.id});
+      if (!p.hasTrack) p.count++;
+      p.hasTrack = true;
+      playlists.refresh();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<List<BmTrack>> fetchPlaylistTracks(BmPlaylistInfo p) async {
+    try {
+      final res = await RequestService().get('/blowmusic/playlists/${p.id}/tracks');
+      final list = res.data?['data'];
+      if (list is List) return list.map((j) => BmTrack.fromJson(Map<String, dynamic>.from(j))).toList();
+    } catch (_) {}
+    return [];
+  }
+
+  Future<void> removeFromPlaylist(BmPlaylistInfo p, BmTrack t) async {
+    try {
+      await RequestService().delete('/blowmusic/playlists/${p.id}/tracks/${t.id}');
+      if (p.count > 0) p.count--;
+      playlists.refresh();
+    } catch (_) {}
+  }
+
+  Future<void> savePlaylistOrder(BmPlaylistInfo p, List<BmTrack> tracks) async {
+    try {
+      await RequestService().put('/blowmusic/playlists/${p.id}/order', data: {'track_ids': tracks.map((t) => t.id).toList()});
+    } catch (_) {}
+  }
+
   /// Lancer la lecture du Live
   Future<void> playLive() async {
     final rawUrl = liveStream.value?['stream_url']?.toString();
@@ -258,6 +546,7 @@ class BlowMusicController extends GetxController {
     }
 
     currentTrack.value = null;
+    queueIndex.value = -1;
     isPlayingLive.value = true;
 
     await _initPlayer(rawUrl, isLiveStream: true);
@@ -294,11 +583,12 @@ class BlowMusicController extends GetxController {
   void toggleFullScreen(BuildContext context) {
     final c = videoPlayerController;
     if (c == null || !c.value.isInitialized) return;
+    isFullScreen.value = true;
     Get.to(
       () => LiveFullscreenPage(controller: c, title: liveStream.value?['title']?.toString() ?? 'Direct', isLive: isPlayingLive.value),
       transition: Transition.fade,
       fullscreenDialog: true,
-    );
+    )?.then((_) => isFullScreen.value = false);
   }
 
   Future<void> switchToGrandPublic() async {
@@ -309,6 +599,7 @@ class BlowMusicController extends GetxController {
   @override
   void onClose() {
     _livePoll?.cancel();
+    _libDebounce?.cancel();
     videoPlayerController?.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);

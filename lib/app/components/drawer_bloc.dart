@@ -41,7 +41,7 @@ class _DrawerBlocState extends State<DrawerBloc> {
     },
     {
       "icon": 'assets/icons/blow.png',
-      "title": "BLOW MUSIC",
+      "title": "BLOWMUSIC",
       "callback": "/soon",
     },
     {

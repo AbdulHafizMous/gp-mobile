@@ -1,6 +1,6 @@
 // lib/app/components/live_fullscreen_page.dart
 //
-// Plein écran VIDÉO (live HLS, Blow Music & Grand Public). Corrige l'ancien
+// Plein écran VIDÉO (live HLS, Blowmusic & Grandpublic). Corrige l'ancien
 // rendu « une partie seulement » : on force la taille native de la vidéo dans
 // un FittedBox(contain) qui remplit TOUT l'écran (SizedBox.expand), en
 // paysage immersif, avec contrôles qui se masquent automatiquement.
@@ -14,7 +14,12 @@ class LiveFullscreenPage extends StatefulWidget {
   final VideoPlayerController controller;
   final String title;
   final bool isLive;
-  const LiveFullscreenPage({super.key, required this.controller, required this.title, this.isLive = true});
+  const LiveFullscreenPage({
+    super.key,
+    required this.controller,
+    required this.title,
+    this.isLive = true,
+  });
 
   @override
   State<LiveFullscreenPage> createState() => _LiveFullscreenPageState();
@@ -30,7 +35,10 @@ class _LiveFullscreenPageState extends State<LiveFullscreenPage> {
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     c.addListener(_tick);
     _scheduleHide();
   }
@@ -62,7 +70,9 @@ class _LiveFullscreenPageState extends State<LiveFullscreenPage> {
 
   @override
   Widget build(BuildContext context) {
-    final size = c.value.isInitialized && c.value.size.width > 0 ? c.value.size : const Size(1920, 1080);
+    final size = c.value.isInitialized && c.value.size.width > 0
+        ? c.value.size
+        : const Size(1920, 1080);
     final playing = c.value.isPlaying;
 
     return Scaffold(
@@ -77,10 +87,17 @@ class _LiveFullscreenPageState extends State<LiveFullscreenPage> {
             SizedBox.expand(
               child: FittedBox(
                 fit: BoxFit.contain,
-                child: SizedBox(width: size.width, height: size.height, child: VideoPlayer(c)),
+                child: SizedBox(
+                  width: size.width,
+                  height: size.height,
+                  child: VideoPlayer(c),
+                ),
               ),
             ),
-            if (c.value.isBuffering) const Center(child: CircularProgressIndicator(color: Colors.white)),
+            if (c.value.isBuffering)
+              const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
             AnimatedOpacity(
               opacity: _controls ? 1 : 0,
               duration: const Duration(milliseconds: 220),
@@ -94,29 +111,47 @@ class _LiveFullscreenPageState extends State<LiveFullscreenPage> {
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [Color(0xCC000000), Colors.transparent, Colors.transparent, Color(0xCC000000)],
+                          colors: [
+                            Color(0xCC000000),
+                            Colors.transparent,
+                            Colors.transparent,
+                            Color(0xCC000000),
+                          ],
                           stops: [0, .28, .72, 1],
                         ),
                       ),
                     ),
                     SafeArea(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.fullscreen_exit_rounded, color: Colors.white, size: 30),
+                              icon: const Icon(
+                                Icons.fullscreen_exit_rounded,
+                                color: Colors.white,
+                                size: 30,
+                              ),
                               onPressed: () => Navigator.of(context).pop(),
                             ),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Padding(
                                 padding: const EdgeInsets.only(top: 10),
-                                child: Text(widget.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                                child: Text(
+                                  widget.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                               ),
                             ),
                             if (widget.isLive) const _LiveBadge(),
@@ -133,8 +168,18 @@ class _LiveFullscreenPageState extends State<LiveFullscreenPage> {
                         child: Container(
                           width: 72,
                           height: 72,
-                          decoration: BoxDecoration(color: Colors.black45, shape: BoxShape.circle, border: Border.all(color: Colors.white54)),
-                          child: Icon(playing ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white, size: 44),
+                          decoration: BoxDecoration(
+                            color: Colors.black45,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white54),
+                          ),
+                          child: Icon(
+                            playing
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                            color: Colors.white,
+                            size: 44,
+                          ),
                         ),
                       ),
                     ),
@@ -143,7 +188,13 @@ class _LiveFullscreenPageState extends State<LiveFullscreenPage> {
                       bottom: 16,
                       child: SafeArea(
                         child: IconButton(
-                          icon: Icon(c.value.volume == 0 ? Icons.volume_off_rounded : Icons.volume_up_rounded, color: Colors.white, size: 28),
+                          icon: Icon(
+                            c.value.volume == 0
+                                ? Icons.volume_off_rounded
+                                : Icons.volume_up_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
                           onPressed: () {
                             c.setVolume(c.value.volume == 0 ? 1 : 0);
                             _scheduleHide();
@@ -169,8 +220,12 @@ class _LiveBadge extends StatefulWidget {
   State<_LiveBadge> createState() => _LiveBadgeState();
 }
 
-class _LiveBadgeState extends State<_LiveBadge> with SingleTickerProviderStateMixin {
-  late final AnimationController _a = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat(reverse: true);
+class _LiveBadgeState extends State<_LiveBadge>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _a = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat(reverse: true);
   @override
   void dispose() {
     _a.dispose();
@@ -181,12 +236,29 @@ class _LiveBadgeState extends State<_LiveBadge> with SingleTickerProviderStateMi
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(color: const Color(0xFFE11D48), borderRadius: BorderRadius.circular(8)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        FadeTransition(opacity: Tween(begin: .35, end: 1.0).animate(_a), child: const Icon(Icons.circle, size: 8, color: Colors.white)),
-        const SizedBox(width: 5),
-        const Text('EN DIRECT', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .6)),
-      ]),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE11D48),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FadeTransition(
+            opacity: Tween(begin: .35, end: 1.0).animate(_a),
+            child: const Icon(Icons.circle, size: 8, color: Colors.white),
+          ),
+          const SizedBox(width: 5),
+          const Text(
+            'EN DIRECT',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: .6,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -183,7 +183,8 @@ final sections = [
 ];
 
 var fixedDrawerItems = [
-  if (!activeUser.value.role.contains("Super Admin") && !shouldSkipMedia &&
+  if (!activeUser.value.role.contains("Super Admin") &&
+      !shouldSkipMedia &&
       !shouldSkipPayments)
     DrawerItem(
       title: "Premium",
@@ -198,7 +199,7 @@ var fixedDrawerItems = [
   ),
   if (isBlowMusicActivated)
     DrawerItem(
-      title: "Blow Music",
+      title: "Blowmusic",
       icon: Icons.graphic_eq_rounded,
       route: "/blowmusic/home",
     ),
