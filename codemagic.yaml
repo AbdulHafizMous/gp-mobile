@@ -47,7 +47,7 @@ workflows:
     instance_type: mac_mini_m2
 
     integrations:
-      app_store_connect: Grandpublic API Key
+      app_store_connect: Grand Public API Key
 
     environment:
       flutter: stable

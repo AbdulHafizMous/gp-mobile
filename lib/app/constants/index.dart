@@ -70,7 +70,8 @@ const bool skipMediaOnIos = true;
 // ══════════════════════════════════════════════════════════════════════════
 const bool skipPaymentsOnIos = true;
 
-bool get shouldSkipPayments => true;
+bool get shouldSkipPayments =>
+    true;
     // skipPaymentsOnIos && !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
 const String paymentsUnavailableMessage =
