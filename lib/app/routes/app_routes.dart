@@ -35,7 +35,8 @@ abstract class Routes {
   static const SHOP = _Paths.SHOP;
   static const SHOP_MY_LISTINGS = _Paths.SHOP_MY_LISTINGS;
   static const BLOWMUSIC_HOME = _Paths.BLOWMUSIC_HOME;
-  static const GAMEZ_HOME = _Paths.GAMEZ_HOME;
+  static const YOUWIIIN_HOME = _Paths.YOUWIIIN_HOME;
+  static const YOUWIIIN_ROOM = _Paths.YOUWIIIN_ROOM;
   static const MODULE_CHOICE = _Paths.MODULE_CHOICE;
   static const COMPLETE_PROFILE = _Paths.COMPLETE_PROFILE;
 }
@@ -74,7 +75,10 @@ abstract class _Paths {
   static const SHOP = '/shop';
   static const SHOP_MY_LISTINGS = '/shop/my-listings';
   static const BLOWMUSIC_HOME = '/blowmusic/home';
-  static const GAMEZ_HOME = '/gamez/home';
+  static const YOUWIIIN_HOME = '/youwiiin/home';
+  static const YOUWIIIN_ROOM = '/youwiiin/room/:code';
+  // Ancienne route (avant renommage GameZ → Youwiiin), gardée en alias.
+  static const GAMEZ_HOME_LEGACY = '/gamez/home';
   static const MODULE_CHOICE = '/module-choice';
   static const COMPLETE_PROFILE = '/complete-profile';
 }

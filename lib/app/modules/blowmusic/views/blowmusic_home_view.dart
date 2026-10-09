@@ -9,6 +9,7 @@ import 'package:video_player/video_player.dart';
 
 import 'package:grand_public_v2/app/components/empty_state_widget.dart';
 import 'package:grand_public_v2/app/components/vinyl_disc.dart';
+import 'package:grand_public_v2/app/components/module_bottom_bar.dart';
 import 'package:grand_public_v2/app/components/module_drawer.dart';
 import 'package:grand_public_v2/app/components/module_page_shell.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
@@ -32,6 +33,8 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
         return Icons.library_music_rounded;
       case 'playlist':
         return Icons.playlist_play_rounded;
+      case 'favorite':
+        return Icons.favorite_rounded;
       default:
         return Icons.circle;
     }
@@ -72,6 +75,11 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
             icon: Icons.playlist_play_rounded,
             onTap: () => controller.changeTab(3),
           ),
+          ModuleDrawerNavItem(
+            title: 'Favoris',
+            icon: Icons.favorite_rounded,
+            onTap: () => controller.changeTab(4),
+          ),
         ],
       ),
       appBar: AppBar(
@@ -92,7 +100,7 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
         title: SizedBox(
           height: 25,
           child: Image.asset(
-            isDark ? LOGO_BLOWMUSIC_NAV : LOGO_BLOWMUSIC_NAV_LIGHT,
+            LOGO_BLOWMUSIC_NAV_LIGHT,
             height: 30,
             filterQuality: FilterQuality.high,
           ),
@@ -108,6 +116,8 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
             return _LibraryTab(accent: accent, fg: fg);
           case 3:
             return _PlaylistsTab(fg: fg);
+          case 4:
+            return _FavoritesTab(accent: accent, fg: fg);
           default:
             return _HomeTab(accent: accent, fg: fg);
         }
@@ -117,17 +127,16 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
         children: [
           const _MiniPlayer(),
           Obx(
-            () => BottomNavigationBar(
-              backgroundColor: bg,
-              selectedItemColor: accent,
-              unselectedItemColor: isDark ? Colors.white38 : Colors.black38,
-              currentIndex: controller.currentTab.value,
+            // Même rendu que la barre de Grandpublic (composant partagé).
+            () => ModuleBottomBar(
+              backgroundColor: accent,
+              accentColor: accent,
+              activeIndex: controller.currentTab.value,
               onTap: controller.changeTab,
-              type: BottomNavigationBarType.fixed,
               items: kBlowMusicTabs
                   .map(
-                    (t) => BottomNavigationBarItem(
-                      icon: Icon(_iconFor(t.icon)),
+                    (t) => ModuleBottomBarItem(
+                      icon: _iconFor(t.icon),
                       label: t.label,
                     ),
                   )
@@ -209,7 +218,11 @@ class _SectionHeader extends StatelessWidget {
 class _FadeSlide extends StatefulWidget {
   final Widget child;
   final Duration delay;
-  const _FadeSlide({super.key, required this.child, this.delay = Duration.zero});
+  const _FadeSlide({
+    super.key,
+    required this.child,
+    this.delay = Duration.zero,
+  });
 
   @override
   State<_FadeSlide> createState() => _FadeSlideState();
@@ -673,7 +686,10 @@ class _RecentTile extends StatelessWidget {
           if (t != null) {
             ctrl.playTrack(t, label: 'Repris récemment');
           } else {
-            Get.snackbar('Titre indisponible', 'Ce titre n\'est plus disponible.');
+            Get.snackbar(
+              'Titre indisponible',
+              'Ce titre n\'est plus disponible.',
+            );
           }
         },
         child: Padding(
@@ -1379,10 +1395,7 @@ class _LibraryTabState extends State<_LibraryTab> {
               off += _tileH;
             }
             _sections = sections;
-            _railLetters = [
-              ..._az.split(''),
-              if (counts.containsKey('#')) '#',
-            ];
+            _railLetters = [..._az.split(''), if (counts.containsKey('#')) '#'];
             if (_active.value.isEmpty || !counts.containsKey(_active.value)) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) _onScroll();
@@ -1670,6 +1683,96 @@ class _PlaylistsTab extends StatelessWidget {
               ),
           ],
         ),
+      );
+    });
+  }
+}
+
+// -----------------------------------------------------------------------------
+// ONGLET FAVORIS : liste des titres aimés, lecture au tap, retrait (menu ou
+// glissement), état vide.
+// -----------------------------------------------------------------------------
+class _FavoritesTab extends StatelessWidget {
+  final Color accent;
+  final Color fg;
+  const _FavoritesTab({required this.accent, required this.fg});
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = Get.find<BlowMusicController>();
+    return Obx(() {
+      final list = ctrl.favoriteTracks.toList();
+      if (ctrl.favoritesLoading.value && list.isEmpty) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      return RefreshIndicator(
+        onRefresh: () => ctrl.loadFavorites(),
+        child: list.isEmpty
+            ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: const [
+                  SizedBox(height: 60),
+                  EmptyStateWidget(
+                    icon: Icons.favorite_border_rounded,
+                    message:
+                        'Aucun favori pour le moment.\nAppuyez sur le menu d\'un titre puis « Ajouter aux favoris ».',
+                  ),
+                ],
+              )
+            : ListView(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  _SectionHeader(
+                    icon: Icons.favorite_rounded,
+                    title: 'Mes favoris',
+                    count: list.length,
+                    accent: accent,
+                    fg: fg,
+                  ),
+                  const SizedBox(height: 12),
+                  // Lecture de toute la liste dans l'ordre.
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(backgroundColor: accent),
+                      onPressed: () => ctrl.playTrack(
+                        list.first,
+                        queue: list,
+                        label: 'Favoris',
+                      ),
+                      icon: const Icon(Icons.play_arrow_rounded),
+                      label: const Text('Tout lire'),
+                    ),
+                  ),
+                  for (final t in list)
+                    Dismissible(
+                      key: ValueKey('fav_${t.id}'),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.only(right: 20),
+                        alignment: Alignment.centerRight,
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.heart_broken_rounded,
+                          color: Colors.white,
+                        ),
+                      ),
+                      onDismissed: (_) => ctrl.toggleFavorite(t),
+                      child: _TrackTile(
+                        track: t,
+                        accent: accent,
+                        fg: fg,
+                        queue: list,
+                        label: 'Favoris',
+                      ),
+                    ),
+                ],
+              ),
       );
     });
   }

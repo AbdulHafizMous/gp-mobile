@@ -6,6 +6,7 @@ import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
 import 'package:grand_public_v2/app/services/app_mode_service.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
+import 'package:grand_public_v2/app/utils/app_link_router.dart';
 
 // ── Catégories de filtre (mappées sur les `type` réellement émis par le
 // backend — voir NotificationService / Jobs côté Laravel) ──────────────────
@@ -36,7 +37,15 @@ const List<NotifCategory> kNotifCategories = [
     'bm_live',
     'bm_playlist',
   ]),
-  NotifCategory('gamez', 'GameZ', ['gz_game', 'gz_reward', 'gz_record']),
+  // Les types gz_* gardent leur préfixe (compat backend / apps installées).
+  NotifCategory('youwiiin', 'Youwiiin', [
+    'gz_game',
+    'gz_reward',
+    'gz_record',
+    'gz_invite',
+    'gz_room_started',
+    'gz_room_result',
+  ]),
 ];
 
 class NotifsPageController extends GetxController {
@@ -51,13 +60,26 @@ class NotifsPageController extends GetxController {
   final sortMostRecentFirst = true.obs; // false = non-lues d'abord
 
   List<AppNotification> get visibleNotifications {
+    // « gamez » = ancien identifiant de la catégorie Youwiiin (toujours accepté).
+    final catId = selectedCategory.value == 'gamez'
+        ? 'youwiiin'
+        : selectedCategory.value;
     final cat = kNotifCategories.firstWhere(
-      (c) => c.id == selectedCategory.value,
+      (c) => c.id == catId,
       orElse: () => kNotifCategories.first,
     );
     var list = cat.types.isEmpty
         ? notifications.toList()
-        : notifications.where((n) => cat.types.contains(n.type)).toList();
+        : notifications
+              .where(
+                (n) =>
+                    cat.types.contains(n.type) ||
+                    // Le module renvoyé par le backend peut valoir
+                    // « gamez » (ancien) ou « youwiiin ».
+                    (cat.id == 'youwiiin' &&
+                        (n.module == 'youwiiin' || n.module == 'gamez')),
+              )
+              .toList();
 
     if (!sortMostRecentFirst.value) {
       list.sort((a, b) {
@@ -72,18 +94,19 @@ class NotifsPageController extends GetxController {
 
   int _currentPage = 1;
 
-  /// Depuis Blowmusic / GameZ, la page s'ouvre directement sur la catégorie
+  /// Depuis Blowmusic / Youwiiin, la page s'ouvre directement sur la catégorie
   /// du module (le Club continue de pré-sélectionner « club » lui-même).
   void preselectModuleCategory() {
     switch (AppModeService.current) {
       case AppMode.blowMusic:
         selectedCategory.value = 'blowmusic';
         break;
-      case AppMode.gameZ:
-        selectedCategory.value = 'gamez';
+      case AppMode.youwiiin:
+        selectedCategory.value = 'youwiiin';
         break;
       case AppMode.grandPublic:
         if (selectedCategory.value == 'blowmusic' ||
+            selectedCategory.value == 'youwiiin' ||
             selectedCategory.value == 'gamez') {
           selectedCategory.value = 'all';
         }
@@ -240,6 +263,20 @@ class NotifsPageController extends GetxController {
   void onTapNotification(AppNotification notif) {
     markAsRead(notif);
 
+    // Notifications Youwiiin (invitation, salle lancée, résultat…) : le
+    // routeur central sait ouvrir le lobby de la bonne salle.
+    if (notif.type.startsWith('gz_')) {
+      final code = (notif.data?['code'] ?? notif.data?['room_code'])
+          ?.toString();
+      final r = notif.route ?? '';
+      final fromRoute = RegExp(r'/room/([^/?#]+)').firstMatch(r)?.group(1);
+      final roomCode = code ?? fromRoute;
+      if (roomCode != null && roomCode.isNotEmpty) {
+        AppLinkRouter.route(notif.type, id: roomCode, extra: notif.data);
+        return;
+      }
+    }
+
     final route = notif.route;
     if (route == null || route.isEmpty) return;
 
@@ -249,12 +286,17 @@ class NotifsPageController extends GetxController {
     // (même GlobalKey de Scaffold utilisé deux fois → crash). Voir aussi
     // AppLinkRouter, qui centralise déjà cette règle pour les deep links.
     // Notifications de module : on bascule dans le module puis on ouvre le bon onglet.
-    if (route.startsWith('/blowmusic') || route.startsWith('/gamez')) {
+    if (route.startsWith('/blowmusic') || route.startsWith('/gamez') ||
+        route.startsWith('/youwiiin')) {
       final isBlow = route.startsWith('/blowmusic');
-      AppModeService.setMode(isBlow ? AppMode.blowMusic : AppMode.gameZ).then((
+      // Ancienne route /gamez/... → /youwiiin/...
+      final target = route.startsWith('/gamez')
+          ? route.replaceFirst('/gamez', '/youwiiin')
+          : route;
+      AppModeService.setMode(isBlow ? AppMode.blowMusic : AppMode.youwiiin).then((
         _,
       ) {
-        Get.offAllNamed(route, arguments: notif.data);
+        Get.offAllNamed(target, arguments: notif.data);
       });
       return;
     }

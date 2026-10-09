@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:grand_public_v2/app/components/vinyl_disc.dart';
+// import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 import '../controllers/blowmusic_controller.dart';
@@ -193,6 +194,8 @@ class _BmPlayerPageState extends State<BmPlayerPage>
                                 playing: playing && !loading,
                                 accent: accent,
                                 coverUrl: t.coverUrl,
+                                // Activer pour avoir le logo de Blowmusic au centre du disque
+                                // isCoverUrlAvailable: false,
                               ),
                             ),
                             if (hasCover)
@@ -231,6 +234,39 @@ class _BmPlayerPageState extends State<BmPlayerPage>
                                   ),
                                 ),
                               ),
+                            // Positioned(
+                            //   right: 0,
+                            //   bottom: 0,
+                            //   child: Transform.rotate(
+                            //     angle: -.09,
+                            //     child: AnimatedSwitcher(
+                            //       duration: const Duration(milliseconds: 450),
+                            //       child: Container(
+                            //         key: ValueKey('cov${t.id}'),
+                            //         width: 84,
+                            //         height: 84,
+                            //         decoration: BoxDecoration(
+                            //           borderRadius: BorderRadius.circular(14),
+                            //           border: Border.all(
+                            //             color: Colors.white.withOpacity(.85),
+                            //             width: 2,
+                            //           ),
+                            //           boxShadow: [
+                            //             BoxShadow(
+                            //               color: Colors.black.withOpacity(.55),
+                            //               blurRadius: 16,
+                            //               offset: const Offset(0, 8),
+                            //             ),
+                            //           ],
+                            //           image: DecorationImage(
+                            //             image: AssetImage(LOGO_BLOWMUSIC),
+                            //             fit: BoxFit.cover,
+                            //           ),
+                            //         ),
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ),
                             if (loading)
                               const CircularProgressIndicator(
                                 color: Colors.white,

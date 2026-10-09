@@ -14,7 +14,7 @@ import 'package:video_player/video_player.dart';
 /// Récupère et affiche la prochaine pub plein écran s'il y en a une.
 /// Ne bloque jamais l'app : silencieux en cas d'échec/absence de pub.
 /// Ne s'affiche qu'UNE fois par session app (peu importe le module ouvert
-/// en premier — Grandpublic, Blowmusic ou GameZ appellent tous cette
+/// en premier — Grandpublic, Blowmusic ou Youwiiin appellent tous cette
 /// même fonction à leur démarrage).
 bool _adShownThisSession = false;
 

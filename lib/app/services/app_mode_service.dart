@@ -1,7 +1,7 @@
 // lib/app/services/app_mode_service.dart
 //
-// Centralise le choix "Grandpublic" / "Blowmusic" / "GameZ". Tant que
-// isBlowMusicActivated ET isGameZActivated sont à false, ce service se
+// Centralise le choix "Grandpublic" / "Blowmusic" / "Youwiiin". Tant que
+// isBlowMusicActivated ET isYouwiiinActivated sont à false, ce service se
 // comporte comme s'il n'y avait que Grandpublic : rien ne change pour les
 // utilisateurs actuels.
 
@@ -11,7 +11,7 @@ import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 
-enum AppMode { grandPublic, blowMusic, gameZ }
+enum AppMode { grandPublic, blowMusic, youwiiin }
 
 class AppModeService {
   AppModeService._();
@@ -19,27 +19,43 @@ class AppModeService {
   static const _values = {
     AppMode.grandPublic: 'grandpublic',
     AppMode.blowMusic: 'blowmusic',
-    AppMode.gameZ: 'gamez',
+    AppMode.youwiiin: 'youwiiin',
   };
 
   /// Un choix de module est-il nécessaire (plus d'un module actif) ?
   static bool get hasMultipleModules =>
-      isBlowMusicActivated || isGameZActivated;
+      isBlowMusicActivated || isYouwiiinActivated;
+
+  /// Ancienne valeur persistée (module renommé GameZ → Youwiiin).
+  static const _legacyYouwiiin = 'gamez';
+
+  /// Migre la valeur persistée « gamez » vers « youwiiin » (une seule fois,
+  /// à la première lecture). Tolère un stockage indisponible.
+  static String? _readRaw() {
+    final storage = GetStorage();
+    final raw = storage.read<String>(kAppModeStorageKey);
+    if (raw == _legacyYouwiiin) {
+      try {
+        storage.write(kAppModeStorageKey, _values[AppMode.youwiiin]);
+      } catch (_) {}
+      return _values[AppMode.youwiiin];
+    }
+    return raw;
+  }
 
   static AppMode get current {
-    final raw = GetStorage().read<String>(kAppModeStorageKey);
+    final raw = _readRaw();
     if (raw == _values[AppMode.blowMusic] && isBlowMusicActivated)
       return AppMode.blowMusic;
-    if (raw == _values[AppMode.gameZ] && isGameZActivated) return AppMode.gameZ;
+    if (raw == _values[AppMode.youwiiin] && isYouwiiinActivated) return AppMode.youwiiin;
     return AppMode.grandPublic;
   }
 
   static bool get isBlowMusic => current == AppMode.blowMusic;
-  static bool get isGameZ => current == AppMode.gameZ;
+  static bool get isYouwiiin => current == AppMode.youwiiin;
 
   /// L'utilisateur a-t-il déjà choisi un module au moins une fois ?
-  static bool get hasChosenMode =>
-      GetStorage().read<String>(kAppModeStorageKey) != null;
+  static bool get hasChosenMode => _readRaw() != null;
 
   static Future<void> setMode(AppMode mode) async {
     await GetStorage().write(kAppModeStorageKey, _values[mode]);
@@ -50,8 +66,8 @@ class AppModeService {
     switch (current) {
       case AppMode.blowMusic:
         return '/blowmusic/home';
-      case AppMode.gameZ:
-        return '/gamez/home';
+      case AppMode.youwiiin:
+        return '/youwiiin/home';
       case AppMode.grandPublic:
         return '/home';
     }

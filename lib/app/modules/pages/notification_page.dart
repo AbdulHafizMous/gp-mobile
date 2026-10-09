@@ -403,6 +403,9 @@ class _NotifTile extends StatelessWidget {
       'bm_live' => Icons.podcasts_rounded,
       'gz_game' => Icons.sports_esports_rounded,
       'gz_reward' || 'gz_record' => Icons.emoji_events_rounded,
+      'gz_invite' => Icons.group_add_rounded,
+      'gz_room_started' => Icons.play_circle_fill_rounded,
+      'gz_room_result' => Icons.military_tech_rounded,
       _ => Icons.notifications_outlined,
     };
   }
@@ -421,7 +424,13 @@ class _NotifTile extends StatelessWidget {
       'chat_channel' || 'chat_private' => GPTheme.socialColor,
       'live' => Colors.redAccent,
       'bm_track' || 'bm_live' || 'bm_playlist' => GPTheme.primaryColor,
-      'gz_game' || 'gz_reward' || 'gz_record' => GPTheme.clubColor,
+      // Couleur du module Youwiiin = couleur primaire.
+      'gz_game' ||
+      'gz_reward' ||
+      'gz_record' ||
+      'gz_invite' ||
+      'gz_room_started' ||
+      'gz_room_result' => GPTheme.primaryColor,
       _ => SectionHelper.color,
     };
   }

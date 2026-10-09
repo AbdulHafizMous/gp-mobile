@@ -11,7 +11,8 @@ import 'package:grand_public_v2/app/services/profession_service.dart';
 
 class AudienceFormState {
   final birthday = TextEditingController(); // yyyy-MM-dd
-  final profession = TextEditingController(); // nom exact d'une profession du backend
+  final profession =
+      TextEditingController(); // nom exact d'une profession du backend
   final gender = ValueNotifier<String?>(null);
 
   bool get isValid =>
@@ -24,10 +25,10 @@ class AudienceFormState {
   bool get isWorkValid => profession.text.trim().isNotEmpty;
 
   Map<String, dynamic> toPayload() => {
-        'birthday': birthday.text,
-        'gender': gender.value,
-        'profession': profession.text.trim(),
-      };
+    'birthday': birthday.text,
+    'gender': gender.value,
+    'profession': profession.text.trim(),
+  };
 
   void prefill({String? b, String? g, String? p}) {
     if (b != null && b.length >= 10) birthday.text = b.substring(0, 10);
@@ -83,7 +84,8 @@ class _AudienceFieldsState extends State<AudienceFields> {
         setState(() {
           _professions = l;
           // Ancienne valeur libre absente de la liste : on la redemande.
-          if (widget.state.profession.text.isNotEmpty && !l.contains(widget.state.profession.text)) {
+          if (widget.state.profession.text.isNotEmpty &&
+              !l.contains(widget.state.profession.text)) {
             widget.state.profession.clear();
           }
         });
@@ -91,7 +93,11 @@ class _AudienceFieldsState extends State<AudienceFields> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Impossible de charger les professions. Touchez le champ pour réessayer.')),
+          const SnackBar(
+            content: Text(
+              'Impossible de charger les professions. Touchez le champ pour réessayer.',
+            ),
+          ),
         );
       }
     } finally {
@@ -109,12 +115,19 @@ class _AudienceFieldsState extends State<AudienceFields> {
           AppDateField(
             controller: s.birthday,
             hint: 'Date de naissance *',
-            lastDate: DateTime(DateTime.now().year - 13, DateTime.now().month, DateTime.now().day),
-            validator: (v) => (v == null || v.isEmpty) ? 'Date de naissance obligatoire' : null,
+            lastDate: DateTime(
+              DateTime.now().year - 13,
+              DateTime.now().month,
+              DateTime.now().day,
+            ),
+            validator: (v) => (v == null || v.isEmpty)
+                ? 'Date de naissance obligatoire'
+                : null,
           ),
           const SizedBox(height: 16),
           FormField<String>(
-            validator: (_) => s.gender.value == null ? 'Genre obligatoire' : null,
+            validator: (_) =>
+                s.gender.value == null ? 'Genre obligatoire' : null,
             builder: (field) => Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -133,23 +146,41 @@ class _AudienceFieldsState extends State<AudienceFields> {
                               duration: const Duration(milliseconds: 180),
                               padding: const EdgeInsets.symmetric(vertical: 15),
                               decoration: BoxDecoration(
-                                color: g == o.$1 ? AppFieldStyle.focus : AppFieldStyle.fill,
-                                borderRadius: BorderRadius.circular(AppFieldStyle.radius),
-                                border: Border.all(color: g == o.$1 ? AppFieldStyle.focus : AppFieldStyle.border),
+                                color: g == o.$1
+                                    ? AppFieldStyle.focus
+                                    : AppFieldStyle.fill,
+                                borderRadius: BorderRadius.circular(
+                                  AppFieldStyle.radius,
+                                ),
+                                border: Border.all(
+                                  color: g == o.$1
+                                      ? AppFieldStyle.focus
+                                      : AppFieldStyle.border,
+                                ),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(o.$3, size: 18, color: g == o.$1 ? Colors.white : AppFieldStyle.icon),
+                                  Icon(
+                                    o.$3,
+                                    size: 18,
+                                    color: g == o.$1
+                                        ? Colors.white
+                                        : AppFieldStyle.icon,
+                                  ),
                                   const SizedBox(width: 4),
                                   Flexible(
-                                    child: Text(o.$2,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          color: g == o.$1 ? Colors.white : AppFieldStyle.text,
-                                        )),
+                                    child: Text(
+                                      o.$2,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: g == o.$1
+                                            ? Colors.white
+                                            : AppFieldStyle.text,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -164,8 +195,16 @@ class _AudienceFieldsState extends State<AudienceFields> {
                 if (field.hasError)
                   Padding(
                     padding: const EdgeInsets.only(left: 16, top: 6),
-                    child: Text(field.errorText!,
-                        style: TextStyle(color: widget.onPrimary ? AppFieldStyle.errorOnPrimary : AppFieldStyle.error, fontSize: 12, fontWeight: FontWeight.w600)),
+                    child: Text(
+                      field.errorText!,
+                      style: TextStyle(
+                        color: widget.onPrimary
+                            ? AppFieldStyle.errorOnPrimary
+                            : AppFieldStyle.error,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -181,7 +220,9 @@ class _AudienceFieldsState extends State<AudienceFields> {
             icon: Icons.work_outline_rounded,
             loading: _loading,
             onRetry: () => _load(force: true),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Profession obligatoire' : null,
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? 'Profession obligatoire'
+                : null,
             onChanged: (v) => setState(() => s.profession.text = v),
           ),
       ],

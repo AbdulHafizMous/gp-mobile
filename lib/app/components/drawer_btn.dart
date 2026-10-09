@@ -37,7 +37,7 @@ class DrawerBtn extends StatelessWidget {
   /// clubColor, trop clair). Défaut : rouge "main" (Espaces / items fixes).
   final Color? accentColor;
 
-  /// true : l'asset garde ses couleurs d'origine (logos Blowmusic / GameZ).
+  /// true : l'asset garde ses couleurs d'origine (logos Blowmusic / Youwiiin).
   final bool keepIconColors;
 
   @override

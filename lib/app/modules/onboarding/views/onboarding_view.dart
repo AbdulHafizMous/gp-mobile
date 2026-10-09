@@ -7,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../controllers/onboarding_controller.dart';
 
 /// Écran d'accueil (fond "wall_start"). Le choix du module (Grandpublic /
-/// Blowmusic / GameZ) se fait maintenant APRÈS la connexion — voir
+/// Blowmusic / Youwiiin) se fait maintenant APRÈS la connexion — voir
 /// lib/app/modules/module_choice/. Cet écran ne fait donc plus que mener
 /// au login, quel que soit le nombre de modules actifs.
 class OnboardingView extends GetView<OnboardingController> {

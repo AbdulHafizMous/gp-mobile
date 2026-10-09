@@ -66,13 +66,14 @@ class SucessPageView extends GetView<SucessPageController> {
                         ),
                       ),
                       const SizedBox(height: 30),
-                      Image.asset(
-                        "assets/images/checked.png",
-                        width: 40,
-                        height: 40,
-                        cacheHeight: 40,
-                        cacheWidth: 40,
-                      ),
+                      InfiniteRotatingImage(),
+                      // Image.asset(
+                      //   "assets/images/checked.png",
+                      //   width: 40,
+                      //   height: 40,
+                      //   cacheHeight: 40,
+                      //   cacheWidth: 40,
+                      // ),
                       const SizedBox(height: 30),
                     ],
                   ),
@@ -89,6 +90,49 @@ class SucessPageView extends GetView<SucessPageController> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class InfiniteRotatingImage extends StatefulWidget {
+  const InfiniteRotatingImage({super.key});
+
+  @override
+  State<InfiniteRotatingImage> createState() => _InfiniteRotatingImageState();
+}
+
+class _InfiniteRotatingImageState extends State<InfiniteRotatingImage>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(
+        seconds: 2,
+      ), // Temps pour effectuer 1 tour complet
+    )..repeat(); // Lance la rotation en boucle infinie
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose(); // Très important pour éviter les fuites de mémoire
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RotationTransition(
+      turns: _controller,
+      child: Image.asset(
+        "assets/images/checked.png",
+        width: 40,
+        height: 40,
+        cacheHeight: 40,
+        cacheWidth: 40,
       ),
     );
   }

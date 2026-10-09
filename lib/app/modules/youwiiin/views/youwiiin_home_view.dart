@@ -1,6 +1,6 @@
-// lib/app/modules/gamez/views/gamez_home_view.dart
+// lib/app/modules/youwiiin/views/youwiiin_home_view.dart
 //
-// Coquille GameZ : or (GPTheme.clubColor), drawer partagé, 3 onglets
+// Coquille Youwiiin : couleur primaire (GPTheme.primaryColor), drawer partagé, 3 onglets
 // (Jeux, Mon profil GCoin, Classement). Theme-aware, états vides gérés.
 //
 // Onglet Jeux :
@@ -17,20 +17,22 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/empty_state_widget.dart';
+import 'package:grand_public_v2/app/components/module_bottom_bar.dart';
 import 'package:grand_public_v2/app/components/module_drawer.dart';
 import 'package:grand_public_v2/app/components/module_page_shell.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
-import '../controllers/gamez_controller.dart';
-import 'gamez_game_view.dart';
+import '../controllers/youwiiin_controller.dart';
+import '../widgets/youwiiin_create_room_sheet.dart';
+import 'youwiiin_game_view.dart';
 
-class GameZHomeView extends GetView<GameZController> {
-  const GameZHomeView({super.key});
+class YouwiiinHomeView extends GetView<YouwiiinController> {
+  const YouwiiinHomeView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final accent = GPTheme.clubColor;
+    final accent = GPTheme.primaryColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF111014) : const Color(0xFFF7F5F0);
     final fg = isDark ? Colors.white : Colors.black87;
@@ -39,14 +41,25 @@ class GameZHomeView extends GetView<GameZController> {
       backgroundColor: bg,
       drawer: ModuleDrawer(
         accentColor: accent,
-        moduleName: 'YouWiiin',
-        // moduleLogo: LOGO_YOUWIIIN_NAV,
+        moduleName: 'Youwiiin',
         moduleLogo: isDark ? LOGO_YOUWIIIN_NAV_DARK : LOGO_YOUWIIIN_NAV_LIGHT,
         variableItems: [
           ModuleDrawerNavItem(
             title: 'Jeux',
             icon: Icons.grid_view_rounded,
-            onTap: () => controller.changeTab(0),
+            onTap: () {
+              controller.showFavoritesOnly.value = false;
+              controller.changeTab(0);
+            },
+          ),
+          ModuleDrawerNavItem(
+            title: 'Favoris',
+            icon: Icons.favorite_rounded,
+            onTap: () {
+              controller.changeTab(0);
+              controller.showFavoritesOnly.value = true;
+              controller.loadFavorites();
+            },
           ),
           ModuleDrawerNavItem(
             title: 'GCoin',
@@ -71,13 +84,13 @@ class GameZHomeView extends GetView<GameZController> {
         ),
         elevation: 0,
         actions: [
-          ModuleBellAction(category: 'gamez', color: fg),
+          ModuleBellAction(category: 'youwiiin', color: fg),
           const SizedBox(width: 4),
         ],
         title: Row(
           children: [
             Image.asset(
-              LOGO_YOUWIIIN,
+              isDark ? LOGO_YOUWIIIN_DARK : LOGO_YOUWIIIN_LIGHT,
               width: 30,
               height: 30,
               errorBuilder: (_, __, ___) => Container(
@@ -89,14 +102,14 @@ class GameZHomeView extends GetView<GameZController> {
                 ),
                 child: const Icon(
                   Icons.sports_esports_rounded,
-                  color: Colors.black,
+                  color: Colors.white,
                   size: 18,
                 ),
               ),
             ),
             const SizedBox(width: 10),
             Text(
-              'GameZ',
+              'Youwiiin',
               style: TextStyle(
                 color: fg,
                 fontWeight: FontWeight.bold,
@@ -119,24 +132,21 @@ class GameZHomeView extends GetView<GameZController> {
             return _CatalogTab(accent: accent, fg: fg);
         }
       }),
+      // Même rendu que la barre de Grandpublic (composant partagé).
       bottomNavigationBar: Obx(
-        () => BottomNavigationBar(
-          backgroundColor: bg,
-          selectedItemColor: accent,
-          unselectedItemColor: isDark ? Colors.white38 : Colors.black38,
-          currentIndex: controller.currentTab.value,
+        () => ModuleBottomBar(
+          backgroundColor: accent,
+          accentColor: accent,
+          activeIndex: controller.currentTab.value,
           onTap: controller.changeTab,
           items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.grid_view_rounded),
-              label: 'Jeux',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.monetization_on_outlined),
+            ModuleBottomBarItem(icon: Icons.grid_view_rounded, label: 'Jeux'),
+            ModuleBottomBarItem(
+              icon: Icons.monetization_on_outlined,
               label: 'GCoin',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.leaderboard_rounded),
+            ModuleBottomBarItem(
+              icon: Icons.leaderboard_rounded,
               label: 'Classement',
             ),
           ],
@@ -169,6 +179,11 @@ FaIconData gzIcon(String name) => switch (name) {
   'footprints' => FontAwesomeIcons.shoePrints,
   'gem' => FontAwesomeIcons.gem,
   'ping-pong' => FontAwesomeIcons.tableTennisPaddleBall,
+  'grid-3x3' => FontAwesomeIcons.tableCells,
+  'hand' => FontAwesomeIcons.handBackFist,
+  'calculator' => FontAwesomeIcons.calculator,
+  'palette' => FontAwesomeIcons.palette,
+  'keyboard' => FontAwesomeIcons.keyboard,
   _ => FontAwesomeIcons.gamepad,
 };
 
@@ -208,7 +223,7 @@ Widget _gameBadge(GzGame g, {double size = 48}) => Container(
 );
 
 void playGame(GzGame g) =>
-    Get.to(() => GameZGameView(game: g), transition: Transition.downToUp);
+    Get.to(() => YouwiiinGameView(game: g), transition: Transition.downToUp);
 
 /// Lettre d'index d'un nom (accents retirés). '#' si ce n'est pas A-Z.
 String _letterOf(String name) {
@@ -386,7 +401,7 @@ class _CatalogTabState extends State<_CatalogTab> {
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.find<GameZController>();
+    final c = Get.find<YouwiiinController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final card = isDark ? const Color(0xFF1B1A22) : Colors.white;
     final accent = widget.accent;
@@ -463,6 +478,65 @@ class _CatalogTabState extends State<_CatalogTab> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Invitations multijoueur reçues
+                      if (c.invitations.isNotEmpty) ...[
+                        _title('Invitations', Icons.mail_rounded, fg, accent),
+                        const SizedBox(height: 10),
+                        for (final inv in c.invitations)
+                          _InvitationTile(room: inv, card: card, fg: fg, accent: accent),
+                        const SizedBox(height: 14),
+                      ],
+                      // Filtre Tous / Favoris
+                      Row(
+                        children: [
+                          ChoiceChip(
+                            label: const Text('Tous'),
+                            selected: !c.showFavoritesOnly.value,
+                            selectedColor: accent,
+                            labelStyle: TextStyle(color: !c.showFavoritesOnly.value ? Colors.white : fg, fontWeight: FontWeight.w800),
+                            onSelected: (_) => c.showFavoritesOnly.value = false,
+                          ),
+                          const SizedBox(width: 8),
+                          ChoiceChip(
+                            avatar: Icon(Icons.favorite_rounded, size: 16, color: c.showFavoritesOnly.value ? Colors.white : accent),
+                            label: Text('Favoris${c.favoriteIds.isEmpty ? '' : ' (${c.favoriteIds.length})'}'),
+                            selected: c.showFavoritesOnly.value,
+                            selectedColor: accent,
+                            labelStyle: TextStyle(color: c.showFavoritesOnly.value ? Colors.white : fg, fontWeight: FontWeight.w800),
+                            onSelected: (_) {
+                              c.showFavoritesOnly.value = true;
+                              c.loadFavorites();
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      if (c.showFavoritesOnly.value) ...[
+                        if (c.favoritesLoading.value && c.favorites.isEmpty)
+                          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator()))
+                        else if (c.favorites.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 20),
+                            child: EmptyStateWidget(
+                              icon: Icons.favorite_border_rounded,
+                              message: 'Aucun jeu favori.\nTouchez le cœur d\'un jeu pour le retrouver ici.',
+                            ),
+                          )
+                        else
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            padding: EdgeInsets.zero,
+                            itemCount: c.favorites.length,
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 12,
+                              crossAxisSpacing: 12,
+                              mainAxisExtent: 156,
+                            ),
+                            itemBuilder: (_, i) => _GameCard(game: c.favorites[i], card: card, fg: fg),
+                          ),
+                      ] else ...[
                       if (recentEntries.isNotEmpty) ...[
                         _title(
                           'Parties récentes',
@@ -530,6 +604,7 @@ class _CatalogTabState extends State<_CatalogTab> {
                             ],
                           ),
                         ),
+                      ],
                     ],
                   ),
                 ),
@@ -606,7 +681,7 @@ class _CatalogTabState extends State<_CatalogTab> {
                           child: Text(
                             _lastBubble,
                             style: const TextStyle(
-                              color: Colors.black,
+                              color: Colors.white,
                               fontSize: 40,
                               fontWeight: FontWeight.w900,
                             ),
@@ -771,6 +846,64 @@ Widget _title(String t, IconData i, Color fg, Color accent) => Row(
   ],
 );
 
+/// Cœur de favori animé (rebond au changement d'état).
+class _FavHeart extends StatelessWidget {
+  final bool fav;
+  final VoidCallback onTap;
+  final double size;
+  const _FavHeart({required this.fav, required this.onTap, this.size = 22});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkResponse(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      radius: 22,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 260),
+          transitionBuilder: (c, a) => ScaleTransition(scale: CurvedAnimation(parent: a, curve: Curves.elasticOut), child: c),
+          child: Icon(
+            fav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+            key: ValueKey(fav),
+            size: size,
+            color: fav ? GPTheme.primaryColor : Colors.grey,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Invitation reçue : ouvre le lobby de la salle.
+class _InvitationTile extends StatelessWidget {
+  final GzRoom room;
+  final Color card, fg, accent;
+  const _InvitationTile({required this.room, required this.card, required this.fg, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    final host = room.player(room.hostId);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16), border: Border.all(color: accent.withOpacity(.5))),
+      child: ListTile(
+        leading: Icon(Icons.mail_rounded, color: accent),
+        title: Text('${host?.name ?? 'Un joueur'} vous invite', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontWeight: FontWeight.w800)),
+        subtitle: Text(
+          '${room.gameName} · ${room.stake == 0 ? 'gratuit' : 'mise ${room.stake} GCoin'}',
+          style: TextStyle(color: fg.withOpacity(.55), fontSize: 12),
+        ),
+        trailing: Icon(Icons.chevron_right_rounded, color: fg.withOpacity(.5)),
+        onTap: () => Get.toNamed('/youwiiin/room/${room.code}'),
+      ),
+    );
+  }
+}
+
 class _GameCard extends StatelessWidget {
   final GzGame game;
   final Color card, fg;
@@ -778,6 +911,27 @@ class _GameCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = Get.find<YouwiiinController>();
+    return Stack(
+      children: [
+        Positioned.fill(child: _card(context)),
+        // Cœur favori (réactif)
+        Positioned(
+          top: 4,
+          right: 4,
+          child: Obx(() => _FavHeart(fav: c.isFav(game), onTap: () => c.toggleFavorite(game))),
+        ),
+        if (game.isMultiplayer)
+          Positioned(
+            top: 14,
+            right: 44,
+            child: Icon(Icons.groups_rounded, size: 18, color: fg.withOpacity(.4)),
+          ),
+      ],
+    );
+  }
+
+  Widget _card(BuildContext context) {
     return Material(
       color: card,
       borderRadius: BorderRadius.circular(20),
@@ -1012,7 +1166,7 @@ class _RecentTile extends StatelessWidget {
 
 /// Fiche d'un jeu : statistiques personnelles + top 10 + bouton Jouer.
 void _showGameSheet(BuildContext context, GzGame g) {
-  final c = Get.find<GameZController>();
+  final c = Get.find<YouwiiinController>();
   final isDark = Theme.of(context).brightness == Brightness.dark;
   final fg = isDark ? Colors.white : Colors.black87;
   showModalBottomSheet(
@@ -1079,6 +1233,8 @@ void _showGameSheet(BuildContext context, GzGame g) {
                       ],
                     ),
                   ),
+                  // Cœur favori
+                  Obx(() => _FavHeart(fav: c.isFav(g), size: 28, onTap: () => c.toggleFavorite(g))),
                 ],
               ),
               const SizedBox(height: 18),
@@ -1103,6 +1259,25 @@ void _showGameSheet(BuildContext context, GzGame g) {
                   ),
                 ),
               ),
+              if (g.isMultiplayer) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      showYouwiiinCreateRoomSheet(context, g);
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: fg,
+                      side: BorderSide(color: g.accent, width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    icon: Icon(Icons.groups_rounded, color: g.accent),
+                    label: const Text('Jouer avec des amis', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                  ),
+                ),
+              ],
               const SizedBox(height: 20),
               if (snap.connectionState != ConnectionState.done)
                 const Padding(
@@ -1324,7 +1499,7 @@ class _ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.find<GameZController>();
+    final c = Get.find<YouwiiinController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final card = isDark ? const Color(0xFF1B1A22) : Colors.white;
 
@@ -1385,7 +1560,7 @@ class _ProfileTab extends StatelessWidget {
                         '${v.round()}',
                         maxLines: 1,
                         style: const TextStyle(
-                          color: Colors.black,
+                          color: Colors.white,
                           fontSize: 44,
                           fontWeight: FontWeight.w900,
                         ),
@@ -1462,7 +1637,7 @@ class _ProfileTab extends StatelessWidget {
                           size: 18,
                           color: c.historyType.value.isEmpty
                               ? fg
-                              : Colors.black,
+                              : Colors.white,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -1476,7 +1651,7 @@ class _ProfileTab extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                             color: c.historyType.value.isEmpty
                                 ? fg
-                                : Colors.black,
+                                : Colors.white,
                           ),
                         ),
                       ],
@@ -1610,7 +1785,7 @@ class _LeaderboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.find<GameZController>();
+    final c = Get.find<YouwiiinController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Obx(() {
@@ -1667,13 +1842,13 @@ class _LeaderboardTab extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: c.lbPeriod.value == p.$1 ? Colors.black : fg,
+                            color: c.lbPeriod.value == p.$1 ? Colors.white : fg,
                           ),
                         ),
                         selected: c.lbPeriod.value == p.$1,
                         selectedColor: accent,
                         onSelected: (_) => c.setLbPeriod(p.$1),
-                        checkmarkColor: Colors.black,
+                        checkmarkColor: Colors.white,
                         iconTheme: const IconThemeData(size: 16),
                         visualDensity: VisualDensity.compact,
                       ),
@@ -1696,7 +1871,7 @@ class _LeaderboardTab extends StatelessWidget {
                     Text(
                       '#${c.lbMe.value!['rank']}',
                       style: const TextStyle(
-                        color: Colors.black,
+                        color: Colors.white,
                         fontWeight: FontWeight.w900,
                         fontSize: 26,
                       ),
@@ -1732,7 +1907,7 @@ class _LeaderboardTab extends StatelessWidget {
                           ? '${c.lbMe.value!['best_score']} pts'
                           : '${c.lbMe.value!['points']} pts',
                       style: const TextStyle(
-                        color: Colors.black,
+                        color: Colors.white,
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
                       ),
@@ -1777,12 +1952,12 @@ class _LeaderboardTab extends StatelessWidget {
         style: TextStyle(
           fontWeight: FontWeight.w800,
           fontSize: 13,
-          color: on ? Colors.black : fg,
+          color: on ? Colors.white : fg,
         ),
       ),
       selected: on,
       selectedColor: a,
-      checkmarkColor: Colors.black,
+      checkmarkColor: Colors.white,
       onSelected: (_) => f(),
     ),
   );

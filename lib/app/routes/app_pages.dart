@@ -17,8 +17,9 @@ import 'package:grand_public_v2/app/modules/space/bindings/space_binding.dart';
 import 'package:grand_public_v2/app/modules/space/views/space_view.dart';
 import 'package:grand_public_v2/app/modules/blowmusic/bindings/blowmusic_binding.dart';
 import 'package:grand_public_v2/app/modules/blowmusic/views/blowmusic_home_view.dart';
-import 'package:grand_public_v2/app/modules/gamez/bindings/gamez_binding.dart';
-import 'package:grand_public_v2/app/modules/gamez/views/gamez_home_view.dart';
+import 'package:grand_public_v2/app/modules/youwiiin/bindings/youwiiin_binding.dart';
+import 'package:grand_public_v2/app/modules/youwiiin/views/youwiiin_home_view.dart';
+import 'package:grand_public_v2/app/modules/youwiiin/views/youwiiin_room_view.dart';
 import 'package:grand_public_v2/app/modules/complete_profile/bindings/complete_profile_binding.dart';
 import 'package:grand_public_v2/app/modules/complete_profile/views/complete_profile_view.dart';
 import 'package:grand_public_v2/app/modules/module_choice/bindings/module_choice_binding.dart';
@@ -212,9 +213,21 @@ class AppPages {
       binding: BlowMusicBinding(),
     ),
     GetPage(
-      name: _Paths.GAMEZ_HOME,
-      page: () => const GameZHomeView(),
-      binding: GameZBinding(),
+      name: _Paths.YOUWIIIN_HOME,
+      page: () => const YouwiiinHomeView(),
+      binding: YouwiiinBinding(),
+    ),
+    // Ancienne route /gamez/home : alias vers le même écran (liens/anciens états).
+    GetPage(
+      name: _Paths.GAMEZ_HOME_LEGACY,
+      page: () => const YouwiiinHomeView(),
+      binding: YouwiiinBinding(),
+    ),
+    // Lobby d'une salle multijoueur : /youwiiin/room/:code
+    GetPage(
+      name: _Paths.YOUWIIIN_ROOM,
+      page: () => const YouwiiinRoomView(),
+      binding: YouwiiinBinding(),
     ),
     GetPage(
       name: _Paths.COMPLETE_PROFILE,

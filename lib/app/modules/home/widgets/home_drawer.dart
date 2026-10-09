@@ -2,7 +2,7 @@
 //
 // Extrait de home_view.dart (fichier devenu trop lourd) — drawer dynamique
 // de Grandpublic : profil, menus de la section active, menus fixes
-// (Premium/Liens/À propos/Blowmusic/GameZ), déconnexion.
+// (Premium/Liens/À propos/Blowmusic/Youwiiin), déconnexion.
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -87,10 +87,10 @@ class HomeDrawer extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 10),
             child: DrawerBtn(
               title: item.title,
-              icon: _fixedIcon(item.route),
+              icon: _fixedIcon(context, item.route),
               keepIconColors:
                   item.route == '/blowmusic/home' ||
-                  item.route == '/gamez/home',
+                  item.route == '/youwiiin/home',
               callback: () => ctrl.navigateTo(item.route ?? ''),
               accentColor: linkColor,
             ),
@@ -118,7 +118,7 @@ class HomeDrawer extends StatelessWidget {
 
   String _dynamicIcon(DrawerItem item) => 'assets/icons/portrait.png';
 
-  String _fixedIcon(String? route) {
+  String _fixedIcon(BuildContext context, String? route) {
     switch (route) {
       case '/social-premium':
         return 'assets/icons/premium.png';
@@ -128,8 +128,8 @@ class HomeDrawer extends StatelessWidget {
         return 'assets/icons/info.png';
       case '/blowmusic/home':
         return LOGO_BLOWMUSIC;
-      case '/gamez/home':
-        return LOGO_GAMEZ;
+      case '/youwiiin/home':
+        return Theme.of(context).brightness == Brightness.dark ? LOGO_YOUWIIIN_NAV_DARK : LOGO_YOUWIIIN_NAV_LIGHT;
       default:
         return 'assets/icons/portrait.png';
     }

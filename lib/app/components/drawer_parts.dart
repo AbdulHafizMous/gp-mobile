@@ -1,7 +1,7 @@
 // lib/app/components/drawer_parts.dart
 //
 // Éléments de drawer PARTAGÉS par Grandpublic (home_drawer.dart) et les
-// modules Blowmusic / GameZ (module_drawer.dart) : mêmes en-tête profil,
+// modules Blowmusic / Youwiiin (module_drawer.dart) : mêmes en-tête profil,
 // libellé de section, séparateur, coque (fond + largeur) et logo du bas.
 // Toute modification visuelle se fait ici et s'applique aux trois drawers.
 

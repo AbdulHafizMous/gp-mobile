@@ -42,7 +42,7 @@ class RecentHistoryService {
   static List<Map<String, dynamic>> get recentTracks =>
       _read('bm_recent_tracks');
 
-  // ── GameZ ────────────────────────────────────────────────────────────────
+  // ── Youwiiin ────────────────────────────────────────────────────────────────
   static void addRecentGame({
     required int id,
     required String name,

@@ -1,6 +1,6 @@
 // lib/app/components/module_drawer.dart
 //
-// Drawer partagé par BlowMusic et GameZ — même architecture/principe que
+// Drawer partagé par Blowmusic et Youwiiin — même architecture/principe que
 // le drawer Grandpublic (home_drawer.dart) : en-tête profil (avatar +
 // nom + email), section "menu variable" (les onglets du module), section
 // "menu fixe" (changer de module, déconnexion), logo du module en bas.
@@ -17,7 +17,7 @@ import 'package:grand_public_v2/app/modules/notifs/controllers/notifs_controller
 import 'package:grand_public_v2/app/services/app_mode_service.dart';
 
 /// Ouvre l'écran Notifications directement sur la catégorie du module
-/// (« blowmusic » ou « gamez »).
+/// (« blowmusic » ou « youwiiin »).
 void openModuleNotifications(String categoryId) {
   final ctrl = Get.isRegistered<NotifsPageController>()
       ? Get.find<NotifsPageController>()
@@ -123,8 +123,8 @@ class ModuleDrawer extends StatelessWidget {
           onTap: () => openModuleNotifications(
             moduleName == 'Blowmusic'
                 ? 'blowmusic'
-                : moduleName == 'GameZ'
-                ? 'gamez'
+                : moduleName == 'Youwiiin'
+                ? 'youwiiin'
                 : 'all',
           ),
         ),
@@ -142,12 +142,13 @@ class ModuleDrawer extends StatelessWidget {
             keepColors: true,
             onTap: () => _switchTo(AppMode.blowMusic, '/blowmusic/home'),
           ),
-        if (isGameZActivated && moduleName != 'GameZ')
+        if (isYouwiiinActivated && moduleName != 'Youwiiin')
           _btn(
-            title: 'GameZ',
-            asset: LOGO_GAMEZ,
+            title: 'Youwiiin',
+            // asset: LOGO_YOUWIIIN,
+            asset: isDark ? LOGO_YOUWIIIN_DARK : LOGO_YOUWIIIN_LIGHT,
             keepColors: true,
-            onTap: () => _switchTo(AppMode.gameZ, '/gamez/home'),
+            onTap: () => _switchTo(AppMode.youwiiin, '/youwiiin/home'),
           ),
         const DrawerSep(),
         Padding(

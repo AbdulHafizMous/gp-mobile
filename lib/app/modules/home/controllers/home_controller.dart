@@ -249,12 +249,12 @@ class HomeController extends GetxController {
   void navigateTo(String route, {Map<String, dynamic> params = const {}}) {
     _closeDrawer();
 
-    // Changement de module (Grandpublic / Blowmusic / GameZ) depuis le
+    // Changement de module (Grandpublic / Blowmusic / Youwiiin) depuis le
     // drawer : on fixe le mode ET on redémarre proprement sur son shell.
-    if (route == '/blowmusic/home' || route == '/gamez/home') {
+    if (route == '/blowmusic/home' || route == '/youwiiin/home') {
       final mode = route == '/blowmusic/home'
           ? AppMode.blowMusic
-          : AppMode.gameZ;
+          : AppMode.youwiiin;
       AppModeService.setMode(mode);
       Get.offAllNamed(route);
       return;

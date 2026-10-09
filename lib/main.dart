@@ -103,7 +103,7 @@ Future<void> main() async {
   // HomeController est utilisé par des écrans partagés entre TOUS les
   // modules (Profil, Notifications...) : on l'enregistre une fois pour
   // toutes ici, sinon Get.find<HomeController>() plante quand ces écrans
-  // sont ouverts depuis Blowmusic ou GameZ (qui n'utilisent pas le shell
+  // sont ouverts depuis Blowmusic ou Youwiiin (qui n'utilisent pas le shell
   // Grandpublic).
   Get.put(HomeController(), permanent: true);
 

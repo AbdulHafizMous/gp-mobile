@@ -55,6 +55,7 @@ const List<BlowMusicTab> kBlowMusicTabs = [
   BlowMusicTab('Live', 'live'),
   BlowMusicTab('Biblio', 'library'),
   BlowMusicTab('Playlists', 'playlist'),
+  BlowMusicTab('Favoris', 'favorite'),
 ];
 
 enum BmPlaybackState { idle, loading, playing, paused, error }
@@ -93,6 +94,9 @@ class BlowMusicController extends GetxController {
 
   // Favoris, playlists, bibliothèque paginée
   final favoriteIds = <int>{}.obs;
+  // Titres favoris complets (onglet « Favoris »), du plus récent au plus ancien.
+  final favoriteTracks = <BmTrack>[].obs;
+  final favoritesLoading = false.obs;
   final playlists = <BmPlaylistInfo>[].obs;
   final playlistsLoading = false.obs;
   final libraryTracks = <BmTrack>[].obs;
@@ -124,7 +128,11 @@ class BlowMusicController extends GetxController {
 
   Timer? _livePoll;
 
-  void changeTab(int i) => currentTab.value = i;
+  void changeTab(int i) {
+    currentTab.value = i;
+    // Onglet Favoris : rafraîchit la liste à chaque ouverture.
+    if (i == 4) loadFavorites();
+  }
 
   /// Interroge l'API (léger). Si le direct change (nouveau flux, ou coupé) :
   ///  - on met à jour l'écran immédiatement ;
@@ -394,22 +402,46 @@ class BlowMusicController extends GetxController {
 
   // ── Favoris ──────────────────────────────────────────────────────────────
   Future<void> loadFavorites() async {
+    favoritesLoading.value = true;
     try {
       final res = await RequestService().get('/blowmusic/favorites');
-      final list = res.data?['data'];
+      var list = res.data?['data'];
+      // Tolère une réponse paginée {data: [...]}.
+      if (list is Map && list['data'] is List) list = list['data'];
       if (list is List) {
-        favoriteIds.assignAll(list.map((j) => _bmInt(j['id'])));
+        final tracks = <BmTrack>[];
+        for (final j in list) {
+          if (j is Map) tracks.add(BmTrack.fromJson(Map<String, dynamic>.from(j)));
+        }
+        favoriteTracks.assignAll(tracks);
+        favoriteIds.assignAll(tracks.map((t) => t.id));
       }
-    } catch (_) {}
+    } catch (_) {
+    } finally {
+      favoritesLoading.value = false;
+    }
   }
 
   Future<void> toggleFavorite(BmTrack t) async {
     final was = favoriteIds.contains(t.id);
-    was ? favoriteIds.remove(t.id) : favoriteIds.add(t.id);
+    // Mise à jour optimiste des deux structures (ids + liste affichée).
+    if (was) {
+      favoriteIds.remove(t.id);
+      favoriteTracks.removeWhere((x) => x.id == t.id);
+    } else {
+      favoriteIds.add(t.id);
+      if (!favoriteTracks.any((x) => x.id == t.id)) favoriteTracks.insert(0, t);
+    }
     try {
       await RequestService().post('/blowmusic/tracks/${t.id}/favorite');
     } catch (_) {
-      was ? favoriteIds.add(t.id) : favoriteIds.remove(t.id);
+      if (was) {
+        favoriteIds.add(t.id);
+        favoriteTracks.insert(0, t);
+      } else {
+        favoriteIds.remove(t.id);
+        favoriteTracks.removeWhere((x) => x.id == t.id);
+      }
     }
   }
 

@@ -17,7 +17,7 @@ class NotificationService {
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'high_importance_channel',
     'Notifications importantes',
-    description: 'Notifications de GrandPublic',
+    description: 'Notifications de Grandpublic',
     importance: Importance.high,
     playSound: true,
   );

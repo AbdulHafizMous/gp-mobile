@@ -203,10 +203,10 @@ var fixedDrawerItems = [
       icon: Icons.graphic_eq_rounded,
       route: "/blowmusic/home",
     ),
-  if (isGameZActivated)
+  if (isYouwiiinActivated)
     DrawerItem(
-      title: "GameZ",
+      title: "Youwiiin",
       icon: Icons.sports_esports_rounded,
-      route: "/gamez/home",
+      route: "/youwiiin/home",
     ),
 ];

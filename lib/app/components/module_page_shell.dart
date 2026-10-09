@@ -1,7 +1,7 @@
 // lib/app/components/module_page_shell.dart
 //
 // Dans Grandpublic, Profil et Notifications s'affichent DANS le Scaffold de
-// l'accueil (barre du haut, retour…). Dans Blowmusic / GameZ ces pages sont
+// l'accueil (barre du haut, retour…). Dans Blowmusic / Youwiiin ces pages sont
 // ouvertes seules : on les enrobe donc d'un Scaffold + AppBar avec retour.
 // Contient aussi la cloche de notifications (accès rapide) des AppBar module.
 
@@ -10,7 +10,7 @@ import 'package:get/get.dart';
 import 'package:grand_public_v2/app/modules/notifs/controllers/notifs_controller.dart';
 import 'package:grand_public_v2/app/services/app_mode_service.dart';
 
-/// Vrai quand la page est ouverte depuis Blowmusic ou GameZ.
+/// Vrai quand la page est ouverte depuis Blowmusic ou Youwiiin.
 bool get isInModuleShell => AppModeService.current != AppMode.grandPublic;
 
 class ModulePageShell extends StatelessWidget {
@@ -47,7 +47,7 @@ class ModulePageShell extends StatelessWidget {
 }
 
 /// Cloche de notifications avec pastille de non-lus, pour les AppBar des
-/// modules. `category` = « blowmusic » ou « gamez ».
+/// modules. `category` = « blowmusic » ou « youwiiin ».
 class ModuleBellAction extends StatelessWidget {
   final String category;
   final Color color;

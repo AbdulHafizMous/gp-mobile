@@ -71,8 +71,8 @@ const bool skipMediaOnIos = true;
 const bool skipPaymentsOnIos = true;
 
 bool get shouldSkipPayments =>
-    true;
-    // skipPaymentsOnIos && !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+    // true;
+    skipPaymentsOnIos && !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
 const String paymentsUnavailableMessage =
     "Les achats ne sont pas disponibles dans cette version de l'application.";
@@ -105,7 +105,7 @@ const bool isDebuggingIap = true;
 // false -> comportement actuel inchangé : un seul bouton "Démarrer" qui
 //          mène directement au login Grandpublic (aucun écran de choix).
 // ══════════════════════════════════════════════════════════════════════════
-const bool isBlowMusicActivated = false;
+const bool isBlowMusicActivated = true;
 // Logos / identité visuelle dédiés à Blowmusic (à remplacer par les vrais
 // assets une fois livrés par le design : assets/images/blowmusic_*.png).
 const String LOGO_BLOWMUSIC = 'assets/images/Icone_B_blanc.png';
@@ -116,7 +116,11 @@ const String LOGO_BLOWMUSIC_NAV_LIGHT = 'assets/images/Logo_B3.png';
 // a choisie ('grandpublic' | 'blowmusic'). Voir AppModeService.
 const String kAppModeStorageKey = 'app_mode';
 
-// GameZ — jeux HTML5 embarqués via WebView, à côté de BlowMusic.
-const bool isGameZActivated = false;
-const String LOGO_GAMEZ = 'assets/images/Icone_Y2.png';
-const String LOGO_GAMEZ_NAV = 'assets/images/Logo_Y2.png';
+// Youwiiin — jeux HTML5 embarqués via WebView, à côté de BlowMusic.
+const bool isYouwiiinActivated = true;
+const String LOGO_YOUWIIIN = 'assets/images/Icone_Y2.png';
+const String LOGO_YOUWIIIN_NAV = 'assets/images/Logo_Y2.png';
+const String LOGO_YOUWIIIN_LIGHT = 'assets/images/Icone_Y_Rouge.png';
+const String LOGO_YOUWIIIN_NAV_LIGHT = 'assets/images/Logo_Y_Rouge.png';
+const String LOGO_YOUWIIIN_DARK = 'assets/images/Icone_Y_Noir.png';
+const String LOGO_YOUWIIIN_NAV_DARK = 'assets/images/Logo_Y_Noir.png';

@@ -22,7 +22,7 @@ class ModuleChoiceView extends GetView<ModuleChoiceController> {
       _ModuleCardData(
         mode: AppMode.grandPublic,
         title: 'Grandpublic',
-        subtitle: 'Social, Club, Media & Bizz',
+        subtitle: 'Media, Social & Club',
         color: GPTheme.primaryColor,
         icon: Icons.public_rounded,
         logo: LOGO,
@@ -31,20 +31,20 @@ class ModuleChoiceView extends GetView<ModuleChoiceController> {
         _ModuleCardData(
           mode: AppMode.blowMusic,
           title: 'Blowmusic',
-          subtitle: 'Radio live, playlists & musique',
+          subtitle: 'Live, playlists & musique',
           color: GPTheme.primaryColor,
           icon: Icons.graphic_eq_rounded,
           logo: LOGO_BLOWMUSIC,
         ),
-      if (isGameZActivated)
+      if (isYouwiiinActivated)
         _ModuleCardData(
-          mode: AppMode.gameZ,
-          title: 'GameZ',
-          subtitle: 'Jeux, classements & récompenses',
+          mode: AppMode.youwiiin,
+          title: 'Youwiiin',
+          subtitle: 'Jeux & récompenses',
           color: GPTheme.primaryColor,
           // textColor: Colors.black,
           icon: Icons.sports_esports_rounded,
-          logo: LOGO_GAMEZ,
+          logo: LOGO_YOUWIIIN_LIGHT,
         ),
     ];
 

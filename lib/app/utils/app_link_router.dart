@@ -83,7 +83,7 @@ class AppLinkRouter {
           }
           break;
 
-        // ── Modules Blowmusic / GameZ : bascule de module + bon onglet ──
+        // ── Modules Blowmusic / Youwiiin : bascule de module + bon onglet ──
         case 'bm_track':
         case 'bm_live':
         case 'bm_playlist':
@@ -97,8 +97,24 @@ class AppLinkRouter {
         case 'gz_game':
         case 'gz_reward':
         case 'gz_record':
-          await AppModeService.setMode(AppMode.gameZ);
-          Get.offAllNamed('/gamez/home', arguments: {'tab': 0});
+        case 'youwiiin':
+        case 'gamez': // ancien nom du module (anciens deep links)
+          await AppModeService.setMode(AppMode.youwiiin);
+          Get.offAllNamed('/youwiiin/home', arguments: {'tab': 0});
+          break;
+
+        // Multijoueur Youwiiin : invitation / salle lancée / résultat →
+        // ouvre l'accueil du module puis le lobby de la salle (code = id).
+        case 'gz_invite':
+        case 'gz_room_started':
+        case 'gz_room_result':
+          final code = (id ?? extra?['code'] ?? extra?['room_code'])
+              ?.toString();
+          await AppModeService.setMode(AppMode.youwiiin);
+          Get.offAllNamed('/youwiiin/home', arguments: {'tab': 0});
+          if (code != null && code.isNotEmpty) {
+            Get.toNamed('/youwiiin/room/$code');
+          }
           break;
 
         // Live Grandpublic : retour à l'accueil, la section Live apparaît
@@ -126,6 +142,17 @@ class AppLinkRouter {
     if (parts.isEmpty) return;
     final type = parts[0];
     final id = parts.length > 1 ? parts[1] : null;
+    // youwiiin://room/CODE, https://…/m/youwiiin/room/CODE (ou /gamez/…).
+    if ((type == 'youwiiin' || type == 'gamez') &&
+        parts.length > 2 &&
+        parts[1] == 'room') {
+      await route('gz_invite', id: parts[2]);
+      return;
+    }
+    if (type == 'room' && id != null) {
+      await route('gz_invite', id: id);
+      return;
+    }
     await route(type, id: id);
   }
 
@@ -141,6 +168,8 @@ class AppLinkRouter {
         data['promotion_id'] ??
         data['partner_id'] ??
         data['listing_id'] ??
+        data['room_code'] ??
+        data['code'] ??
         data['channel_id'] ??
         data['conversation_id'];
     await route(type, id: id?.toString(), extra: data);

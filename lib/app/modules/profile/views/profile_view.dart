@@ -62,7 +62,7 @@ class _ProfileViewState extends State<ProfileView> {
   Widget build(BuildContext context) {
     final body = _buildBody(context);
     if (!isInModuleShell) return body;
-    // Ouvert depuis Blowmusic / GameZ : Scaffold + AppBar, et le retour
+    // Ouvert depuis Blowmusic / Youwiiin : Scaffold + AppBar, et le retour
     // système remonte d'abord les sous-pages du profil.
     return Obx(
       () => PopScope(

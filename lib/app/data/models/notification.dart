@@ -3,7 +3,7 @@ class AppNotification {
   final String title;
   final String body;
   final String type;
-  final String module; // grandpublic | blowmusic | gamez
+  final String module; // grandpublic | blowmusic | youwiiin (l'ancienne valeur « gamez » reste acceptée)
   final String? route;
   final Map<String, dynamic>? data;
   final bool isRead;
