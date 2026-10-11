@@ -10,6 +10,56 @@ int gzInt(dynamic v) => v is int ? v : (v is num ? v.toInt() : int.tryParse('$v'
 
 bool _b(dynamic v) => v == true || v == 1 || v == '1' || v == 'true';
 
+/// Une option d'un réglage de partie (ex. « Rapide » = 30).
+class GzSettingOption {
+  final dynamic value;
+  final String label;
+  const GzSettingOption(this.value, this.label);
+}
+
+/// Réglage de partie choisi par l'hôte (schéma `mp_settings` du catalogue).
+class GzSetting {
+  final String key;
+  final String label;
+  final dynamic defaultValue;
+  final List<GzSettingOption> options;
+  const GzSetting(this.key, this.label, this.defaultValue, this.options);
+
+  /// Parsing tolérant : un réglage sans clé ou sans option est ignoré.
+  static GzSetting? tryParse(dynamic raw) {
+    if (raw is! Map) return null;
+    final key = raw['key']?.toString() ?? '';
+    final opts = <GzSettingOption>[];
+    final rawOpts = raw['options'];
+    if (rawOpts is List) {
+      for (final o in rawOpts) {
+        if (o is Map && o['value'] != null) {
+          opts.add(GzSettingOption(o['value'], o['label']?.toString() ?? o['value'].toString()));
+        } else if (o != null && o is! Map) {
+          opts.add(GzSettingOption(o, o.toString()));
+        }
+      }
+    }
+    if (key.isEmpty || opts.isEmpty) return null;
+    final def = raw['default'] ?? opts.first.value;
+    return GzSetting(key, raw['label']?.toString() ?? key, def, opts);
+  }
+
+  /// Libellé lisible d'une valeur (retombe sur la valeur brute).
+  String labelFor(dynamic v) {
+    for (final o in options) {
+      if ('${o.value}' == '$v') return o.label;
+    }
+    return '$v';
+  }
+}
+
+String gzModeLabel(String? mode) => mode == 'score_duel' ? 'Chacun sa partie' : 'Même plateau';
+
+String gzModeHint(String? mode) => mode == 'score_duel'
+    ? 'Chacun joue sa partie, le meilleur score gagne.'
+    : 'Vous jouez ensemble sur le même plateau.';
+
 class GzGame {
   final int id;
   final String name;
@@ -33,6 +83,12 @@ class GzGame {
   /// `realtime` (tour par tour via événements) | `score_duel` | null.
   final String? mpMode;
 
+  /// Modes proposés à la création d'une salle (`realtime`, `score_duel`).
+  final List<String> mpModes;
+
+  /// Réglages de partie choisis par l'hôte (schéma du catalogue).
+  final List<GzSetting> mpSettings;
+
   GzGame.fromJson(Map<String, dynamic> j)
     : id = gzInt(j['id']),
       name = j['name']?.toString() ?? '',
@@ -50,7 +106,17 @@ class GzGame {
       isMultiplayer = _b(j['is_multiplayer']),
       minPlayers = j['min_players'] == null ? 2 : gzInt(j['min_players']),
       maxPlayers = j['max_players'] == null ? 2 : gzInt(j['max_players']),
-      mpMode = j['mp_mode']?.toString();
+      mpMode = j['mp_mode']?.toString(),
+      mpModes = _modes(j['mp_modes'], j['mp_mode']?.toString()),
+      mpSettings = j['mp_settings'] is List
+          ? (j['mp_settings'] as List).map(GzSetting.tryParse).whereType<GzSetting>().toList()
+          : const <GzSetting>[];
+
+  static List<String> _modes(dynamic raw, String? fallback) {
+    final l = raw is List ? raw.map((e) => e.toString()).where((e) => e.isNotEmpty).toSet().toList() : <String>[];
+    if (l.isEmpty && fallback != null && fallback.isNotEmpty) l.add(fallback);
+    return l;
+  }
 
   static Color _hex(String? h) {
     final c = (h ?? '#facc15').replaceFirst('#', '');
@@ -112,6 +178,9 @@ class GzRoom {
   final String myStatus;
   final String playUrl;
 
+  /// Réglages choisis par l'hôte (clé → valeur). Vide si absent.
+  final Map<String, dynamic> settings;
+
   /// JSON brut (renvoyé tel quel au jeu via le pont : `YW._native`).
   final Map<String, dynamic> raw;
 
@@ -134,6 +203,7 @@ class GzRoom {
           .toList(),
       winnerIds = (j['winner_ids'] as List? ?? []).map(gzInt).toList(),
       myStatus = j['my_status']?.toString() ?? '',
+      settings = j['settings'] is Map ? Map<String, dynamic>.from(j['settings']) : <String, dynamic>{},
       playUrl = (j['play_url'] ?? (j['game'] is Map ? j['game']['play_url'] : null))?.toString() ?? '';
 
   bool get isWaiting => status == 'waiting';
@@ -142,6 +212,19 @@ class GzRoom {
   bool get isCancelled => status == 'cancelled';
   bool get isOver => isFinished || isCancelled;
   bool get isScoreDuel => mode == 'score_duel';
+
+  /// Lignes « Libellé : valeur » des réglages, libellés pris dans [schema] si connu.
+  List<(String, String)> settingsLines(List<GzSetting> schema) {
+    final out = <(String, String)>[];
+    settings.forEach((k, v) {
+      GzSetting? s;
+      for (final x in schema) {
+        if (x.key == k) s = x;
+      }
+      out.add((s?.label ?? k, s == null ? '$v' : s.labelFor(v)));
+    });
+    return out;
+  }
 
   String get gameName => gameJson['name']?.toString() ?? 'Jeu';
   int get joinedCount => players.where((p) => p.status == 'joined').length;
@@ -159,6 +242,7 @@ class GzRoom {
     'play_url': playUrl.isNotEmpty ? playUrl : gameJson['play_url'],
     'is_multiplayer': true,
     'mp_mode': mode,
+    'mp_modes': mode == null ? null : [mode],
   });
 
   /// win | lose | draw pour le joueur [me], une fois la salle terminée.

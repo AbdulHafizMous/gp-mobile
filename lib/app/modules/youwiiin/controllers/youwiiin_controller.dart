@@ -24,6 +24,11 @@ class GzResult<T> {
 
 int _i(dynamic v) => gzInt(v);
 
+/// Accès sûr au contrôleur depuis n'importe quel widget (accueil, lobby, feuilles) :
+/// jamais de « not found », jamais de double création.
+YouwiiinController get gzController =>
+    Get.isRegistered<YouwiiinController>() ? Get.find<YouwiiinController>() : Get.put(YouwiiinController());
+
 class YouwiiinController extends GetxController {
   final currentTab = 0.obs;
   final isLoading = true.obs;
@@ -36,10 +41,14 @@ class YouwiiinController extends GetxController {
   final favoriteIds = <int>{}.obs;
   final favorites = <GzGame>[].obs;
   final favoritesLoading = false.obs;
-  final showFavoritesOnly = false.obs;
+
+  /// Filtre de l'accueil : 0 = Tous, 1 = Favoris, 2 = Invitations.
+  final homeFilter = 0.obs;
 
   // Invitations multijoueur reçues (salles en attente où je suis invité)
   final invitations = <GzRoom>[].obs;
+  final invitationsLoaded = false.obs;
+  bool _invBusy = false;
 
   // GCoin
   final gcoinBalance = 0.obs;
@@ -68,6 +77,12 @@ class YouwiiinController extends GetxController {
     loadInvitations();
     loadMe();
     WidgetsBinding.instance.addPostFrameCallback((_) => maybeShowFullscreenAd());
+  }
+
+  void setHomeFilter(int f) {
+    homeFilter.value = f;
+    if (f == 1) loadFavorites();
+    if (f == 2) loadInvitations();
   }
 
   void changeTab(int i) {
@@ -100,7 +115,7 @@ class YouwiiinController extends GetxController {
   }
 
   Future<void> refreshAll() async {
-    await Future.wait([loadHome(), loadRecent(), loadInvitations(), if (showFavoritesOnly.value) loadFavorites()]);
+    await Future.wait([loadHome(), loadRecent(), loadInvitations(), if (homeFilter.value == 1) loadFavorites()]);
   }
 
   /// Parties récentes : un jeu = une ligne (dernier score, record, durée…).
@@ -306,22 +321,44 @@ class YouwiiinController extends GetxController {
     }
   }
 
+  /// Invitations en attente (salle `waiting`) : persistantes, rejoignables à tout moment.
   Future<void> loadInvitations() async {
+    if (_invBusy) return;
+    _invBusy = true;
     try {
       final res = await RequestService().get('/gamez/invitations');
       var raw = res.data is Map ? res.data['data'] : res.data;
       if (raw is Map && raw['data'] is List) raw = raw['data'];
-      invitations.assignAll((raw as List? ?? []).whereType<Map>().map((j) => GzRoom.fromJson(Map<String, dynamic>.from(j))));
-    } catch (_) {}
+      invitations.assignAll(
+        (raw as List? ?? [])
+            .whereType<Map>()
+            .map((j) => GzRoom.fromJson(Map<String, dynamic>.from(j)))
+            .where((r) => r.code.isNotEmpty && r.isWaiting),
+      );
+    } catch (_) {
+      // On garde la liste précédente (réseau instable).
+    } finally {
+      invitationsLoaded.value = true;
+      _invBusy = false;
+    }
   }
 
-  Future<GzResult<GzRoom>> createRoom(GzGame game, {required int stake, required int maxPlayers, required List<int> inviteUserIds}) {
+  Future<GzResult<GzRoom>> createRoom(
+    GzGame game, {
+    required int stake,
+    required int maxPlayers,
+    required List<int> inviteUserIds,
+    String? mode,
+    Map<String, dynamic>? settings,
+  }) {
     return _safe(() async {
       final res = await RequestService().post('/gamez/rooms', data: {
         'game_id': game.id,
         'stake': stake,
         'max_players': maxPlayers,
         'invite_user_ids': inviteUserIds,
+        if (mode != null) 'mode': mode,
+        if (settings != null && settings.isNotEmpty) 'settings': settings,
       });
       return _room(res);
     });
@@ -333,7 +370,7 @@ class YouwiiinController extends GetxController {
 
   Future<GzResult<GzRoom>> declineRoom(String code) async {
     final r = await _safe(() async => _room(await RequestService().post('/gamez/rooms/$code/decline')));
-    invitations.removeWhere((x) => x.code == code);
+    if (r.ok) invitations.removeWhere((x) => x.code == code);
     return r;
   }
 

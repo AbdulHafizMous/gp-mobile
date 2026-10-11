@@ -8,6 +8,7 @@
 //  - "Tous les jeux" : groupés par lettre + index alphabétique vertical animé
 //    à droite (tap / glisser, bulle de lettre, effet vague, haptique).
 
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -22,34 +23,40 @@ import 'package:grand_public_v2/app/components/module_drawer.dart';
 import 'package:grand_public_v2/app/components/module_page_shell.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
+import 'package:grand_public_v2/app/utils/toast_helper.dart';
 
 import '../controllers/youwiiin_controller.dart';
 import '../widgets/youwiiin_create_room_sheet.dart';
+import '../widgets/youwiiin_player_picker.dart' show gzAvatar;
+import '../widgets/youwiiin_style.dart';
 import 'youwiiin_game_view.dart';
 
-class YouwiiinHomeView extends GetView<YouwiiinController> {
+class YouwiiinHomeView extends StatelessWidget {
   const YouwiiinHomeView({super.key});
+
+  // Accès sûr : jamais de « YouwiiinController not found ».
+  YouwiiinController get controller => gzController;
 
   @override
   Widget build(BuildContext context) {
-    final accent = GPTheme.primaryColor;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF111014) : const Color(0xFFF7F5F0);
-    final fg = isDark ? Colors.white : Colors.black87;
+    final st = YwStyle.of(context);
+    final accent = st.accent;
+    final bg = st.bg;
+    final fg = st.fg;
 
     return Scaffold(
       backgroundColor: bg,
       drawer: ModuleDrawer(
         accentColor: accent,
         moduleName: 'Youwiiin',
-        moduleLogo: isDark ? LOGO_YOUWIIIN_NAV_DARK : LOGO_YOUWIIIN_NAV_LIGHT,
+        moduleLogo: LOGO_YOUWIIIN_NAV,
         variableItems: [
           ModuleDrawerNavItem(
             title: 'Jeux',
             icon: Icons.grid_view_rounded,
             onTap: () {
-              controller.showFavoritesOnly.value = false;
               controller.changeTab(0);
+              controller.setHomeFilter(0);
             },
           ),
           ModuleDrawerNavItem(
@@ -57,8 +64,15 @@ class YouwiiinHomeView extends GetView<YouwiiinController> {
             icon: Icons.favorite_rounded,
             onTap: () {
               controller.changeTab(0);
-              controller.showFavoritesOnly.value = true;
-              controller.loadFavorites();
+              controller.setHomeFilter(1);
+            },
+          ),
+          ModuleDrawerNavItem(
+            title: 'Invitations',
+            icon: Icons.mail_rounded,
+            onTap: () {
+              controller.changeTab(0);
+              controller.setHomeFilter(2);
             },
           ),
           ModuleDrawerNavItem(
@@ -83,6 +97,7 @@ class YouwiiinHomeView extends GetView<YouwiiinController> {
           ),
         ),
         elevation: 0,
+        scrolledUnderElevation: 0,
         actions: [
           ModuleBellAction(category: 'youwiiin', color: fg),
           const SizedBox(width: 4),
@@ -90,7 +105,7 @@ class YouwiiinHomeView extends GetView<YouwiiinController> {
         title: Row(
           children: [
             Image.asset(
-              isDark ? LOGO_YOUWIIIN_DARK : LOGO_YOUWIIIN_LIGHT,
+              LOGO_YOUWIIIN,
               width: 30,
               height: 30,
               errorBuilder: (_, __, ___) => Container(
@@ -120,7 +135,9 @@ class YouwiiinHomeView extends GetView<YouwiiinController> {
         ),
       ),
       body: Obx(() {
-        if (controller.isLoading.value && controller.currentTab.value == 0) {
+        if (controller.isLoading.value &&
+            controller.catalog.isEmpty &&
+            controller.currentTab.value == 0) {
           return const Center(child: CircularProgressIndicator());
         }
         switch (controller.currentTab.value) {
@@ -255,7 +272,7 @@ class _CatalogTab extends StatefulWidget {
   State<_CatalogTab> createState() => _CatalogTabState();
 }
 
-class _CatalogTabState extends State<_CatalogTab> {
+class _CatalogTabState extends State<_CatalogTab> with WidgetsBindingObserver {
   static const _az = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
   final _scroll = ScrollController();
@@ -273,14 +290,39 @@ class _CatalogTabState extends State<_CatalogTab> {
   List<String> _available = const [];
   List<String> _railLetters = const [];
 
+  // Invitations : rafraîchies toutes les ~20 s tant que l'accueil est visible.
+  Timer? _invTimer;
+  bool _appResumed = true;
+
   @override
   void initState() {
     super.initState();
     _scroll.addListener(_onScroll);
+    WidgetsBinding.instance.addObserver(this);
+    gzController.loadInvitations();
+    _invTimer = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) => _tickInvites(),
+    );
+  }
+
+  void _tickInvites() {
+    if (!mounted || !_appResumed) return;
+    // Lobby / jeu ouvert par-dessus : on ne sollicite pas le serveur pour rien.
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+    gzController.loadInvitations();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _appResumed = state == AppLifecycleState.resumed;
+    if (_appResumed && mounted) gzController.loadInvitations();
   }
 
   @override
   void dispose() {
+    _invTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     _scroll.removeListener(_onScroll);
     _scroll.dispose();
     _active.dispose();
@@ -401,61 +443,36 @@ class _CatalogTabState extends State<_CatalogTab> {
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.find<YouwiiinController>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final card = isDark ? const Color(0xFF1B1A22) : Colors.white;
+    final c = gzController;
+    final st = YwStyle.of(context);
+    final isDark = st.dark;
+    final card = st.card;
     final accent = widget.accent;
     final fg = widget.fg;
 
     return Obx(() {
-      if (c.hasError.value) {
-        return RefreshIndicator(
-          onRefresh: c.refreshAll,
-          child: ListView(
-            children: const [
-              EmptyStateWidget(
-                icon: Icons.wifi_off_rounded,
-                message:
-                    'Impossible de charger les jeux.\nTirez pour réessayer.',
-              ),
-            ],
-          ),
-        );
-      }
-      if (c.catalog.isEmpty) {
-        return RefreshIndicator(
-          onRefresh: c.refreshAll,
-          child: ListView(
-            children: const [
-              EmptyStateWidget(
-                icon: Icons.sports_esports_outlined,
-                message: 'Aucun jeu disponible pour le moment.',
-              ),
-            ],
-          ),
-        );
-      }
+      final filter = c.homeFilter.value;
+      final showAll = filter == 0 && !c.hasError.value && c.catalog.isNotEmpty;
 
-      final byId = {for (final g in c.catalog) g.id: g};
-
-      // Parties récentes (jeu résolu + données brutes)
+      // Parties récentes + catalogue A-Z (uniquement pour « Tous »)
       final recentEntries = <(GzGame, Map<String, dynamic>)>[];
-      for (final r in c.recent) {
-        final raw = r['game'];
-        if (raw is! Map) continue;
-        final parsed = GzGame.fromJson(Map<String, dynamic>.from(raw));
-        recentEntries.add((
-          byId[parsed.id] ?? parsed,
-          Map<String, dynamic>.from(r),
-        ));
-      }
-
-      // Catalogue trié A-Z puis groupé par lettre
-      final sorted = [...c.catalog]
-        ..sort((a, b) => _sortKey(a).compareTo(_sortKey(b)));
       final groups = <String, List<GzGame>>{};
-      for (final g in sorted) {
-        groups.putIfAbsent(_letterOf(g.name), () => []).add(g);
+      if (showAll) {
+        final byId = {for (final g in c.catalog) g.id: g};
+        for (final r in c.recent) {
+          final raw = r['game'];
+          if (raw is! Map) continue;
+          final parsed = GzGame.fromJson(Map<String, dynamic>.from(raw));
+          recentEntries.add((
+            byId[parsed.id] ?? parsed,
+            Map<String, dynamic>.from(r),
+          ));
+        }
+        final sorted = [...c.catalog]
+          ..sort((a, b) => _sortKey(a).compareTo(_sortKey(b)));
+        for (final g in sorted) {
+          groups.putIfAbsent(_letterOf(g.name), () => []).add(g);
+        }
       }
       _available = groups.keys.toList();
       _railLetters = [..._az.split(''), if (groups.containsKey('#')) '#'];
@@ -464,12 +481,116 @@ class _CatalogTabState extends State<_CatalogTab> {
       }
       WidgetsBinding.instance.addPostFrameCallback((_) => _onScroll());
 
+      final invCount = c.invitations.length;
+      final favCount = c.favoriteIds.length;
+
+      Widget body;
+      if (filter == 2) {
+        body = _InvitationsBody(st: st, onRefresh: c.loadInvitations);
+      } else if (filter == 1) {
+        if (c.favoritesLoading.value && c.favorites.isEmpty) {
+          body = const Padding(
+            padding: EdgeInsets.all(30),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        } else if (c.favorites.isEmpty) {
+          body = const EmptyStateWidget(
+            icon: Icons.favorite_border_rounded,
+            message:
+                'Aucun jeu favori.\nTouchez le cœur d\'un jeu pour le retrouver ici.',
+          );
+        } else {
+          body = GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            itemCount: c.favorites.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              mainAxisExtent: 156,
+            ),
+            itemBuilder: (_, i) =>
+                _GameCard(game: c.favorites[i], card: card, fg: fg),
+          );
+        }
+      } else if (c.hasError.value) {
+        body = const EmptyStateWidget(
+          icon: Icons.wifi_off_rounded,
+          message: 'Impossible de charger les jeux.\nTirez pour réessayer.',
+        );
+      } else if (c.catalog.isEmpty) {
+        body = const EmptyStateWidget(
+          icon: Icons.sports_esports_outlined,
+          message: 'Aucun jeu disponible pour le moment.',
+        );
+      } else {
+        body = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (recentEntries.isNotEmpty) ...[
+              _title('Parties récentes', Icons.history_rounded, fg, accent),
+              const SizedBox(height: 10),
+              _RecentList(
+                entries: recentEntries,
+                card: card,
+                fg: fg,
+                accent: accent,
+              ),
+              const SizedBox(height: 22),
+            ],
+            KeyedSubtree(
+              key: _allTitleKey,
+              child: _title(
+                'Tous les jeux',
+                Icons.grid_view_rounded,
+                fg,
+                accent,
+              ),
+            ),
+            const SizedBox(height: 10),
+            for (final e in groups.entries)
+              Padding(
+                padding: const EdgeInsets.only(right: 22),
+                child: Column(
+                  key: _keys.putIfAbsent(e.key, () => GlobalKey()),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6, bottom: 10),
+                      child: _letterHeader(e.key, e.value.length, accent, fg),
+                    ),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: EdgeInsets.zero,
+                      itemCount: e.value.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            mainAxisExtent: 156,
+                          ),
+                      itemBuilder: (_, i) =>
+                          _GameCard(game: e.value[i], card: card, fg: fg),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              ),
+          ],
+        );
+      }
+
       return Stack(
         children: [
           Positioned.fill(
             child: SizedBox.expand(
               key: _viewportKey,
               child: RefreshIndicator(
+                color: accent,
                 onRefresh: c.refreshAll,
                 child: SingleChildScrollView(
                   controller: _scroll,
@@ -478,133 +599,15 @@ class _CatalogTabState extends State<_CatalogTab> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Invitations multijoueur reçues
-                      if (c.invitations.isNotEmpty) ...[
-                        _title('Invitations', Icons.mail_rounded, fg, accent),
-                        const SizedBox(height: 10),
-                        for (final inv in c.invitations)
-                          _InvitationTile(room: inv, card: card, fg: fg, accent: accent),
-                        const SizedBox(height: 14),
-                      ],
-                      // Filtre Tous / Favoris
-                      Row(
-                        children: [
-                          ChoiceChip(
-                            label: const Text('Tous'),
-                            selected: !c.showFavoritesOnly.value,
-                            selectedColor: accent,
-                            labelStyle: TextStyle(color: !c.showFavoritesOnly.value ? Colors.white : fg, fontWeight: FontWeight.w800),
-                            onSelected: (_) => c.showFavoritesOnly.value = false,
-                          ),
-                          const SizedBox(width: 8),
-                          ChoiceChip(
-                            avatar: Icon(Icons.favorite_rounded, size: 16, color: c.showFavoritesOnly.value ? Colors.white : accent),
-                            label: Text('Favoris${c.favoriteIds.isEmpty ? '' : ' (${c.favoriteIds.length})'}'),
-                            selected: c.showFavoritesOnly.value,
-                            selectedColor: accent,
-                            labelStyle: TextStyle(color: c.showFavoritesOnly.value ? Colors.white : fg, fontWeight: FontWeight.w800),
-                            onSelected: (_) {
-                              c.showFavoritesOnly.value = true;
-                              c.loadFavorites();
-                            },
-                          ),
-                        ],
+                      _FilterBar(
+                        st: st,
+                        filter: filter,
+                        favCount: favCount,
+                        invCount: invCount,
+                        onPick: c.setHomeFilter,
                       ),
                       const SizedBox(height: 14),
-                      if (c.showFavoritesOnly.value) ...[
-                        if (c.favoritesLoading.value && c.favorites.isEmpty)
-                          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator()))
-                        else if (c.favorites.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.only(top: 20),
-                            child: EmptyStateWidget(
-                              icon: Icons.favorite_border_rounded,
-                              message: 'Aucun jeu favori.\nTouchez le cœur d\'un jeu pour le retrouver ici.',
-                            ),
-                          )
-                        else
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            padding: EdgeInsets.zero,
-                            itemCount: c.favorites.length,
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 12,
-                              crossAxisSpacing: 12,
-                              mainAxisExtent: 156,
-                            ),
-                            itemBuilder: (_, i) => _GameCard(game: c.favorites[i], card: card, fg: fg),
-                          ),
-                      ] else ...[
-                      if (recentEntries.isNotEmpty) ...[
-                        _title(
-                          'Parties récentes',
-                          Icons.history_rounded,
-                          fg,
-                          accent,
-                        ),
-                        const SizedBox(height: 10),
-                        _RecentList(
-                          entries: recentEntries,
-                          card: card,
-                          fg: fg,
-                          accent: accent,
-                        ),
-                        const SizedBox(height: 22),
-                      ],
-                      KeyedSubtree(
-                        key: _allTitleKey,
-                        child: _title(
-                          'Tous les jeux',
-                          Icons.grid_view_rounded,
-                          fg,
-                          accent,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      for (final e in groups.entries)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 22),
-                          child: Column(
-                            key: _keys.putIfAbsent(e.key, () => GlobalKey()),
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  top: 6,
-                                  bottom: 10,
-                                ),
-                                child: _letterHeader(
-                                  e.key,
-                                  e.value.length,
-                                  accent,
-                                  fg,
-                                ),
-                              ),
-                              GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                padding: EdgeInsets.zero,
-                                itemCount: e.value.length,
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      mainAxisSpacing: 12,
-                                      crossAxisSpacing: 12,
-                                      mainAxisExtent: 156,
-                                    ),
-                                itemBuilder: (_, i) => _GameCard(
-                                  game: e.value[i],
-                                  card: card,
-                                  fg: fg,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                            ],
-                          ),
-                        ),
-                      ],
+                      body,
                     ],
                   ),
                 ),
@@ -613,40 +616,41 @@ class _CatalogTabState extends State<_CatalogTab> {
           ),
 
           // Index alphabétique vertical (apparaît à la section "Tous les jeux")
-          Positioned(
-            right: 0,
-            top: 8,
-            bottom: 8,
-            child: ValueListenableBuilder<bool>(
-              valueListenable: _showRail,
-              builder: (_, show, child) => IgnorePointer(
-                ignoring: !show,
-                child: AnimatedSlide(
-                  duration: const Duration(milliseconds: 280),
-                  curve: Curves.easeOutCubic,
-                  offset: show ? Offset.zero : const Offset(1.2, 0),
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 220),
-                    opacity: show ? 1 : 0,
-                    child: child,
+          if (showAll)
+            Positioned(
+              right: 0,
+              top: 8,
+              bottom: 8,
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _showRail,
+                builder: (_, show, child) => IgnorePointer(
+                  ignoring: !show,
+                  child: AnimatedSlide(
+                    duration: const Duration(milliseconds: 280),
+                    curve: Curves.easeOutCubic,
+                    offset: show ? Offset.zero : const Offset(1.2, 0),
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 220),
+                      opacity: show ? 1 : 0,
+                      child: child,
+                    ),
+                  ),
+                ),
+                child: SizedBox(
+                  width: 30,
+                  child: _AlphaRail(
+                    letters: _railLetters,
+                    enabled: _available.toSet(),
+                    active: _active,
+                    onPick: _onPick,
+                    onRelease: _onRelease,
+                    accent: accent,
+                    fg: fg,
+                    isDark: isDark,
                   ),
                 ),
               ),
-              child: SizedBox(
-                width: 30,
-                child: _AlphaRail(
-                  letters: _railLetters,
-                  enabled: _available.toSet(),
-                  active: _active,
-                  onPick: _onPick,
-                  onRelease: _onRelease,
-                  accent: accent,
-                  fg: fg,
-                  isDark: isDark,
-                ),
-              ),
             ),
-          ),
 
           // Bulle centrale de la lettre pendant l'appui / glissement
           Positioned.fill(
@@ -672,7 +676,7 @@ class _CatalogTabState extends State<_CatalogTab> {
                             color: accent,
                             boxShadow: [
                               BoxShadow(
-                                color: accent.withOpacity(.45),
+                                color: accent.withValues(alpha: .45),
                                 blurRadius: 24,
                                 offset: const Offset(0, 8),
                               ),
@@ -681,7 +685,7 @@ class _CatalogTabState extends State<_CatalogTab> {
                           child: Text(
                             _lastBubble,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: YwStyle.onAccent,
                               fontSize: 40,
                               fontWeight: FontWeight.w900,
                             ),
@@ -860,12 +864,15 @@ class _FavHeart extends StatelessWidget {
         HapticFeedback.selectionClick();
         onTap();
       },
-      radius: 22,
+      radius: 24,
       child: Padding(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(11),
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 260),
-          transitionBuilder: (c, a) => ScaleTransition(scale: CurvedAnimation(parent: a, curve: Curves.elasticOut), child: c),
+          transitionBuilder: (c, a) => ScaleTransition(
+            scale: CurvedAnimation(parent: a, curve: Curves.elasticOut),
+            child: c,
+          ),
           child: Icon(
             fav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
             key: ValueKey(fav),
@@ -878,27 +885,372 @@ class _FavHeart extends StatelessWidget {
   }
 }
 
-/// Invitation reçue : ouvre le lobby de la salle.
-class _InvitationTile extends StatelessWidget {
-  final GzRoom room;
-  final Color card, fg, accent;
-  const _InvitationTile({required this.room, required this.card, required this.fg, required this.accent});
+/// Barre de filtres de l'accueil : Tous · Favoris · Invitations (badge).
+class _FilterBar extends StatelessWidget {
+  final YwStyle st;
+  final int filter, favCount, invCount;
+  final ValueChanged<int> onPick;
+  const _FilterBar({
+    required this.st,
+    required this.filter,
+    required this.favCount,
+    required this.invCount,
+    required this.onPick,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final host = room.player(room.hostId);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16), border: Border.all(color: accent.withOpacity(.5))),
-      child: ListTile(
-        leading: Icon(Icons.mail_rounded, color: accent),
-        title: Text('${host?.name ?? 'Un joueur'} vous invite', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontWeight: FontWeight.w800)),
-        subtitle: Text(
-          '${room.gameName} · ${room.stake == 0 ? 'gratuit' : 'mise ${room.stake} GCoin'}',
-          style: TextStyle(color: fg.withOpacity(.55), fontSize: 12),
+    return Row(
+      children: [
+        _pill(0, 'Tous', null, 0),
+        const SizedBox(width: 8),
+        _pill(1, 'Favoris', Icons.favorite_rounded, favCount),
+        const SizedBox(width: 8),
+        _pill(2, 'Invitations', Icons.mail_rounded, invCount, badge: true),
+      ],
+    );
+  }
+
+  Widget _pill(
+    int i,
+    String label,
+    IconData? icon,
+    int count, {
+    bool badge = false,
+  }) {
+    final on = filter == i;
+    final fgc = on ? YwStyle.onAccent : st.fg;
+    return Expanded(
+      child: Material(
+        color: on ? st.accent : st.card,
+        borderRadius: BorderRadius.circular(30),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(30),
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onPick(i);
+          },
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: YwStyle.minTap),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(
+                        icon,
+                        size: 15,
+                        color: on ? YwStyle.onAccent : st.accent,
+                      ),
+                      const SizedBox(width: 5),
+                    ],
+                    Text(
+                      !badge && count > 0 ? '$label ($count)' : label,
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: fgc,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
+                    ),
+                    if (badge && count > 0) ...[
+                      const SizedBox(width: 6),
+                      YwCountBadge(count: count, onAccent: on),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
-        trailing: Icon(Icons.chevron_right_rounded, color: fg.withOpacity(.5)),
-        onTap: () => Get.toNamed('/youwiiin/room/${room.code}'),
+      ),
+    );
+  }
+}
+
+/// Contenu de l'onglet « Invitations » : cartes + état vide.
+class _InvitationsBody extends StatelessWidget {
+  final YwStyle st;
+  final Future<void> Function() onRefresh;
+  const _InvitationsBody({required this.st, required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) => Obx(_content);
+
+  Widget _content() {
+    final c = gzController;
+    final list = c.invitations;
+    if (list.isEmpty) {
+      if (!c.invitationsLoaded.value) {
+        return const Padding(
+          padding: EdgeInsets.all(30),
+          child: Center(child: CircularProgressIndicator()),
+        );
+      }
+      return SizedBox(
+        height: 340,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: st.accent.withValues(alpha: .12),
+                  ),
+                  child: Icon(
+                    Icons.mark_email_unread_outlined,
+                    size: 34,
+                    color: st.accent,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Aucune invitation',
+                  style: TextStyle(
+                    color: st.fg,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Quand un ami vous invite à une partie, elle apparaît ici et reste disponible tant que la salle est ouverte.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: st.sub, fontSize: 13, height: 1.35),
+                ),
+                const SizedBox(height: 14),
+                TextButton.icon(
+                  onPressed: onRefresh,
+                  icon: Icon(Icons.refresh_rounded, color: st.accent, size: 18),
+                  label: Text(
+                    'Actualiser',
+                    style: TextStyle(
+                      color: st.accent,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final inv in list)
+          _InvitationCard(key: ValueKey(inv.code), room: inv, st: st),
+      ],
+    );
+  }
+}
+
+/// Invitation reçue : hôte, jeu, mise, joueurs. Rejoindre → lobby (qui fait le join).
+class _InvitationCard extends StatefulWidget {
+  final GzRoom room;
+  final YwStyle st;
+  const _InvitationCard({super.key, required this.room, required this.st});
+
+  @override
+  State<_InvitationCard> createState() => _InvitationCardState();
+}
+
+class _InvitationCardState extends State<_InvitationCard> {
+  bool _busy = false;
+
+  void _join() => Get.toNamed(
+    '/youwiiin/room/${widget.room.code}',
+    arguments: {'join': true},
+  );
+
+  Future<void> _decline() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final r = await gzController.declineRoom(widget.room.code);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (!r.ok)
+      ToastHelper.showToast(
+        r.error ?? 'Impossible de refuser l\'invitation.',
+        backgroundColor: YwStyle.danger,
+      );
+  }
+
+  Widget _chip(IconData icon, String text) {
+    final st = widget.st;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: st.fg.withValues(alpha: .07),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: st.accent),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: st.fg,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final st = widget.st;
+    final room = widget.room;
+    final host = room.player(room.hostId);
+    final hostName = (host?.name ?? '').isEmpty ? 'Un joueur' : host!.name;
+    final g = room.toGame();
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: st.card,
+        borderRadius: BorderRadius.circular(YwStyle.rCard),
+        border: Border.all(color: st.accent.withValues(alpha: .35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              gzAvatar(hostName, host?.avatarUrl, size: 44, color: st.accent),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      hostName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: st.fg,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'vous invite à jouer',
+                      style: TextStyle(color: st.sub, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              _gameBadge(g, size: 44),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            room.gameName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: st.fg,
+              fontWeight: FontWeight.w900,
+              fontSize: 17,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _chip(
+                Icons.toll_rounded,
+                room.stake == 0 ? 'Gratuit' : '${room.stake} GCoin',
+              ),
+              _chip(
+                Icons.group_rounded,
+                '${room.joinedCount}/${room.maxPlayers} joueurs',
+              ),
+              if (room.mode != null)
+                _chip(
+                  room.isScoreDuel
+                      ? Icons.emoji_events_outlined
+                      : Icons.grid_view_rounded,
+                  gzModeLabel(room.mode),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: SizedBox(
+                  height: 46,
+                  child: OutlinedButton(
+                    onPressed: _busy ? null : _decline,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: st.fg,
+                      side: BorderSide(color: st.fg.withValues(alpha: .25)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(YwStyle.rBtn),
+                      ),
+                    ),
+                    child: _busy
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text(
+                            'Refuser',
+                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 3,
+                child: SizedBox(
+                  height: 46,
+                  child: ElevatedButton.icon(
+                    onPressed: _busy ? null : _join,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: st.accent,
+                      foregroundColor: YwStyle.onAccent,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(YwStyle.rBtn),
+                      ),
+                    ),
+                    icon: const Icon(Icons.login_rounded, size: 18),
+                    label: const Text(
+                      'Rejoindre',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -911,7 +1263,7 @@ class _GameCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.find<YouwiiinController>();
+    final c = gzController;
     return Stack(
       children: [
         Positioned.fill(child: _card(context)),
@@ -919,13 +1271,22 @@ class _GameCard extends StatelessWidget {
         Positioned(
           top: 4,
           right: 4,
-          child: Obx(() => _FavHeart(fav: c.isFav(game), onTap: () => c.toggleFavorite(game))),
+          child: Obx(
+            () => _FavHeart(
+              fav: c.isFav(game),
+              onTap: () => c.toggleFavorite(game),
+            ),
+          ),
         ),
         if (game.isMultiplayer)
           Positioned(
-            top: 14,
-            right: 44,
-            child: Icon(Icons.groups_rounded, size: 18, color: fg.withOpacity(.4)),
+            top: 16,
+            right: 48,
+            child: Icon(
+              Icons.groups_rounded,
+              size: 18,
+              color: fg.withOpacity(.4),
+            ),
           ),
       ],
     );
@@ -1166,16 +1527,14 @@ class _RecentTile extends StatelessWidget {
 
 /// Fiche d'un jeu : statistiques personnelles + top 10 + bouton Jouer.
 void _showGameSheet(BuildContext context, GzGame g) {
-  final c = Get.find<YouwiiinController>();
+  final c = gzController;
   final isDark = Theme.of(context).brightness == Brightness.dark;
   final fg = isDark ? Colors.white : Colors.black87;
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: isDark ? const Color(0xFF16151C) : Colors.white,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-    ),
+    backgroundColor: YwStyle.of(context).sheet,
+    shape: YwStyle.sheetShape,
     builder: (_) => DraggableScrollableSheet(
       expand: false,
       initialChildSize: .75,
@@ -1234,7 +1593,13 @@ void _showGameSheet(BuildContext context, GzGame g) {
                     ),
                   ),
                   // Cœur favori
-                  Obx(() => _FavHeart(fav: c.isFav(g), size: 28, onTap: () => c.toggleFavorite(g))),
+                  Obx(
+                    () => _FavHeart(
+                      fav: c.isFav(g),
+                      size: 28,
+                      onTap: () => c.toggleFavorite(g),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 18),
@@ -1246,8 +1611,8 @@ void _showGameSheet(BuildContext context, GzGame g) {
                     playGame(g);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: g.accent,
-                    foregroundColor: Colors.white,
+                    backgroundColor: GPTheme.primaryColor,
+                    foregroundColor: YwStyle.onAccent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -1270,11 +1635,22 @@ void _showGameSheet(BuildContext context, GzGame g) {
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: fg,
-                      side: BorderSide(color: g.accent, width: 1.5),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      side: BorderSide(color: GPTheme.primaryColor, width: 1.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
-                    icon: Icon(Icons.groups_rounded, color: g.accent),
-                    label: const Text('Jouer avec des amis', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                    icon: Icon(
+                      Icons.groups_rounded,
+                      color: GPTheme.primaryColor,
+                    ),
+                    label: const Text(
+                      'Jouer avec des amis',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -1439,8 +1815,8 @@ Widget _stat(String l, String v, IconData i, Color a, Color fg, bool dark) =>
     Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: dark ? const Color(0xFF211F29) : const Color(0xFFF4F2EC),
-        borderRadius: BorderRadius.circular(16),
+        color: fg.withValues(alpha: .06),
+        borderRadius: BorderRadius.circular(YwStyle.rBtn),
       ),
       child: Row(
         children: [
@@ -1499,9 +1875,9 @@ class _ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.find<YouwiiinController>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final card = isDark ? const Color(0xFF1B1A22) : Colors.white;
+    final c = gzController;
+    // final isDark = Theme.of(context).brightness == Brightness.dark;
+    final card = YwStyle.of(context).card;
 
     return Obx(
       () => RefreshIndicator(
@@ -1514,7 +1890,7 @@ class _ProfileTab extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24),
                 gradient: LinearGradient(
-                  colors: [accent, const Color(0xFFF59E0B)],
+                  colors: [accent, Color.lerp(accent, Colors.black, .35)!],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -1531,7 +1907,7 @@ class _ProfileTab extends StatelessWidget {
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.toll_rounded, color: Colors.black87),
+                      Icon(Icons.toll_rounded, color: Colors.white),
                       SizedBox(width: 8),
                       Flexible(
                         child: Text(
@@ -1539,7 +1915,7 @@ class _ProfileTab extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: Colors.black87,
+                            color: Colors.white,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -1573,11 +1949,13 @@ class _ProfileTab extends StatelessWidget {
                       _pill(
                         Icons.south_west_rounded,
                         '${c.totalEarned.value} gagnés',
+                        color: Colors.white,
                       ),
                       const SizedBox(width: 8),
                       _pill(
                         Icons.north_east_rounded,
                         '${c.totalSpent.value} dépensés',
+                        color: Colors.white,
                       ),
                     ],
                   ),
@@ -1751,7 +2129,7 @@ class _ProfileTab extends StatelessWidget {
     );
   }
 
-  Widget _pill(IconData i, String t) => Container(
+  Widget _pill(IconData i, String t, {Color? color}) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
     decoration: BoxDecoration(
       color: Colors.black12,
@@ -1760,12 +2138,12 @@ class _ProfileTab extends StatelessWidget {
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(i, size: 14, color: Colors.black87),
+        Icon(i, size: 14, color: color ?? Colors.black87),
         const SizedBox(width: 4),
         Text(
           t,
-          style: const TextStyle(
-            color: Colors.black87,
+          style: TextStyle(
+            color: color ?? Colors.black87,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
@@ -1785,7 +2163,7 @@ class _LeaderboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.find<YouwiiinController>();
+    final c = gzController;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Obx(() {
@@ -1863,7 +2241,7 @@ class _LeaderboardTab extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(18),
                   gradient: LinearGradient(
-                    colors: [accent.withOpacity(.9), const Color(0xFFF59E0B)],
+                    colors: [accent, Color.lerp(accent, Colors.black, .35)!],
                   ),
                 ),
                 child: Row(
@@ -1886,7 +2264,7 @@ class _LeaderboardTab extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: Colors.black87,
+                              color: Colors.white,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
@@ -1895,7 +2273,7 @@ class _LeaderboardTab extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: Colors.black54,
+                              color: Colors.white,
                               fontSize: 12,
                             ),
                           ),
@@ -2109,8 +2487,8 @@ class _LbRowState extends State<_LbRow> {
       duration: const Duration(milliseconds: 220),
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: widget.isDark ? const Color(0xFF1B1A22) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: widget.fg.withValues(alpha: .06),
+        borderRadius: BorderRadius.circular(YwStyle.rBtn),
         border: medal != null
             ? Border.all(color: medal.withOpacity(.6), width: 1.4)
             : null,

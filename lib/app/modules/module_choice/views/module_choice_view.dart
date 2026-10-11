@@ -167,19 +167,19 @@ class _ModuleCard extends StatelessWidget {
             Container(
               width: 58,
               height: 58,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(16),
-              ),
+              // padding: const EdgeInsets.all(2),
+              // decoration: BoxDecoration(
+              //   color: Colors.white.withOpacity(0.2),
+              //   borderRadius: BorderRadius.circular(16),
+              // ),
               child: data.logo != null
                   ? Image.asset(
                       data.logo!,
                       fit: BoxFit.contain,
                       errorBuilder: (_, __, ___) =>
-                          Icon(data.icon, color: Colors.white, size: 30),
+                          Icon(data.icon, color: Colors.white, size: 55),
                     )
-                  : Icon(data.icon, color: Colors.white, size: 30),
+                  : Icon(data.icon, color: Colors.white, size: 55),
             ),
             const SizedBox(width: 16),
             Expanded(

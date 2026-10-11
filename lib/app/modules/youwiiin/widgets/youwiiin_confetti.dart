@@ -6,6 +6,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/themes/app_theme.dart';
+
+import 'youwiiin_style.dart';
 
 class _Piece {
   final double x, vx, vy, size, rot, vr, delay;
@@ -56,13 +59,9 @@ class _ConfettiPainter extends CustomPainter {
 
 /// Pluie de confettis jouée une fois.
 class YouwiiinConfetti extends StatefulWidget {
-  final List<Color> colors;
+  final List<Color>? colors;
   final int count;
-  const YouwiiinConfetti({
-    super.key,
-    this.count = 90,
-    this.colors = const [Color(0xFFEB2040), Color(0xFFFFC600), Color(0xFF0086C9), Color(0xFF22C55E), Colors.white],
-  });
+  const YouwiiinConfetti({super.key, this.count = 90, this.colors});
 
   @override
   State<YouwiiinConfetti> createState() => _YouwiiinConfettiState();
@@ -72,7 +71,8 @@ class _YouwiiinConfettiState extends State<YouwiiinConfetti> with SingleTickerPr
   late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 3200))..forward();
   late final List<_Piece> _pieces = () {
     final r = math.Random();
-    return List.generate(widget.count, (_) => _Piece(r, widget.colors));
+    final colors = widget.colors ?? [GPTheme.primaryColor, Colors.white, const Color(0xFF0086C9), YwStyle.ok, Color.lerp(GPTheme.primaryColor, Colors.white, .5)!];
+    return List.generate(widget.count, (_) => _Piece(r, colors));
   }();
 
   @override
@@ -112,7 +112,8 @@ class YouwiiinEndOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     final win = outcome == 'win';
     final draw = outcome == 'draw';
-    final color = win ? const Color(0xFFFFC600) : (draw ? const Color(0xFF0086C9) : const Color(0xFF9CA3AF));
+    final accent = GPTheme.primaryColor;
+    final color = win ? accent : (draw ? const Color(0xFF0086C9) : const Color(0xFF9CA3AF));
     final title = cancelled ? 'Partie annulée' : (win ? 'Victoire !' : (draw ? 'Égalité' : 'Défaite'));
     final subtitle = cancelled
         ? 'Les mises ont été remboursées.'
@@ -149,10 +150,10 @@ class YouwiiinEndOverlay extends StatelessWidget {
                           border: Border.all(color: color, width: 3),
                           boxShadow: [BoxShadow(color: color.withValues(alpha: .45), blurRadius: 36)],
                         ),
-                        child: Icon(icon, color: color, size: 58),
+                        child: Icon(icon, color: Colors.white, size: 58),
                       ),
                       const SizedBox(height: 20),
-                      Text(title, style: TextStyle(color: color, fontSize: 34, fontWeight: FontWeight.w900)),
+                      Text(title, style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.w900), textAlign: TextAlign.center),
                       const SizedBox(height: 6),
                       Text(subtitle, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 14)),
                       if (gained > 0) ...[
@@ -162,13 +163,13 @@ class YouwiiinEndOverlay extends StatelessWidget {
                           duration: const Duration(milliseconds: 1100),
                           builder: (_, v, __) => Container(
                             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                            decoration: BoxDecoration(color: const Color(0xFFFFC600).withValues(alpha: .16), borderRadius: BorderRadius.circular(30)),
+                            decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(30)),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.toll_rounded, color: Color(0xFFFFC600)),
+                                const Icon(Icons.toll_rounded, color: Colors.white),
                                 const SizedBox(width: 8),
-                                Text('+$v GCoin', style: const TextStyle(color: Color(0xFFFFC600), fontWeight: FontWeight.w900, fontSize: 20)),
+                                Text('+$v GCoin', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20)),
                               ],
                             ),
                           ),
@@ -182,11 +183,15 @@ class YouwiiinEndOverlay extends StatelessWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(r.winner ? Icons.emoji_events_rounded : Icons.person_rounded, size: 16, color: r.winner ? const Color(0xFFFFC600) : Colors.white38),
+                                Icon(r.winner ? Icons.emoji_events_rounded : Icons.person_rounded, size: 16, color: r.winner ? Colors.white : Colors.white38),
                                 const SizedBox(width: 6),
-                                Text(
+                                Flexible(
+                                  child: Text(
                                   '${r.name}${r.score != null ? '  ·  ${r.score} pts' : ''}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(color: r.winner ? Colors.white : Colors.white60, fontWeight: r.winner ? FontWeight.w800 : FontWeight.w500),
+                                ),
                                 ),
                               ],
                             ),
@@ -199,8 +204,9 @@ class YouwiiinEndOverlay extends StatelessWidget {
                         child: ElevatedButton(
                           onPressed: onClose,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
+                            backgroundColor: accent,
+                            foregroundColor: YwStyle.onAccent,
+                            elevation: 0,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
                           child: const Text('Continuer', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),

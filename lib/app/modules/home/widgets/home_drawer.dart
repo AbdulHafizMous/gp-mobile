@@ -129,7 +129,8 @@ class HomeDrawer extends StatelessWidget {
       case '/blowmusic/home':
         return LOGO_BLOWMUSIC;
       case '/youwiiin/home':
-        return Theme.of(context).brightness == Brightness.dark ? LOGO_YOUWIIIN_NAV_DARK : LOGO_YOUWIIIN_NAV_LIGHT;
+        return LOGO_YOUWIIIN;
+      // return Theme.of(context).brightness == Brightness.dark ? LOGO_YOUWIIIN_NAV_DARK : LOGO_YOUWIIIN_NAV_LIGHT;
       default:
         return 'assets/icons/portrait.png';
     }

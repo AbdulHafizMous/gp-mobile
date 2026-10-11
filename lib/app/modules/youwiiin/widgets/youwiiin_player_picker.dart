@@ -6,7 +6,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+// import 'package:get/get.dart';
 
 import '../controllers/youwiiin_controller.dart';
 
@@ -48,7 +48,7 @@ class YouwiiinPlayerPicker extends StatefulWidget {
 }
 
 class _YouwiiinPlayerPickerState extends State<YouwiiinPlayerPicker> {
-  final _ctrl = Get.find<YouwiiinController>();
+  final _ctrl = gzController;
   final _field = TextEditingController();
   Timer? _debounce;
   bool _loading = false;

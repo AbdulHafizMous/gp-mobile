@@ -26,7 +26,7 @@ class YouwiiinRoomView extends StatefulWidget {
 }
 
 class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
-  final _c = Get.find<YouwiiinController>();
+  final _c = gzController;
   late final String _code = Get.parameters['code'] ?? '';
   GzRoom? _room;
   String? _error;
@@ -284,6 +284,10 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
           const SizedBox(width: 12),
           Expanded(child: _infoTile(Icons.group_rounded, 'Joueurs', '${room.joinedCount}/${room.maxPlayers}', const Color(0xFF0086C9), fg, card)),
         ]),
+        if (room.mode != null || room.settings.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _rulesCard(room, fg, card),
+        ],
         const SizedBox(height: 18),
         Text('Joueurs', style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 16)),
         const SizedBox(height: 8),
@@ -353,6 +357,38 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
       ]),
     );
   }
+
+  /// Mode et réglages choisis par l'hôte : lecture seule pour tout le monde.
+  Widget _rulesCard(GzRoom room, Color fg, Color card) {
+    GzGame? g;
+    for (final x in [..._c.catalog, ..._c.featured]) {
+      if (x.id == gzInt(room.gameJson['id']) || x.slug == room.gameJson['slug']) g = x;
+    }
+    final lines = room.settingsLines(g?.mpSettings ?? const <GzSetting>[]);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(Icons.tune_rounded, size: 18, color: fg.withValues(alpha: .6)),
+          const SizedBox(width: 8),
+          Text('Règles choisies par l\'hôte', style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 14)),
+        ]),
+        const SizedBox(height: 8),
+        if (room.mode != null) _ruleRow('Mode', gzModeLabel(room.mode), fg),
+        for (final l in lines) _ruleRow(l.$1, l.$2, fg),
+      ]),
+    );
+  }
+
+  Widget _ruleRow(String k, String v, Color fg) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 3),
+    child: Row(children: [
+      Expanded(child: Text(k, style: TextStyle(color: fg.withValues(alpha: .6), fontSize: 13))),
+      Flexible(child: Text(v, textAlign: TextAlign.end, style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 13))),
+    ]),
+  );
 
   Widget _infoTile(IconData icon, String label, String value, Color color, Color fg, Color card) => Container(
     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),

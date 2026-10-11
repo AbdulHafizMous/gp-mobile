@@ -145,8 +145,8 @@ class ModuleDrawer extends StatelessWidget {
         if (isYouwiiinActivated && moduleName != 'Youwiiin')
           _btn(
             title: 'Youwiiin',
-            // asset: LOGO_YOUWIIIN,
-            asset: isDark ? LOGO_YOUWIIIN_DARK : LOGO_YOUWIIIN_LIGHT,
+            asset: LOGO_YOUWIIIN,
+            // asset: isDark ? LOGO_YOUWIIIN_DARK : LOGO_YOUWIIIN_LIGHT,
             keepColors: true,
             onTap: () => _switchTo(AppMode.youwiiin, '/youwiiin/home'),
           ),
