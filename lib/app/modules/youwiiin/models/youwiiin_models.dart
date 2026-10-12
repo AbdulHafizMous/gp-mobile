@@ -131,11 +131,15 @@ class GzUserLite {
   final String? username;
   final String? avatarUrl;
 
+  /// Nombre de parties jouées ensemble (suggestions uniquement, 0 sinon).
+  final int played;
+
   GzUserLite.fromJson(Map<String, dynamic> j)
     : id = gzInt(j['id'] ?? j['user_id']),
       name = j['name']?.toString() ?? '',
       username = j['username']?.toString(),
-      avatarUrl = j['avatar_url']?.toString();
+      avatarUrl = j['avatar_url']?.toString(),
+      played = gzInt(j['played']);
 }
 
 class GzRoomPlayer {

@@ -13,6 +13,7 @@ import 'package:grand_public_v2/app/themes/app_theme.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 
 import '../controllers/youwiiin_controller.dart';
+import '../widgets/youwiiin_confirm_dialog.dart';
 import '../widgets/youwiiin_player_picker.dart';
 import 'youwiiin_game_view.dart';
 import 'youwiiin_home_view.dart' show gzIcon;
@@ -109,42 +110,12 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
   }
 
   Future<void> _invite(GzRoom room) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final fg = isDark ? Colors.white : Colors.black87;
-    var picked = <GzUserLite>[];
-    final ok = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF16151C) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(20, 18, 20, 20 + MediaQuery.of(ctx).viewInsets.bottom),
-        child: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Inviter des joueurs', style: TextStyle(color: fg, fontSize: 20, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 12),
-            YouwiiinPlayerPicker(
-              accent: GPTheme.primaryColor,
-              fg: fg,
-              maxSelect: (room.maxPlayers - room.players.length).clamp(0, 99),
-              excludeIds: room.players.map((p) => p.userId).toList(),
-              onChanged: (l) => picked = l,
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                style: ElevatedButton.styleFrom(backgroundColor: GPTheme.primaryColor, foregroundColor: Colors.white),
-                child: const Text('Inviter', style: TextStyle(fontWeight: FontWeight.w800)),
-              ),
-            ),
-          ]),
-        ),
-      ),
+    final picked = await showYouwiiinPlayerPicker(
+      context,
+      maxSelect: (room.maxPlayers - room.players.length).clamp(0, 99),
+      excludeIds: room.players.map((p) => p.userId).toList(),
     );
-    if (ok != true || picked.isEmpty) return;
+    if (picked == null || picked.isEmpty) return;
     final r = await _c.inviteToRoom(_code, picked.map((u) => u.id).toList());
     ToastHelper.showToast(r.ok ? 'Invitation envoyée.' : (r.error ?? 'Invitation impossible.'));
     _refresh();
@@ -152,18 +123,15 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
 
   Future<void> _confirmLeave(GzRoom room) async {
     final host = room.hostId == _c.myId;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(host ? 'Annuler la salle ?' : 'Quitter la salle ?'),
-        content: Text(host ? 'La salle sera annulée pour tous les joueurs.' : 'Vous ne participerez plus à cette partie.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Non')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Oui')),
-        ],
-      ),
+    final ok = await showYouwiiinConfirm(
+      context,
+      icon: host ? Icons.cancel_outlined : Icons.logout_rounded,
+      title: host ? 'Annuler la salle ?' : 'Quitter la salle ?',
+      message: host ? 'La salle sera annulée pour tous les joueurs invités.' : 'Vous ne participerez plus à cette partie. Vous pourrez la rejoindre tant qu\'elle n\'a pas commencé.',
+      confirmLabel: host ? 'Annuler la salle' : 'Quitter la salle',
+      cancelLabel: 'Rester dans la salle',
     );
-    if (ok == true) _act(() => _c.leaveRoom(_code), closeAfter: true);
+    if (ok) _act(() => _c.leaveRoom(_code), closeAfter: true);
   }
 
   // ───────────────────────── UI ─────────────────────────

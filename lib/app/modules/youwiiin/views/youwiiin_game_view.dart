@@ -17,6 +17,7 @@ import 'package:grand_public_v2/app/utils/toast_helper.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../controllers/youwiiin_controller.dart';
 import '../widgets/youwiiin_confetti.dart';
+import '../widgets/youwiiin_confirm_dialog.dart';
 
 class YouwiiinGameView extends StatefulWidget {
   final GzGame game;
@@ -216,6 +217,7 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
     if (_bridgeReady) {
       // Page rechargée : le jeu repart de zéro, on lui rejoue tous les événements.
       _lastEventId = 0;
+      _rv = null;
       _delivered.clear();
     }
     _bridgeReady = true;
@@ -230,12 +232,36 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
     _startPolling();
   }
 
+  // File d'envoi : les `state` (haute fréquence) sont fusionnés (le dernier gagne), les `move` gardent leur ordre ;
+  // tout part en UN lot par requête, ce qui évite de saturer le réseau/serveur et de « retarder » l'autre joueur.
+  final List<Map<String, dynamic>> _outbox = [];
+  Timer? _flushTimer;
+
   void _onMpSend(Map p) {
     final evt = p['evt']?.toString() ?? 'move';
     final payload = p['payload'] is Map ? Map<String, dynamic>.from(p['payload']) : <String, dynamic>{};
+    if (evt == 'state') {
+      // En cas de retard réseau on ne garde que les 6 derniers instantanés (les plus anciens sont périmés).
+      final idx = <int>[for (var i = 0; i < _outbox.length; i++) if (_outbox[i]['type'] == 'state') i];
+      if (idx.length >= 6) _outbox.removeAt(idx.first);
+    }
+    _outbox.add({'type': evt, 'payload': payload});
+    if (evt != 'state') {
+      _flushNow();
+    } else {
+      _flushTimer ??= Timer(const Duration(milliseconds: 200), _flushNow);
+    }
+  }
+
+  void _flushNow() {
+    _flushTimer?.cancel();
+    _flushTimer = null;
+    if (_outbox.isEmpty) return;
+    final batch = List<Map<String, dynamic>>.from(_outbox);
+    _outbox.clear();
     _queue(() async {
-      final r = await _ctrl.postRoomEvent(_code, evt, payload);
-      if (!r.ok && !_disposed) ToastHelper.showToast('Coup non envoyé : ${r.error}');
+      final r = await _ctrl.postRoomEvents(_code, batch);
+      if (!r.ok && !_disposed && batch.any((e) => e['type'] != 'state')) ToastHelper.showToast('Coup non envoyé : ${r.error}');
     });
   }
 
@@ -244,32 +270,52 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
     final winner = w == null ? null : gzInt(w);
     final draw = p['draw'] == true;
     final score = p['score'] == null ? null : gzInt(p['score']);
+    _flushNow();
     _queue(() async {
       final r = await _ctrl.postRoomResult(_code, score: score, winnerUserId: winner, draw: draw);
       if (!r.ok && !_disposed) ToastHelper.showToast(r.error ?? 'Résultat non envoyé.');
     });
   }
 
+  bool _polling = false;
+  String? _rv;
+  int _pollMs = 400;
+
   void _startPolling() {
-    if (_poll != null || !_isMp) return;
-    // 450 ms : le serpent et les jeux temps réel restent fluides (_pollBusy évite tout chevauchement).
-    _poll = Timer.periodic(const Duration(milliseconds: 450), (_) => _tick());
+    if (_polling || !_isMp) return;
+    _polling = true;
+    _schedule();
   }
 
   void _stopPolling() {
+    _polling = false;
     _poll?.cancel();
     _poll = null;
+  }
+
+  /// Cadence adaptative : le serveur renvoie `next_poll_ms` (rapide en temps réel, lente en duel de scores).
+  void _schedule() {
+    if (!_polling || _disposed) return;
+    _poll?.cancel();
+    _poll = Timer(Duration(milliseconds: _pollMs.clamp(250, 5000)), () async {
+      await _tick();
+      _schedule();
+    });
   }
 
   Future<void> _tick() async {
     if (_pollBusy || _disposed || _ended) return;
     _pollBusy = true;
     try {
-      final res = await _ctrl.fetchRoomEvents(_code, _lastEventId);
-      if (_disposed || !res.ok) return; // erreur réseau : on retente au tick suivant
+      final res = await _ctrl.fetchRoomEvents(_code, _lastEventId, rv: _rv);
+      if (_disposed) return;
+      if (!res.ok) {
+        _pollMs = (_pollMs * 2).clamp(500, 5000); // réseau/serveur en difficulté : on recule
+        return;
+      }
       final d = res.data!;
-      // Tant que le jeu n'a pas envoyé mp_ready, on ne consomme aucun événement
-      // (ils lui seront livrés après l'init) ; on suit seulement l'état de la salle.
+      if (d.nextPollMs > 0) _pollMs = d.nextPollMs;
+      if (d.rv != null) _rv = d.rv;
       for (final e in (_bridgeReady ? d.events : const <Map<String, dynamic>>[])) {
         final id = gzInt(e['id']);
         if (id <= 0 || !_delivered.add(id)) continue;
@@ -346,22 +392,19 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
   }
 
   // ───────────────────────── Sortie ─────────────────────────
-  Future<bool> _confirmLeave() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Quitter la partie ?'),
-        content: const Text('Vous abandonnez la partie multijoueur : c\'est un forfait et votre mise est perdue.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Rester')),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Quitter', style: TextStyle(color: GPTheme.primaryColor, fontWeight: FontWeight.w800)),
-          ),
-        ],
-      ),
+  Future<bool> _confirmLeave() {
+    final stake = _room?.stake ?? 0;
+    return showYouwiiinConfirm(
+      context,
+      icon: Icons.flag_rounded,
+      title: 'Abandonner la partie ?',
+      message: 'Quitter maintenant compte comme un forfait.',
+      confirmLabel: 'Abandonner',
+      cancelLabel: 'Continuer à jouer',
+      consequence: stake > 0
+          ? 'Vous perdrez votre mise de $stake GCoin et l\'adversaire remporte la partie.'
+          : 'L\'adversaire remporte la partie.',
     );
-    return ok == true;
   }
 
   Future<void> _leave() async {
@@ -395,6 +438,7 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
   @override
   void dispose() {
     _disposed = true;
+    _flushNow();
     _stopPolling(); // le polling d'événements s'arrête avec la vue
     _bannerTimer?.cancel();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);

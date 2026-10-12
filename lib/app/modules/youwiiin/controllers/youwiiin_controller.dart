@@ -321,6 +321,23 @@ class YouwiiinController extends GetxController {
     }
   }
 
+  List<GzUserLite>? _suggestionsCache;
+
+  /// Suggestions d'amis à inviter (co-joueurs fréquents puis contacts), mises en cache pour la session.
+  Future<List<GzUserLite>> fetchPlayerSuggestions({bool force = false}) async {
+    if (!force && _suggestionsCache != null) return _suggestionsCache!;
+    try {
+      final res = await RequestService().get('/gamez/players/suggestions');
+      var raw = res.data is Map ? res.data['data'] : res.data;
+      if (raw is Map && raw['data'] is List) raw = raw['data'];
+      final list = (raw as List? ?? []).whereType<Map>().map((j) => GzUserLite.fromJson(Map<String, dynamic>.from(j))).toList();
+      _suggestionsCache = list;
+      return list;
+    } catch (_) {
+      return _suggestionsCache ?? [];
+    }
+  }
+
   /// Invitations en attente (salle `waiting`) : persistantes, rejoignables à tout moment.
   Future<void> loadInvitations() async {
     if (_invBusy) return;
@@ -387,18 +404,24 @@ class YouwiiinController extends GetxController {
     return const GzResult.ok(true);
   });
 
-  Future<GzResult<int>> postRoomEvent(String code, String type, Map<String, dynamic> payload) => _safe(() async {
-    final res = await RequestService().post('/gamez/rooms/$code/events', data: {'type': type, 'payload': payload});
+  Future<GzResult<int>> postRoomEvent(String code, String type, Map<String, dynamic> payload) => postRoomEvents(code, [
+        {'type': type, 'payload': payload}
+      ]);
+
+  /// Envoie un lot d'événements en UNE requête (ordre préservé côté serveur).
+  Future<GzResult<int>> postRoomEvents(String code, List<Map<String, dynamic>> batch) => _safe(() async {
+    final res = await RequestService().post('/gamez/rooms/$code/events', data: {'batch': batch}).timeout(const Duration(seconds: 8));
     return GzResult.ok(_i(_unwrap(res)?['id']));
   });
 
-  /// Événements après [after] + état de la salle (polling ~1,2 s).
-  Future<GzResult<({List<Map<String, dynamic>> events, GzRoom? room})>> fetchRoomEvents(String code, int after) => _safe(() async {
-    final res = await RequestService().get('/gamez/rooms/$code/events', queryParameters: {'after': after});
+  /// Événements après [after]. [rv] = version de salle déjà connue : le serveur ne renvoie `room` que si elle a changé.
+  /// `nextPollMs` = cadence conseillée par le serveur (adaptative selon la charge/le mode).
+  Future<GzResult<({List<Map<String, dynamic>> events, GzRoom? room, String? rv, int nextPollMs})>> fetchRoomEvents(String code, int after, {String? rv}) => _safe(() async {
+    final res = await RequestService().get('/gamez/rooms/$code/events', queryParameters: {'after': after, if (rv != null) 'rv': rv}).timeout(const Duration(seconds: 8));
     final m = _unwrap(res) ?? {};
     final events = (m['events'] as List? ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
     final room = m['room'] is Map ? GzRoom.fromJson(Map<String, dynamic>.from(m['room'])) : null;
-    return GzResult.ok((events: events, room: room));
+    return GzResult.ok((events: events, room: room, rv: m['rv']?.toString(), nextPollMs: _i(m['next_poll_ms'])));
   });
 
   Future<GzResult<bool>> postRoomResult(String code, {int? score, int? winnerUserId, bool? draw}) => _safe(() async {
