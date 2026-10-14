@@ -13,6 +13,8 @@ import 'package:grand_public_v2/app/modules/reset_password/views/reset_password_
 import 'package:grand_public_v2/app/modules/shop/views/shop_my_listings_view.dart';
 import 'package:grand_public_v2/app/modules/update_required/bindings/update_required_binding.dart';
 import 'package:grand_public_v2/app/modules/update_required/views/update_required_view.dart';
+import 'package:grand_public_v2/app/modules/channels/bindings/channel_binding.dart';
+import 'package:grand_public_v2/app/modules/channels/views/channels_list_view.dart';
 import 'package:grand_public_v2/app/modules/space/bindings/space_binding.dart';
 import 'package:grand_public_v2/app/modules/space/views/space_view.dart';
 import 'package:grand_public_v2/app/modules/blowmusic/bindings/blowmusic_binding.dart';
@@ -138,6 +140,26 @@ class AppPages {
       // transition optionnelle :
       transition: Transition.rightToLeftWithFade,
       transitionDuration: const Duration(milliseconds: 320),
+    ),
+    // ── Chaînes de créateurs (même page qu'un espace, en « mode chaîne ») ──
+    GetPage(
+      name: _Paths.CHANNEL_PAGE,
+      page: () => const SpaceView(),
+      binding: ChannelBinding(),
+      transition: Transition.rightToLeftWithFade,
+      transitionDuration: const Duration(milliseconds: 320),
+    ),
+    // Deep link des notifications : /channels/{id}
+    GetPage(
+      name: '${_Paths.CHANNELS}/:id',
+      page: () => const SpaceView(),
+      binding: ChannelBinding(),
+      transition: Transition.rightToLeftWithFade,
+    ),
+    GetPage(
+      name: _Paths.CHANNELS,
+      page: () => const ChannelsPage(),
+      transition: Transition.rightToLeftWithFade,
     ),
      GetPage(
       name: _Paths.CLUB_PAGE,

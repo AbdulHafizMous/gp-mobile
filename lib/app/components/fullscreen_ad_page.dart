@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/services/ad_service.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
@@ -22,7 +23,10 @@ Future<void> maybeShowFullscreenAd() async {
   if (_adShownThisSession) return;
   _adShownThisSession = true;
   try {
-    final res = await RequestService().get('/ads/next');
+    final res = await RequestService().get(
+      '/ads/next',
+      queryParameters: {'module': AdService.module()},
+    );
     final data = res.data?['data'];
     if (data == null) return;
 
@@ -97,7 +101,7 @@ class _FullscreenAdPageState extends State<_FullscreenAdPage> {
     if (widget.adId == null) return;
     RequestService().post(
       '/ads/${widget.adId}/impression',
-      data: {'clicked': clicked},
+      data: {'clicked': clicked, 'module': AdService.module(), 'screen': 'entry'},
     );
   }
 

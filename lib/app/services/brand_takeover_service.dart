@@ -12,6 +12,7 @@
 
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/data/models/brand_takeover_model.dart';
+import 'package:grand_public_v2/app/services/ad_service.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 
 class BrandTakeoverService extends GetxService {
@@ -30,7 +31,10 @@ class BrandTakeoverService extends GetxService {
 
   Future<void> refresh() async {
     try {
-      final res = await RequestService().get('/ads/takeover');
+      final res = await RequestService().get(
+        '/ads/takeover',
+        queryParameters: {'module': AdService.module()},
+      );
       final data = res.data?['data'];
       current.value = data != null ? BrandTakeover.fromJson(data) : null;
     } catch (_) {

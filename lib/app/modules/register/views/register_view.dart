@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/app_field.dart';
-import 'package:grand_public_v2/app/components/audience_fields.dart';
+// import 'package:grand_public_v2/app/components/audience_fields.dart';
 import 'package:grand_public_v2/app/components/country_picker.dart';
 import 'package:grand_public_v2/app/components/primary_button.dart';
 import 'package:grand_public_v2/app/components/primary_loading_button.dart';
@@ -93,7 +93,7 @@ class RegisterView extends GetView<RegisterController> {
                 Text(
                   isSocial
                       ? 'Plus qu\'une étape avant de commencer !'
-                      : 'Remplissez les informations ci-dessous',
+                      : 'Nom, e-mail et mot de passe : 30 secondes !',
                   style: const TextStyle(color: Colors.white70, fontSize: 13),
                 ),
                 const SizedBox(height: 24),
@@ -102,14 +102,6 @@ class RegisterView extends GetView<RegisterController> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
                     children: [
-                      AppStepper(
-                        labels: const ['Compte', 'Profil'],
-                        current: controller.step.value,
-                        color: Colors.white,
-                        onColor: GPTheme.primaryColor,
-                      ),
-                      const SizedBox(height: 22),
-
                       // ── ÉTAPE 1 : informations du compte ──────────────
                       Visibility(
                         visible: controller.step.value == 0,
@@ -120,18 +112,13 @@ class RegisterView extends GetView<RegisterController> {
                             children: [
                               AppField(
                                 controller: controller.nameController,
-                                hint: 'Nom et prénom(s)',
+                                hint: 'Nom ou prénom (un seul mot suffit)',
                                 icon: Icons.person_outline,
                                 capitalization: TextCapitalization.words,
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'Veuillez saisir votre nom complet';
-                                  }
-                                  if (value.trim().split(' ').length < 2) {
-                                    return 'Veuillez saisir votre nom ET prénom(s)';
-                                  }
-                                  return null;
-                                },
+                                validator: (value) =>
+                                    (value == null || value.trim().isEmpty)
+                                        ? 'Veuillez saisir votre nom'
+                                        : null,
                               ),
                               const SizedBox(height: 16),
                               AppField(
@@ -157,7 +144,7 @@ class RegisterView extends GetView<RegisterController> {
                                 valueListenable: controller.selectedCountry,
                                 builder: (_, country, _) => AppField(
                                   controller: controller.phoneController,
-                                  hint: 'Téléphone',
+                                  hint: 'Téléphone (facultatif)',
                                   keyboardType: TextInputType.phone,
                                   prefix: CountryPickerWidget(
                                     selectedCountry: country,
@@ -168,9 +155,8 @@ class RegisterView extends GetView<RegisterController> {
                                     SimplePhoneFormatter(),
                                   ],
                                   validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Veuillez saisir votre téléphone';
-                                    }
+                                    // Facultatif : validé seulement s'il est saisi.
+                                    if (value == null || value.isEmpty) return null;
                                     if (value.length < 6) return 'Numéro invalide';
                                     return null;
                                   },
@@ -205,47 +191,25 @@ class RegisterView extends GetView<RegisterController> {
                         ),
                       ),
 
-                      // ── ÉTAPE 2 : profil d'audience ───────────────────
-                      Visibility(
-                        visible: controller.step.value == 1,
-                        maintainState: true,
-                        child: Form(
-                          key: controller.formKey2,
-                          child: AudienceFields(state: controller.audience),
-                        ),
-                      ),
                       const SizedBox(height: 28),
 
-                      // ── Boutons ───────────────────────────────────────
-                      if (controller.step.value == 0)
-                        PrimaryButton(text: 'CONTINUER', callback: controller.nextStep)
-                      else
-                        Obx(
-                          () => controller.isLoading.value
-                              ? const PrimaryLoadingButton()
-                              : Column(
-                                  children: [
-                                    PrimaryButton(
-                                      text: isSocial ? 'FINALISER' : "S'INSCRIRE",
-                                      callback: isSocial
-                                          ? controller.completeSocialProfile
-                                          : controller.register,
-                                    ),
-                                    TextButton.icon(
-                                      onPressed: controller.previousStep,
-                                      icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 18),
-                                      label: const Text('Retour',
-                                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                                    ),
-                                  ],
-                                ),
-                        ),
+                      // ── Bouton unique ─────────────────────────────────
+                      Obx(
+                        () => controller.isLoading.value
+                            ? const PrimaryLoadingButton()
+                            : PrimaryButton(
+                                text: isSocial ? 'FINALISER' : "S'INSCRIRE",
+                                callback: isSocial
+                                    ? controller.completeSocialProfile
+                                    : controller.register,
+                              ),
+                      ),
                     ],
                   ),
                 ),
 
                 // ── Social buttons (masqués en mode complétion) ───────
-                if (!isSocial && controller.step.value == 0) ...[
+                if (!isSocial) ...[
                   const SizedBox(height: 20),
                   const Text(
                     'Ou',

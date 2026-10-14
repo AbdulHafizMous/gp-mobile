@@ -62,8 +62,13 @@ class ModuleBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Téléphones à boutons de navigation (retour/home/…) : l'écran passe
+    // SOUS la barre système et la recouvrirait. On ajoute donc l'inset bas
+    // réel à la hauteur (0 en navigation par gestes ⇒ rendu inchangé).
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     return Container(
-      height: 85,
+      height: 85 + bottomInset,
+      padding: EdgeInsets.only(bottom: bottomInset),
       decoration: BoxDecoration(
         color: isDark ? darkBackgroundColor : backgroundColor,
         border: Border(

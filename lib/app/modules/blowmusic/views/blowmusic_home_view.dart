@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/components/ad_banner_widget.dart';
+import 'package:grand_public_v2/app/components/profile_completion_banner.dart';
 import 'package:flutter/services.dart';
 import 'package:grand_public_v2/app/components/live_fullscreen_page.dart';
 import 'package:get/get.dart';
@@ -106,7 +108,10 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
           ),
         ),
       ),
-      body: Obx(() {
+      body: Column(children: [
+        const ProfileCompletionBanner(module: 'blowmusic'),
+        const AdBannerWidget(screen: 'blowmusic'),
+        Expanded(child: Obx(() {
         if (controller.isLoading.value)
           return const Center(child: CircularProgressIndicator());
         switch (controller.currentTab.value) {
@@ -121,7 +126,8 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
           default:
             return _HomeTab(accent: accent, fg: fg);
         }
-      }),
+      })),
+      ]),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

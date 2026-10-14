@@ -87,6 +87,9 @@ class ApiErrorHelper {
 
   /// Affiche directement un toast d'erreur pour une [DioException].
   static void showError(DioException e) {
+    // Un 401 est déjà géré (une seule fois) par l'intercepteur Dio, et reste
+    // silencieux pour un visiteur non connecté : jamais de toast ici.
+    if (isSessionExpired(e)) return;
     ToastHelper.showToast(
       messageFor(e),
       backgroundColor: Colors.red,

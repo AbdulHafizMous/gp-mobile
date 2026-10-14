@@ -13,6 +13,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/data/models/channel_model.dart';
 import 'package:grand_public_v2/app/data/models/space_model.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
@@ -28,6 +29,10 @@ class SpaceController extends GetxController {
 
   /// Loading par catégorie (id → true/false)
   final categoryLoading = <int, bool>{}.obs;
+
+  /// Mode « Chaîne » (voir ChannelController) : vrai = page d'une chaîne.
+  bool get isChannel => false;
+  final channel = Rxn<ChannelModel>();
 
   final isSingleColumn = false.obs;
   void toggleLayout() => isSingleColumn.value = !isSingleColumn.value;

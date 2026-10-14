@@ -15,6 +15,7 @@ class VinylDisc extends StatefulWidget {
   final Color accent;
   final String? coverUrl;
   final bool isCoverUrlAvailable;
+  final bool isCenterFixed;
   final IconData fallbackIcon;
   final Duration period;
 
@@ -25,6 +26,7 @@ class VinylDisc extends StatefulWidget {
     required this.accent,
     this.coverUrl,
     this.isCoverUrlAvailable = true,
+    this.isCenterFixed = false,
     this.fallbackIcon = Icons.music_note_rounded,
     this.period = const Duration(seconds: 7),
   });
@@ -113,7 +115,7 @@ class _VinylDiscState extends State<VinylDisc>
                   ),
                   border: Border.all(color: Colors.black, width: s * .012),
                 ),
-                child: !widget.isCoverUrlAvailable
+                child: !widget.isCoverUrlAvailable || widget.isCenterFixed
                     ? ClipOval(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),

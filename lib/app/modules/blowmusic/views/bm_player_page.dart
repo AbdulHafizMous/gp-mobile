@@ -194,46 +194,47 @@ class _BmPlayerPageState extends State<BmPlayerPage>
                                 playing: playing && !loading,
                                 accent: accent,
                                 coverUrl: t.coverUrl,
-                                // Activer pour avoir le logo de Blowmusic au centre du disque
-                                // isCoverUrlAvailable: false,
+                                isCoverUrlAvailable: false,
+                                isCenterFixed: true,
                               ),
                             ),
-                            if (hasCover)
-                              Positioned(
-                                left: 0,
-                                top: 0,
-                                child: Transform.rotate(
-                                  angle: -.09,
-                                  child: AnimatedSwitcher(
-                                    duration: const Duration(milliseconds: 450),
-                                    child: Container(
-                                      key: ValueKey('cov${t.id}'),
-                                      width: 84,
-                                      height: 84,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(14),
-                                        border: Border.all(
-                                          color: Colors.white.withOpacity(.85),
-                                          width: 2,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(
-                                              .55,
-                                            ),
-                                            blurRadius: 16,
-                                            offset: const Offset(0, 8),
-                                          ),
-                                        ],
-                                        image: DecorationImage(
-                                          image: NetworkImage(t.coverUrl!),
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            // if (hasCover)
+                            //   Positioned(
+                            //     left: 0,
+                            //     top: 0,
+                            //     child: Transform.rotate(
+                            //       angle: -.09,
+                            //       child: AnimatedSwitcher(
+                            //         duration: const Duration(milliseconds: 450),
+                            //         child: Container(
+                            //           key: ValueKey('cov${t.id}'),
+                            //           width: 84,
+                            //           height: 84,
+                            //           decoration: BoxDecoration(
+                            //             borderRadius: BorderRadius.circular(14),
+                            //             border: Border.all(
+                            //               color: Colors.white.withOpacity(.85),
+                            //               width: 2,
+                            //             ),
+                            //             boxShadow: [
+                            //               BoxShadow(
+                            //                 color: Colors.black.withOpacity(
+                            //                   .55,
+                            //                 ),
+                            //                 blurRadius: 16,
+                            //                 offset: const Offset(0, 8),
+                            //               ),
+                            //             ],
+                            //             image: DecorationImage(
+                            //               image: NetworkImage(t.coverUrl!),
+                            //               fit: BoxFit.cover,
+                            //             ),
+                            //           ),
+                            //         ),
+                            //       ),
+                            //     ),
+                            //   ),
+                            // Another option: show the Blowmusic logo in the corner instead of the cover
                             // Positioned(
                             //   right: 0,
                             //   bottom: 0,
@@ -276,41 +277,66 @@ class _BmPlayerPageState extends State<BmPlayerPage>
                       ),
                     ),
                   ),
-                  // Équaliseur
-                  SizedBox(
-                    height: 30,
-                    child: AnimatedBuilder(
-                      animation: _eq,
-                      builder: (_, __) => Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          for (var i = 0; i < 22; i++)
-                            Container(
-                              width: 4,
-                              margin: const EdgeInsets.symmetric(horizontal: 2),
-                              height: playing
-                                  ? 5 +
-                                        24 *
-                                            (0.5 +
-                                                    0.5 *
-                                                        math.sin(
-                                                          _eq.value *
-                                                                  6.283 *
-                                                                  2 +
-                                                              i * .75,
-                                                        ))
-                                                .abs()
-                                  : 4,
-                              decoration: BoxDecoration(
-                                color: accent.withOpacity(.85),
-                                borderRadius: BorderRadius.circular(3),
-                              ),
-                            ),
+                  // Cover
+                  if (hasCover)
+                    Container(
+                      key: ValueKey('cov${t.id}'),
+                      width: 84,
+                      height: 84,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(.85),
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(.55),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
+                          ),
                         ],
+                        image: DecorationImage(
+                          image: NetworkImage(t.coverUrl!),
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
-                  ),
+                  // Équaliseur
+                  // SizedBox(
+                  //   height: 30,
+                  //   child: AnimatedBuilder(
+                  //     animation: _eq,
+                  //     builder: (_, __) => Row(
+                  //       mainAxisAlignment: MainAxisAlignment.center,
+                  //       crossAxisAlignment: CrossAxisAlignment.end,
+                  //       children: [
+                  //         for (var i = 0; i < 22; i++)
+                  //           Container(
+                  //             width: 4,
+                  //             margin: const EdgeInsets.symmetric(horizontal: 2),
+                  //             height: playing
+                  //                 ? 5 +
+                  //                       24 *
+                  //                           (0.5 +
+                  //                                   0.5 *
+                  //                                       math.sin(
+                  //                                         _eq.value *
+                  //                                                 6.283 *
+                  //                                                 2 +
+                  //                                             i * .75,
+                  //                                       ))
+                  //                               .abs()
+                  //                 : 4,
+                  //             decoration: BoxDecoration(
+                  //               color: accent.withOpacity(.85),
+                  //               borderRadius: BorderRadius.circular(3),
+                  //             ),
+                  //           ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
                   // Titre + favori
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 14, 12, 0),

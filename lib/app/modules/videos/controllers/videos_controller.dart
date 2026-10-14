@@ -292,6 +292,11 @@ class VideosController extends GetxController {
       return Future.value();
     }
     if (!kIsWeb && Platform.isIOS) {
+      if (video.channelId != null) {
+        // Les ventes de chaînes ne passent pas (encore) par StoreKit.
+        Get.snackbar('Indisponible sur iOS', channelPaymentsIosMessage);
+        return Future.value();
+      }
       return _purchaseVideoWithRevenueCat(
         context: context,
         video: video,
@@ -388,6 +393,8 @@ class VideosController extends GetxController {
       final data = res.data?['data'];
       final checkoutUrl = data?['checkout_url']?.toString();
       final returnUrlPrefix = data?['return_url_prefix']?.toString();
+      // Vidéo de CHAÎNE : confirmation vérifiée côté serveur (Moneroo).
+      final confirmEndpoint = data?['confirm_endpoint']?.toString();
       if (checkoutUrl == null || returnUrlPrefix == null || !context.mounted)
         return;
 
@@ -403,6 +410,7 @@ class VideosController extends GetxController {
           video: video,
           transactionId: paymentId,
           metadata: {'gateway': 'moneroo'},
+          confirmEndpoint: confirmEndpoint,
           onSuccess: onSuccess,
         );
       }
@@ -420,19 +428,23 @@ class VideosController extends GetxController {
     required SpaceVideo video,
     required String transactionId,
     Map<String, dynamic>? metadata,
+    String? confirmEndpoint,
     required VoidCallback onSuccess,
   }) async {
     isPurchasing.value = true;
     try {
       final response = await RequestService().post(
-        '/videos/${video.id}/purchase',
-        data: {
-          'transaction_id': transactionId,
-          if (metadata != null) 'metadata': metadata,
-        },
+        confirmEndpoint ?? '/videos/${video.id}/purchase',
+        data: confirmEndpoint != null
+            ? {'payment_id': transactionId}
+            : {
+                'transaction_id': transactionId,
+                if (metadata != null) 'metadata': metadata,
+              },
       );
 
-      if (response.statusCode == 200) {
+      if ((response.statusCode ?? 0) >= 200 &&
+          (response.statusCode ?? 0) < 300) {
         currentVideo.value =
             currentVideo.value?.copyWith(canRead: true) ??
             video.copyWith(canRead: true);

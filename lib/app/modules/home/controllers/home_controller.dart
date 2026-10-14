@@ -176,6 +176,7 @@ class HomeController extends GetxController {
       GetStorage().write('email', data['email']);
       return user;
     } on DioException catch (e) {
+      if (e.response?.statusCode == 401) return User.empty();
       if (e.response != null) {
         debugPrint(
           'Error: ${e.response?.statusCode} ${e.response?.statusMessage}',

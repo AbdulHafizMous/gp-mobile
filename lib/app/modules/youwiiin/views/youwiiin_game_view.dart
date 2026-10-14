@@ -15,6 +15,7 @@ import 'package:get/get.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:grand_public_v2/app/utils/game_webview_style.dart';
 import '../controllers/youwiiin_controller.dart';
 import '../widgets/youwiiin_confetti.dart';
 import '../widgets/youwiiin_confirm_dialog.dart';
@@ -84,8 +85,11 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF0F0E13))
       ..addJavaScriptChannel('GameZBridge', onMessageReceived: (m) => _onBridge(m.message))
-      ..setNavigationDelegate(NavigationDelegate(onPageFinished: (_) async {
+      ..setNavigationDelegate(NavigationDelegate(onPageStarted: (_) {
+        if (!_disposed) injectGameInAppStyle(_webCtrl);
+      }, onPageFinished: (_) async {
         if (!_disposed && mounted) setState(() => _loading = false);
+        if (!_disposed) await injectGameInAppStyle(_webCtrl);
         await _injectYw();
         _syncMuted();
       }));
@@ -540,9 +544,10 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
         body: Stack(
           children: [
             SafeArea(
+              bottom: false,
               child: Column(children: [
                 SizedBox(
-                  height: 48,
+                  height: 40,
                   child: Row(children: [
                     IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70, size: 18), onPressed: _leave),
                     Expanded(

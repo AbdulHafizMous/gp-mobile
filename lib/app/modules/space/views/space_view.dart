@@ -8,7 +8,10 @@ import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/vinyl_disc.dart';
 import 'package:grand_public_v2/app/data/models/space_model.dart';
 import 'package:grand_public_v2/app/modules/space/controllers/space_controller.dart';
-import 'package:grand_public_v2/app/modules/videos/views/videos_view.dart';
+import 'package:grand_public_v2/app/components/ad_banner_widget.dart';
+import 'package:grand_public_v2/app/modules/channels/views/channel_subscribe_sheet.dart';
+import 'package:grand_public_v2/app/modules/channels/views/shorts_feed_view.dart';
+// import 'package:grand_public_v2/app/modules/videos/views/videos_view.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 import 'package:video_player/video_player.dart';
@@ -36,6 +39,39 @@ class SpaceView extends GetView<SpaceController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.isDark ? null : GPTheme.primaryColor,
+      bottomNavigationBar: controller.isChannel
+          ? Obx(() {
+              final ch = controller.channel.value;
+              if (ch == null || ch.isSubscribed || ch.isOwner || ch.plans.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              final cheapest = ch.plans.map((p) => p.price).reduce((a, b) => a < b ? a : b).round();
+              return SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+                  child: SizedBox(
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: () => ChannelSubscribeSheet.show(
+                        context,
+                        ch,
+                        () async => (controller as dynamic).refreshAfterPayment(),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: GPTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      ),
+                      child: Text(
+                        "S'abonner · dès $cheapest F",
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            })
+          : null,
       body: Obx(() {
         if (controller.isLoading.value) return _ShimmerSkeleton();
         if (controller.space.value == null) return _buildNotFound(context);
@@ -173,6 +209,42 @@ class _SpaceBodyState extends State<_SpaceBody> with TickerProviderStateMixin {
               onPressed: Get.back,
             ),
             actions: [
+              if (_ctrl.isChannel) ...[
+                IconButton(
+                  tooltip: 'Shorts',
+                  icon: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
+                    child: const Icon(Icons.slow_motion_video_rounded, color: Colors.white, size: 18),
+                  ),
+                  onPressed: () => Get.to(() => ShortsFeedView(channelId: _ctrl.spaceId)),
+                ),
+                IconButton(
+                  tooltip: 'Paramètres de la chaîne',
+                  icon: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
+                    child: const Icon(Icons.settings_rounded, color: Colors.white, size: 18),
+                  ),
+                  onPressed: () {
+                    final ch = _ctrl.channel.value;
+                    if (ch == null) return;
+                    ChannelSubscribeSheet.show(
+                      context,
+                      ch,
+                      () async => (_ctrl as dynamic).refreshAfterPayment(),
+                    );
+                  },
+                ),
+              ],
               Obx(
                 () => _LayoutToggleButton(
                   isSingleColumn: _ctrl.isSingleColumn.value,
@@ -226,7 +298,10 @@ class _SpaceBodyState extends State<_SpaceBody> with TickerProviderStateMixin {
                   ),
           ),
         ],
-        body: cats.isEmpty
+        body: Column(children: [
+          if (_ctrl.isChannel)
+            AdBannerWidget(screen: 'channel', channelId: _ctrl.spaceId),
+          Expanded(child: cats.isEmpty
             ? _EmptyCategoryBody()
             : TabBarView(
                 controller: _tabController,
@@ -239,7 +314,8 @@ class _SpaceBodyState extends State<_SpaceBody> with TickerProviderStateMixin {
                       ),
                     )
                     .toList(),
-              ),
+              )),
+        ]),
       );
     });
   }
@@ -429,6 +505,18 @@ class _SpaceHeroHeader extends StatelessWidget {
       ),
       child: Stack(
         children: [
+          if (Get.isRegistered<SpaceController>() &&
+              Get.find<SpaceController>().channel.value?.bannerUrl != null)
+            Positioned.fill(
+              child: Opacity(
+                opacity: 0.55,
+                child: Image.network(
+                  Get.find<SpaceController>().channel.value!.bannerUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+            ),
           Positioned(
             right: -30,
             top: -30,
@@ -1918,7 +2006,7 @@ class _ThumbnailInteractiveState extends State<_ThumbnailInteractive>
     final isDark = context.isDark;
 
     return GestureDetector(
-      onTap: () => Get.to(() => VideosView(videoId: widget.video.id)),
+      onTap: () => openVideoSmart(widget.video),
       onDoubleTap: _handleDoubleTap,
       onLongPressStart: (_) => _startPreview(),
       onLongPressEnd: (_) => _stopPreview(),
@@ -2318,7 +2406,7 @@ class _VideoCardList extends StatelessWidget {
           ),
           Expanded(
             child: GestureDetector(
-              onTap: () => Get.to(() => VideosView(videoId: video.id)),
+              onTap: () => openVideoSmart(video),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
                 child: Column(

@@ -13,6 +13,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/components/ad_banner_widget.dart';
+import 'package:grand_public_v2/app/modules/channels/views/channels_list_view.dart';
+import 'package:grand_public_v2/app/components/profile_completion_banner.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -134,21 +137,35 @@ class YouwiiinHomeView extends StatelessWidget {
           ],
         ),
       ),
-      body: Obx(() {
-        if (controller.isLoading.value &&
-            controller.catalog.isEmpty &&
-            controller.currentTab.value == 0) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        switch (controller.currentTab.value) {
-          case 1:
-            return _ProfileTab(accent: accent, fg: fg);
-          case 2:
-            return _LeaderboardTab(accent: accent, fg: fg);
-          default:
-            return _CatalogTab(accent: accent, fg: fg);
-        }
-      }),
+      body: Column(
+        children: [
+          const ProfileCompletionBanner(module: 'youwiiin'),
+          Obx(
+            () => controller.currentTab.value == 3
+                ? const SizedBox.shrink()
+                : const AdBannerWidget(screen: 'youwiiin'),
+          ),
+          Expanded(
+            child: Obx(() {
+              if (controller.isLoading.value &&
+                  controller.catalog.isEmpty &&
+                  controller.currentTab.value == 0) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              switch (controller.currentTab.value) {
+                case 1:
+                  return _ProfileTab(accent: accent, fg: fg);
+                case 2:
+                  return _LeaderboardTab(accent: accent, fg: fg);
+                case 3:
+                  return ChannelsListBody(accent: accent);
+                default:
+                  return _CatalogTab(accent: accent, fg: fg);
+              }
+            }),
+          ),
+        ],
+      ),
       // Même rendu que la barre de Grandpublic (composant partagé).
       bottomNavigationBar: Obx(
         () => ModuleBottomBar(
@@ -166,6 +183,10 @@ class YouwiiinHomeView extends StatelessWidget {
               icon: Icons.leaderboard_rounded,
               label: 'Classement',
             ),
+            // ModuleBottomBarItem(
+            //   icon: Icons.live_tv_rounded,
+            //   label: 'Chaînes',
+            // ),
           ],
         ),
       ),

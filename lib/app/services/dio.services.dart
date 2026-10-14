@@ -64,7 +64,13 @@ class RequestService {
           final isExempt = _authExemptPaths.any((p) => path.contains(p));
 
           if (e.response?.statusCode == 401 && !isExempt) {
-            _handleSessionExpired();
+            // 401 sans jeton envoyé = visiteur non connecté / première
+            // ouverture : résultat normal, on ne dit RIEN (pas de toast).
+            // Seule une vraie session expirée (jeton envoyé) déconnecte.
+            final hadToken = e.requestOptions.headers['Authorization'] != null;
+            if (hadToken) {
+              _handleSessionExpired();
+            }
           }
 
           return handler.next(e);

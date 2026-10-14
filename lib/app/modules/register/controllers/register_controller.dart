@@ -16,6 +16,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
+import 'package:grand_public_v2/app/utils/auth_flow.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 enum RegisterMode { normal, socialCompletion }
@@ -99,17 +100,10 @@ class RegisterController extends GetxController {
     if (step.value > 0) step.value = 0;
   }
 
-  /// Valide les 2 étapes ; renvoie à l'étape fautive le cas échéant.
+  /// Inscription en UNE étape : seul le formulaire du compte est validé.
   bool _validateAll() {
-    if (!(formKey.currentState?.validate() ?? false)) {
-      step.value = 0;
-      return false;
-    }
-    if (!(formKey2.currentState?.validate() ?? false)) {
-      step.value = 1;
-      return false;
-    }
-    return true;
+    step.value = 0;
+    return formKey.currentState?.validate() ?? false;
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -133,26 +127,21 @@ class RegisterController extends GetxController {
         return;
       }
 
-      final nameParts = nameController.text.trim().split(' ');
-      final lastName = nameParts.first;
-      final firstName = nameParts.length > 1
-          ? nameParts.sublist(1).join(' ')
-          : '';
-      final fullPhone =
-          '+${selectedCountry.value.phoneCode}${phoneController.text.replaceAll(" ", "").trim()}';
+      final rawPhone = phoneController.text.replaceAll(' ', '').trim();
+      final hasPhone = rawPhone.isNotEmpty;
 
       final response = await RequestService().post(
         '/auth/register',
         data: {
-          'last_name': lastName,
-          'first_name': firstName,
+          // Un seul mot suffit : le backend gère le découpage prénom/nom.
           'name': nameController.text.trim(),
           'email': emailController.text.trim(),
-          'phone': fullPhone,
+          if (hasPhone) 'phone': '+${selectedCountry.value.phoneCode}$rawPhone',
           'country_code': selectedCountry.value.isoCode,
           'password': passwordController.text,
           'password_confirmation': passwordController.text,
           'terms': true,
+          // Champs de ciblage facultatifs (renseignés plus tard si vides).
           ...audience.toPayload(),
         },
       );
@@ -202,17 +191,11 @@ class RegisterController extends GetxController {
           backgroundColor: Colors.green,
           textColor: Colors.white,
         );
-        Get.offAllNamed('/sucess-page');
+        await AuthFlow.finish();
         return;
       }
 
-      final nameParts = nameController.text.trim().split(' ');
-      final lastName = nameParts.first;
-      final firstName = nameParts.length > 1
-          ? nameParts.sublist(1).join(' ')
-          : '';
-      final fullPhone =
-          '+${selectedCountry.value.phoneCode}${phoneController.text.replaceAll(" ", "").trim()}';
+      final rawPhone = phoneController.text.replaceAll(' ', '').trim();
 
       final response = await RequestService().post(
         '/users/update-profile',
@@ -220,9 +203,8 @@ class RegisterController extends GetxController {
           'social_token': _socialToken,
           'provider': _socialProvider,
           'name': nameController.text.trim(),
-          'last_name': lastName,
-          'first_name': firstName,
-          'phone': fullPhone,
+          if (rawPhone.isNotEmpty)
+            'phone': '+${selectedCountry.value.phoneCode}$rawPhone',
           'country_code': selectedCountry.value.isoCode,
           'email': emailController.text.trim(),
           ...audience.toPayload(),
@@ -244,7 +226,7 @@ class RegisterController extends GetxController {
           textColor: Colors.white,
         );
 
-        Get.offAllNamed('/sucess-page');
+        await AuthFlow.finish(response.data['data']?['user']);
       }
     } on DioException catch (e) {
       _handleDioError(e);
@@ -620,7 +602,7 @@ class RegisterController extends GetxController {
       textColor: Colors.white,
     );
 
-    Get.offAllNamed('/sucess-page');
+    await AuthFlow.finish(data);
   }
 
   // ══════════════════════════════════════════════════════════════════════════

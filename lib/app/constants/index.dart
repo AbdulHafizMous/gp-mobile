@@ -124,3 +124,10 @@ const String LOGO_YOUWIIIN_LIGHT = 'assets/images/Icone_Y_Rouge.png';
 const String LOGO_YOUWIIIN_NAV_LIGHT = 'assets/images/Logo_Y_Rouge.png';
 const String LOGO_YOUWIIIN_DARK = 'assets/images/Icone_Y_Noir.png';
 const String LOGO_YOUWIIIN_NAV_DARK = 'assets/images/Logo_Y_Noir.png';
+
+// Chaînes de créateurs : abonnements / achats via Moneroo (Android, web).
+// Sur iOS, l'achat de contenus numériques doit passer par StoreKit : les
+// produits par chaîne ne sont pas encore déclarés, on informe l'utilisateur.
+const String channelPaymentsIosMessage =
+    "L'abonnement aux chaînes n'est pas encore disponible sur iOS. "
+    'Rendez-vous sur Android ou sur le site pour vous abonner.';

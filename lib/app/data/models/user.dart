@@ -15,6 +15,10 @@ class User {
   final String? gender;
   final String? profession;
   final bool needsAudienceProfile;
+
+  /// Champs de profil manquants (phone, birthday, gender, profession,
+  /// interests) : pilote la bannière / le bottom sheet de complétion.
+  final List<String> profileMissingFields;
   final String? description;
   final String? lookingForGender;
   final String? fcmToken;
@@ -43,6 +47,7 @@ class User {
     this.gender,
     this.profession,
     this.needsAudienceProfile = false,
+    this.profileMissingFields = const [],
     this.description,
     this.lookingForGender,
     this.fcmToken,
@@ -77,6 +82,9 @@ class User {
     final r = role.toLowerCase().trim();
     return r == 'super admin';
   }
+
+  /// Profil à compléter (au moins un champ manquant) — connecté seulement.
+  bool get needsProfileCompletion => id != 0 && profileMissingFields.isNotEmpty;
 
   bool get hasAvatar => avatarUrl != null && avatarUrl!.isNotEmpty;
 
@@ -124,6 +132,9 @@ class User {
       gender: json['gender']?.toString(),
       profession: json['profession']?.toString(),
       needsAudienceProfile: _parseBool(json['needs_audience_profile']),
+      profileMissingFields: (json['profile_missing_fields'] is List)
+          ? (json['profile_missing_fields'] as List).map((e) => e.toString()).toList()
+          : const [],
       description: json['description']?.toString(),
       lookingForGender: json['looking_for_gender']?.toString(),
       fcmToken: json['fcm_token']?.toString(),
@@ -182,6 +193,7 @@ class User {
     String? gender,
     String? profession,
     bool? needsAudienceProfile,
+    List<String>? profileMissingFields,
     String? description,
     String? lookingForGender,
     String? fcmToken,
@@ -208,6 +220,7 @@ class User {
       gender: gender ?? this.gender,
       profession: profession ?? this.profession,
       needsAudienceProfile: needsAudienceProfile ?? this.needsAudienceProfile,
+      profileMissingFields: profileMissingFields ?? this.profileMissingFields,
       description: description ?? this.description,
       lookingForGender: lookingForGender ?? this.lookingForGender,
       fcmToken: fcmToken ?? this.fcmToken,

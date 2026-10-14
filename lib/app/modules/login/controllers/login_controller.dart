@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 // import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/utils/auth_flow.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
@@ -539,7 +540,8 @@ class LoginController extends GetxController {
     final storage = GetStorage();
     storage.write('token', data['token']);
     storage.write('isLogged', true);
-    // if (data['user'] != null) storage.write('user', data['user']);
+    // Nom + e-mail disponibles immédiatement (sans attendre /auth/me).
+    AuthFlow.hydrate(data['user']);
 
     await ToastHelper.showToast(
       'Connexion réussie ! Bienvenue  ',

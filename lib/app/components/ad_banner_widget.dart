@@ -9,10 +9,11 @@
 // Usage : `const AdBannerWidget(screen: 'home')` en haut d'une liste/colonne.
 
 import 'package:flutter/material.dart';
-import 'package:grand_public_v2/app/services/dio.services.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:grand_public_v2/app/services/ad_service.dart';
+// import 'package:url_launcher/url_launcher.dart';
 
 class _BannerAd {
+  final AdItem item;
   final int id;
   final String advertiserName;
   final String title;
@@ -22,8 +23,22 @@ class _BannerAd {
   final String? ctaUrl;
   final bool dismissible;
 
+  factory _BannerAd.fromItem(AdItem i) => _BannerAd.fromJson({
+    'id': i.id,
+    'placement': i.placement,
+    'advertiser_name': i.advertiserName,
+    'title': i.title,
+    'body': i.body,
+    'media_type': i.mediaType,
+    'media_url': i.mediaUrl,
+    'cta_label': i.ctaLabel,
+    'cta_url': i.ctaUrl,
+    'dismissible': i.dismissible,
+  });
+
   _BannerAd.fromJson(Map<String, dynamic> j)
-    : id = j['id'] is int ? j['id'] : int.tryParse('${j['id']}') ?? 0,
+    : item = AdItem.fromJson(j),
+      id = j['id'] is int ? j['id'] : int.tryParse('${j['id']}') ?? 0,
       advertiserName = j['advertiser_name']?.toString() ?? '',
       title = j['title']?.toString() ?? '',
       body = j['body']?.toString(),
@@ -35,7 +50,10 @@ class _BannerAd {
 
 class AdBannerWidget extends StatefulWidget {
   final String screen;
-  const AdBannerWidget({super.key, required this.screen});
+
+  /// Dans une chaîne : permet le ciblage par chaîne côté admin.
+  final int? channelId;
+  const AdBannerWidget({super.key, required this.screen, this.channelId});
 
   @override
   State<AdBannerWidget> createState() => _AdBannerWidgetState();
@@ -57,40 +75,35 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
   }
 
   Future<void> _load() async {
-    try {
-      final res = await RequestService().get(
-        '/ads/banners',
-        queryParameters: {'screen': widget.screen},
-      );
-      final list = (res.data?['data'] as List<dynamic>? ?? [])
-          .map((j) => _BannerAd.fromJson(j))
-          .where((b) => !_dismissedThisSession.contains(b.id))
-          .toList();
-      if (mounted) {
-        setState(() {
-          _banners = list;
-          _loading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _loading = false);
+    final items = await AdService.fetch(
+      'banner',
+      screen: widget.screen,
+      channelId: widget.channelId,
+      limit: 3,
+    );
+    final list = items
+        .map((i) => _BannerAd.fromItem(i))
+        .where((b) => !_dismissedThisSession.contains(b.id))
+        .toList();
+    if (mounted) {
+      setState(() {
+        _banners = list;
+        _loading = false;
+      });
     }
   }
 
-  void _trackImpression(int adId, {bool clicked = false}) {
-    RequestService()
-        .post('/ads/$adId/impression', data: {'clicked': clicked})
-        ;
+  int? _trackedId;
+
+  /// Impression comptée UNE fois par bannière réellement affichée.
+  void _trackOnce(_BannerAd ad) {
+    if (_trackedId == ad.id) return;
+    _trackedId = ad.id;
+    AdService.track(ad.item, screen: widget.screen, channelId: widget.channelId);
   }
 
-  Future<void> _openCta(_BannerAd ad) async {
-    _trackImpression(ad.id, clicked: true);
-    if (ad.ctaUrl == null) return;
-    final uri = Uri.tryParse(ad.ctaUrl!);
-    if (uri != null && await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
+  Future<void> _openCta(_BannerAd ad) =>
+      AdService.openCta(ad.item, screen: widget.screen, channelId: widget.channelId);
 
   @override
   Widget build(BuildContext context) {
@@ -98,9 +111,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
 
     final ad = _banners.first;
     // Impression comptée une fois la bannière effectivement affichée.
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _trackImpression(ad.id),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _trackOnce(ad));
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

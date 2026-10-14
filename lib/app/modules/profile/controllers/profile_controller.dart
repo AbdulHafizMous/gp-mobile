@@ -73,8 +73,12 @@ class ProfileController extends GetxController {
   final isInterestsLoading = false.obs;
 
   // ── Getters ────────────────────────────────────────────────────────────────
-  String get displayName => activeUser.value.name;
-  String get displayEmail => activeUser.value.email;
+  String get displayName => activeUser.value.name.isNotEmpty
+      ? activeUser.value.name
+      : (GetStorage().read<String>('username') ?? '');
+  String get displayEmail => activeUser.value.email.isNotEmpty
+      ? activeUser.value.email
+      : (GetStorage().read<String>('email') ?? '');
   String get displayAvatar => activeUser.value.avatarUrl ?? '';
 
   // ── Init ───────────────────────────────────────────────────────────────────

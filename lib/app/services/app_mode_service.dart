@@ -79,12 +79,10 @@ class AppModeService {
   /// ce n'est PAS un choix figé une fois pour toutes. Reste directement sur
   /// Grandpublic si un seul module est actif (comportement actuel conservé).
   ///
-  /// Profil d'audience incomplet (naissance / genre / profession) → écran
-  /// bloquant /complete-profile AVANT toute destination (il renvoie ensuite
-  /// ici une fois complété).
+  /// Profil incomplet : n'est plus bloquant (bannière + bottom sheet).
   static String get postAuthRoute {
-    final u = activeUser.value;
-    if (u.id != 0 && u.needsAudienceProfile) return '/complete-profile';
+    // Plus d'écran bloquant : la complétion du profil passe par la bannière
+    // et le bottom sheet (voir ProfileCompletionService).
     return hasMultipleModules ? '/module-choice' : homeRoute;
   }
 

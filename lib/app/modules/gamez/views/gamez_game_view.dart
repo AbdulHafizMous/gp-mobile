@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:grand_public_v2/app/utils/game_webview_style.dart';
 import '../controllers/gamez_controller.dart';
 
 class GameZGameView extends StatefulWidget {
@@ -67,10 +68,16 @@ class _GameZGameViewState extends State<GameZGameView> {
           }
         } catch (_) {}
       })
-      ..setNavigationDelegate(NavigationDelegate(onPageFinished: (_) {
-        if (mounted) setState(() => _loading = false);
-      }));
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageStarted: (_) => _injectInAppStyle(),
+        onPageFinished: (_) {
+          _injectInAppStyle();
+          if (mounted) setState(() => _loading = false);
+        },
+      ));
   }
+
+  Future<void> _injectInAppStyle() => injectGameInAppStyle(_webCtrl);
 
   Future<void> _initSession() async {
     final ctrl = Get.find<GameZController>();
@@ -113,11 +120,17 @@ class _GameZGameViewState extends State<GameZGameView> {
       child: Scaffold(
         backgroundColor: const Color(0xFF0F0E13),
         body: SafeArea(
+          bottom: false,
           child: Column(children: [
             SizedBox(
-              height: 40,
+              height: 36,
               child: Row(children: [
-                IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70, size: 18), onPressed: _leave),
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 40, minHeight: 36),
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70, size: 18),
+                  onPressed: _leave,
+                ),
                 Expanded(
                   child: Text(widget.game.name,
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),

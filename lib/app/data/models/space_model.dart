@@ -32,6 +32,8 @@ class SpaceVideo {
   final String? appleProductId; // produit RevenueCat/StoreKit pour le PPV iOS
   final String sourceType; // 'youtube' (défaut) ou 'upload' (hébergé chez nous)
   final String? videoFileUrl; // URL du fichier vidéo si sourceType == 'upload'
+  final String orientation; // 'landscape' (défaut) | 'portrait' (short)
+  final int? channelId; // non-null = média d'une chaîne
 
   const SpaceVideo({
     required this.id,
@@ -60,7 +62,11 @@ class SpaceVideo {
     this.appleProductId,
     this.sourceType = 'youtube',
     this.videoFileUrl,
+    this.orientation = 'landscape',
+    this.channelId,
   });
+
+  bool get isPortrait => orientation == 'portrait';
 
   /// Le live est-il actif en ce moment ?
   bool get isLiveNow {
@@ -121,6 +127,8 @@ class SpaceVideo {
       appleProductId: json['apple_product_id']?.toString(),
       sourceType: json['source_type']?.toString() ?? 'youtube',
       videoFileUrl: json['video_file_url']?.toString(),
+      orientation: json['orientation']?.toString() ?? 'landscape',
+      channelId: json['channel_id'] == null ? null : _parseInt(json['channel_id']),
     );
   }
 
@@ -161,6 +169,8 @@ class SpaceVideo {
       videoFileUrl: videoFileUrl,
       spaceLogoUrl: spaceLogoUrl,
       categoryName: categoryName,
+      orientation: orientation,
+      channelId: channelId,
     );
   }
 

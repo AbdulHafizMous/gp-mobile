@@ -5,6 +5,7 @@
 // lib/app/modules/home/widgets/ pour rester lisible et réutilisable.
 
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/components/profile_completion_banner.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/ad_banner_widget.dart';
 import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
@@ -44,6 +45,7 @@ class HomeView extends GetView<HomeController> {
             // Bannière pub — visible uniquement à la racine de l'accueil
             // (section 0, pas de sous-page ouverte), pour ne jamais gêner
             // la navigation dans les sous-écrans.
+            const ProfileCompletionBanner(module: 'grandpublic'),
             if (controller.activeSectionIndex == 0 && !controller.canPop)
               const AdBannerWidget(screen: 'home'),
             Expanded(

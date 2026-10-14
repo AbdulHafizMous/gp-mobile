@@ -16,6 +16,7 @@ import 'package:grand_public_v2/app/services/iap_debug_logger.dart';
 import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
 import 'package:grand_public_v2/app/services/brand_takeover_service.dart';
 import 'package:grand_public_v2/app/services/crush_quota_service.dart';
+import 'package:grand_public_v2/app/services/profile_completion_service.dart';
 import 'package:grand_public_v2/firebase_options.dart';
 
 import 'app/routes/app_pages.dart';
@@ -106,6 +107,9 @@ Future<void> main() async {
   // sont ouverts depuis Blowmusic ou Youwiiin (qui n'utilisent pas le shell
   // Grandpublic).
   Get.put(HomeController(), permanent: true);
+
+  // Complétion progressive du profil (bannière + bottom sheet, tous modules).
+  Get.put(ProfileCompletionService(), permanent: true);
 
   // 4bis. RevenueCat (Apple IAP — Guideline 3.1.1). iOS uniquement :
   // Android/le reste continuent d'utiliser Moneroo / le paiement web.

@@ -15,6 +15,8 @@ abstract class Routes {
   static const CONFIRM = _Paths.CONFIRM;
   static const SUCESS_PAGE = _Paths.SUCESS_PAGE;
   static const SPACE_PAGE = _Paths.SPACE_PAGE;
+  static const CHANNEL_PAGE = _Paths.CHANNEL_PAGE;
+  static const CHANNELS = _Paths.CHANNELS;
   static const CLUB_PAGE = _Paths.CLUB_PAGE;
   static const INTEREST = _Paths.INTEREST;
   static const PAYEMENT = _Paths.PAYEMENT;
@@ -55,6 +57,8 @@ abstract class _Paths {
   static const RESET_PASSWORD = '/reset-password';
   static const SUCESS_PAGE = '/sucess-page';
   static const SPACE_PAGE = '/home/spaces/:id';
+  static const CHANNEL_PAGE = '/channel/:id';
+  static const CHANNELS = '/channels';
   static const CLUB_PAGE = '/home/club/:id';
   static const INTEREST = '/interest';
   static const PAYEMENT = '/payement';
