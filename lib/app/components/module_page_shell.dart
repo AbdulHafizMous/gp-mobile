@@ -51,10 +51,14 @@ class ModulePageShell extends StatelessWidget {
 class ModuleBellAction extends StatelessWidget {
   final String category;
   final Color color;
+
+  /// Rapproche la cloche de l'icône voisine (ex. profil) : moins de marge.
+  final bool dense;
   const ModuleBellAction({
     super.key,
     required this.category,
     required this.color,
+    this.dense = false,
   });
 
   @override
@@ -66,6 +70,9 @@ class ModuleBellAction extends StatelessWidget {
     return Obx(() {
       final n = ctrl.unreadCount.value;
       return IconButton(
+        visualDensity: dense ? VisualDensity.compact : null,
+        padding: dense ? const EdgeInsets.only(left: 6) : null,
+        constraints: dense ? const BoxConstraints(minWidth: 36, minHeight: 40) : null,
         tooltip: 'Notifications',
         onPressed: () {
           ctrl.selectedCategory.value = category;

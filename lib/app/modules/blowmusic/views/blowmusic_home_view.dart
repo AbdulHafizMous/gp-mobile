@@ -96,7 +96,14 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
         centerTitle: true,
         elevation: 0,
         actions: [
-          ModuleBellAction(category: 'blowmusic', color: fg),
+          // Cloche rapprochée de l'icône profil (même duo que Grandpublic).
+          ModuleBellAction(category: 'blowmusic', color: fg, dense: true),
+          IconButton(
+            tooltip: 'Profil',
+            visualDensity: VisualDensity.compact,
+            icon: Icon(Icons.person_outline_rounded, color: fg),
+            onPressed: () => Get.toNamed('/profile'),
+          ),
           const SizedBox(width: 4),
         ],
         title: SizedBox(
@@ -552,6 +559,27 @@ class _HomeTab extends StatelessWidget {
             const SizedBox(height: 22),
           ],
 
+          // ── Playlists suggérées (sélection de l'équipe) ─────────────────────
+          Obx(() {
+            final list = ctrl.suggestedPlaylists.toList();
+            if (list.isEmpty) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SectionHeader(
+                  title: 'Playlists suggérées',
+                  icon: Icons.auto_awesome_rounded,
+                  count: list.length,
+                  accent: accent,
+                  fg: fg,
+                ),
+                const SizedBox(height: 12),
+                _PlaylistsRow(playlists: list, accent: accent, fg: fg),
+                const SizedBox(height: 22),
+              ],
+            );
+          }),
+
           // ── En ce moment : 4 max + Voir plus ────────────────────────────────
           Obx(() {
             final list = ctrl.latestTracks.toList();
@@ -590,6 +618,34 @@ class _HomeTab extends StatelessWidget {
             );
           }),
           const SizedBox(height: 22),
+
+          // ── Vidéos ──────────────────────────────────────────────────────────
+          Obx(() {
+            final list = ctrl.latestVideos.toList();
+            if (list.isEmpty) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SectionHeader(
+                  title: 'Vidéos',
+                  icon: Icons.smart_display_rounded,
+                  count: list.length,
+                  accent: accent,
+                  fg: fg,
+                ),
+                const SizedBox(height: 12),
+                _ExpandableList(
+                  max: 3,
+                  accent: accent,
+                  children: [
+                    for (final t in list)
+                      _TrackTile(track: t, accent: accent, fg: fg, queue: list, label: 'Vidéos'),
+                  ],
+                ),
+                const SizedBox(height: 22),
+              ],
+            );
+          }),
 
           // ── Les plus écoutés : classement 5 max + Voir plus ─────────────────
           Obx(() {
@@ -1358,6 +1414,32 @@ class _LibraryTabState extends State<_LibraryTab> {
             ),
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+          child: Obx(() => Row(children: [
+                for (final e in const [
+                  ('all', 'Tout', Icons.library_music_rounded),
+                  ('audio', 'Audio', Icons.music_note_rounded),
+                  ('video', 'Vidéos', Icons.smart_display_rounded),
+                ])
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      avatar: Icon(e.$3, size: 16, color: ctrl.libType.value == e.$1 ? Colors.white : fg.withOpacity(.6)),
+                      label: Text(e.$2),
+                      selected: ctrl.libType.value == e.$1,
+                      showCheckmark: false,
+                      selectedColor: accent,
+                      labelStyle: TextStyle(
+                        color: ctrl.libType.value == e.$1 ? Colors.white : fg.withOpacity(.75),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12.5,
+                      ),
+                      onSelected: (_) => ctrl.setLibType(e.$1),
+                    ),
+                  ),
+              ])),
+        ),
         Expanded(
           child: Obx(() {
             final list = ctrl.libraryTracks.toList();
@@ -1570,7 +1652,13 @@ class _PlaylistsTab extends StatelessWidget {
     return Obx(() {
       final list = ctrl.playlists.toList();
       return RefreshIndicator(
-        onRefresh: () => ctrl.loadPlaylists(),
+        onRefresh: () async {
+          await Future.wait([
+            ctrl.loadPlaylists(),
+            ctrl.loadSuggestedPlaylists(),
+            ctrl.loadFavoritePlaylists(),
+          ]);
+        },
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
           physics: const AlwaysScrollableScrollPhysics(),
@@ -1613,6 +1701,38 @@ class _PlaylistsTab extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
+            if (ctrl.suggestedPlaylists.isNotEmpty) ...[
+              _SectionHeader(
+                title: 'Suggérées pour vous',
+                icon: Icons.auto_awesome_rounded,
+                count: ctrl.suggestedPlaylists.length,
+                accent: accent,
+                fg: fg,
+              ),
+              const SizedBox(height: 10),
+              _PlaylistsRow(playlists: ctrl.suggestedPlaylists.toList(), accent: accent, fg: fg),
+              const SizedBox(height: 18),
+            ],
+            if (ctrl.favoritePlaylists.isNotEmpty) ...[
+              _SectionHeader(
+                title: 'Playlists favorites',
+                icon: Icons.favorite_rounded,
+                count: ctrl.favoritePlaylists.length,
+                accent: accent,
+                fg: fg,
+              ),
+              const SizedBox(height: 10),
+              _PlaylistsRow(playlists: ctrl.favoritePlaylists.toList(), accent: accent, fg: fg),
+              const SizedBox(height: 18),
+            ],
+            _SectionHeader(
+              title: 'Mes playlists',
+              icon: Icons.queue_music_rounded,
+              count: list.length,
+              accent: accent,
+              fg: fg,
+            ),
+            const SizedBox(height: 10),
             if (ctrl.playlistsLoading.value && list.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(30),
@@ -1898,6 +2018,18 @@ class _TrackTile extends StatelessWidget {
                             ),
                           ),
                         ),
+                        if (track.isVideo)
+                          const Positioned(
+                            left: 3,
+                            bottom: 3,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                              child: Padding(
+                                padding: EdgeInsets.all(3),
+                                child: Icon(Icons.play_arrow_rounded, color: Colors.white, size: 13),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -2125,3 +2257,85 @@ class _MiniPlayer extends StatelessWidget {
     });
   }
 }
+
+
+// -----------------------------------------------------------------------------
+// PLAYLISTS : carrousel horizontal de cartes (pochette + cœur favori).
+// -----------------------------------------------------------------------------
+class _PlaylistsRow extends StatelessWidget {
+  final List<BmPlaylistInfo> playlists;
+  final Color accent, fg;
+  const _PlaylistsRow({required this.playlists, required this.accent, required this.fg});
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = Get.find<BlowMusicController>();
+    return SizedBox(
+      height: 190,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: playlists.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (_, i) {
+          final p = playlists[i];
+          return GestureDetector(
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => BmPlaylistPage(playlist: p)),
+            ),
+            child: SizedBox(
+              width: 140,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Stack(children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: SizedBox(
+                      width: 140,
+                      height: 140,
+                      child: (p.coverUrl != null && p.coverUrl!.isNotEmpty)
+                          ? Image.network(
+                              p.coverUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _plFallback(accent),
+                            )
+                          : _plFallback(accent),
+                    ),
+                  ),
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: Obx(() {
+                      ctrl.favoritePlaylists.length; // se redessine quand les favoris changent
+                      ctrl.suggestedPlaylists.length;
+                      return InkWell(
+                        onTap: () => ctrl.toggleFavoritePlaylist(p),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
+                          child: Icon(
+                            p.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                            size: 18,
+                            color: p.isFavorite ? const Color(0xFFFB7185) : Colors.white,
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ]),
+                const SizedBox(height: 6),
+                Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 13.5)),
+                Text('${p.count} titre${p.count > 1 ? 's' : ''}', style: TextStyle(color: fg.withOpacity(.5), fontSize: 11.5)),
+              ]),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+Widget _plFallback(Color accent) => Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [accent, const Color(0xFF7C3AED)]),
+      ),
+      child: const Icon(Icons.queue_music_rounded, color: Colors.white70, size: 44),
+    );

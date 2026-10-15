@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:video_player/video_player.dart';
 
 import 'package:grand_public_v2/app/components/vinyl_disc.dart';
 // import 'package:grand_public_v2/app/constants/index.dart';
@@ -85,6 +86,13 @@ class _BmPlayerPageState extends State<BmPlayerPage>
         final playing = ctrl.isPlaying.value;
         final loading = ctrl.playbackState.value == BmPlaybackState.loading;
         final hasCover = t.coverUrl != null && t.coverUrl!.isNotEmpty;
+        // Titre vidéo : on montre la vidéo, sauf si « audio seul » est actif.
+        final vc = ctrl.videoPlayerController;
+        final showVideo =
+            t.isVideo &&
+            ctrl.isVideo.value &&
+            vc != null &&
+            vc.value.isInitialized;
 
         return Stack(
           fit: StackFit.expand,
@@ -157,6 +165,22 @@ class _BmPlayerPageState extends State<BmPlayerPage>
                             ],
                           ),
                         ),
+                        if (t.isVideo)
+                          IconButton(
+                            tooltip: ctrl.audioOnly.value
+                                ? 'Afficher la vidéo'
+                                : 'Écouter le son seulement',
+                            onPressed: ctrl.toggleAudioOnly,
+                            icon: Icon(
+                              ctrl.audioOnly.value
+                                  ? Icons.videocam_off_rounded
+                                  : Icons.headphones_rounded,
+                              color: ctrl.audioOnly.value
+                                  ? accent
+                                  : Colors.white,
+                              size: 26,
+                            ),
+                          ),
                         IconButton(
                           icon: const Icon(
                             Icons.playlist_add_rounded,
@@ -172,109 +196,124 @@ class _BmPlayerPageState extends State<BmPlayerPage>
                   // Scène : disque + pochette dans le coin
                   Expanded(
                     child: Center(
-                      child: SizedBox(
-                        width: w.width - 32,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            _Pulse(
-                              playing: playing,
-                              size: disc,
-                              accent: accent,
+                      child: showVideo
+                          ? _VideoStage(ctrl: ctrl, accent: accent)
+                          : SizedBox(
+                              width: w.width - 32,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  _Pulse(
+                                    playing: playing,
+                                    size: disc,
+                                    accent: accent,
+                                  ),
+                                  AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 450),
+                                    transitionBuilder: (c, a) =>
+                                        ScaleTransition(
+                                          scale: Tween(
+                                            begin: .85,
+                                            end: 1.0,
+                                          ).animate(a),
+                                          child: FadeTransition(
+                                            opacity: a,
+                                            child: c,
+                                          ),
+                                        ),
+                                    child: VinylDisc(
+                                      key: ValueKey('disc${t.id}'),
+                                      size: disc,
+                                      playing: playing && !loading,
+                                      accent: accent,
+                                      coverUrl: t.coverUrl,
+                                      // Activer pour avoir le logo de Blowmusic au centre du disque
+                                      isCoverUrlAvailable: false,
+                                      isCenterFixed: true,
+                                    ),
+                                  ),
+                                  // if (hasCover)
+                                  //   Positioned(
+                                  //     left: 0,
+                                  //     top: 0,
+                                  //     child: Transform.rotate(
+                                  //       angle: -.09,
+                                  //       child: AnimatedSwitcher(
+                                  //         duration: const Duration(
+                                  //           milliseconds: 450,
+                                  //         ),
+                                  //         child: Container(
+                                  //           key: ValueKey('cov${t.id}'),
+                                  //           width: 84,
+                                  //           height: 84,
+                                  //           decoration: BoxDecoration(
+                                  //             borderRadius:
+                                  //                 BorderRadius.circular(14),
+                                  //             border: Border.all(
+                                  //               color: Colors.white.withOpacity(
+                                  //                 .85,
+                                  //               ),
+                                  //               width: 2,
+                                  //             ),
+                                  //             boxShadow: [
+                                  //               BoxShadow(
+                                  //                 color: Colors.black
+                                  //                     .withOpacity(.55),
+                                  //                 blurRadius: 16,
+                                  //                 offset: const Offset(0, 8),
+                                  //               ),
+                                  //             ],
+                                  //             image: DecorationImage(
+                                  //               image: NetworkImage(
+                                  //                 t.coverUrl!,
+                                  //               ),
+                                  //               fit: BoxFit.cover,
+                                  //             ),
+                                  //           ),
+                                  //         ),
+                                  //       ),
+                                  //     ),
+                                  //   ),
+                                  // Positioned(
+                                  //   right: 0,
+                                  //   bottom: 0,
+                                  //   child: Transform.rotate(
+                                  //     angle: -.09,
+                                  //     child: AnimatedSwitcher(
+                                  //       duration: const Duration(milliseconds: 450),
+                                  //       child: Container(
+                                  //         key: ValueKey('cov${t.id}'),
+                                  //         width: 84,
+                                  //         height: 84,
+                                  //         decoration: BoxDecoration(
+                                  //           borderRadius: BorderRadius.circular(14),
+                                  //           border: Border.all(
+                                  //             color: Colors.white.withOpacity(.85),
+                                  //             width: 2,
+                                  //           ),
+                                  //           boxShadow: [
+                                  //             BoxShadow(
+                                  //               color: Colors.black.withOpacity(.55),
+                                  //               blurRadius: 16,
+                                  //               offset: const Offset(0, 8),
+                                  //             ),
+                                  //           ],
+                                  //           image: DecorationImage(
+                                  //             image: AssetImage(LOGO_BLOWMUSIC),
+                                  //             fit: BoxFit.cover,
+                                  //           ),
+                                  //         ),
+                                  //       ),
+                                  //     ),
+                                  //   ),
+                                  // ),
+                                  if (loading)
+                                    const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    ),
+                                ],
+                              ),
                             ),
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 450),
-                              transitionBuilder: (c, a) => ScaleTransition(
-                                scale: Tween(begin: .85, end: 1.0).animate(a),
-                                child: FadeTransition(opacity: a, child: c),
-                              ),
-                              child: VinylDisc(
-                                key: ValueKey('disc${t.id}'),
-                                size: disc,
-                                playing: playing && !loading,
-                                accent: accent,
-                                coverUrl: t.coverUrl,
-                                isCoverUrlAvailable: false,
-                                isCenterFixed: true,
-                              ),
-                            ),
-                            // if (hasCover)
-                            //   Positioned(
-                            //     left: 0,
-                            //     top: 0,
-                            //     child: Transform.rotate(
-                            //       angle: -.09,
-                            //       child: AnimatedSwitcher(
-                            //         duration: const Duration(milliseconds: 450),
-                            //         child: Container(
-                            //           key: ValueKey('cov${t.id}'),
-                            //           width: 84,
-                            //           height: 84,
-                            //           decoration: BoxDecoration(
-                            //             borderRadius: BorderRadius.circular(14),
-                            //             border: Border.all(
-                            //               color: Colors.white.withOpacity(.85),
-                            //               width: 2,
-                            //             ),
-                            //             boxShadow: [
-                            //               BoxShadow(
-                            //                 color: Colors.black.withOpacity(
-                            //                   .55,
-                            //                 ),
-                            //                 blurRadius: 16,
-                            //                 offset: const Offset(0, 8),
-                            //               ),
-                            //             ],
-                            //             image: DecorationImage(
-                            //               image: NetworkImage(t.coverUrl!),
-                            //               fit: BoxFit.cover,
-                            //             ),
-                            //           ),
-                            //         ),
-                            //       ),
-                            //     ),
-                            //   ),
-                            // Another option: show the Blowmusic logo in the corner instead of the cover
-                            // Positioned(
-                            //   right: 0,
-                            //   bottom: 0,
-                            //   child: Transform.rotate(
-                            //     angle: -.09,
-                            //     child: AnimatedSwitcher(
-                            //       duration: const Duration(milliseconds: 450),
-                            //       child: Container(
-                            //         key: ValueKey('cov${t.id}'),
-                            //         width: 84,
-                            //         height: 84,
-                            //         decoration: BoxDecoration(
-                            //           borderRadius: BorderRadius.circular(14),
-                            //           border: Border.all(
-                            //             color: Colors.white.withOpacity(.85),
-                            //             width: 2,
-                            //           ),
-                            //           boxShadow: [
-                            //             BoxShadow(
-                            //               color: Colors.black.withOpacity(.55),
-                            //               blurRadius: 16,
-                            //               offset: const Offset(0, 8),
-                            //             ),
-                            //           ],
-                            //           image: DecorationImage(
-                            //             image: AssetImage(LOGO_BLOWMUSIC),
-                            //             fit: BoxFit.cover,
-                            //           ),
-                            //         ),
-                            //       ),
-                            //     ),
-                            //   ),
-                            // ),
-                            if (loading)
-                              const CircularProgressIndicator(
-                                color: Colors.white,
-                              ),
-                          ],
-                        ),
-                      ),
                     ),
                   ),
                   // Cover
@@ -357,7 +396,7 @@ class _BmPlayerPageState extends State<BmPlayerPage>
                             ),
                             child: Column(
                               key: ValueKey('ti${t.id}'),
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Text(
                                   t.title,
@@ -368,6 +407,7 @@ class _BmPlayerPageState extends State<BmPlayerPage>
                                     fontSize: 22,
                                     fontWeight: FontWeight.w800,
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
@@ -841,6 +881,66 @@ class _TapState extends State<_Tap> {
           duration: const Duration(milliseconds: 110),
           curve: Curves.easeOut,
           child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
+/// Scène vidéo du lecteur : image du titre vidéo (touchez pour le plein écran).
+class _VideoStage extends StatelessWidget {
+  final BlowMusicController ctrl;
+  final Color accent;
+  const _VideoStage({required this.ctrl, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = ctrl.videoPlayerController;
+    if (c == null || !c.value.isInitialized) return const SizedBox.shrink();
+    final w = MediaQuery.of(context).size.width - 32;
+    final ar = c.value.aspectRatio <= 0 ? 16 / 9 : c.value.aspectRatio;
+    // Les vidéos verticales sont limitées en hauteur pour laisser la place aux contrôles.
+    final maxH = MediaQuery.of(context).size.height * .42;
+    final h = (w / ar).clamp(0.0, maxH);
+    return GestureDetector(
+      onTap: () => ctrl.toggleFullScreen(context),
+      child: Container(
+        width: h * ar,
+        height: h,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: accent.withOpacity(.45),
+              blurRadius: 28,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              VideoPlayer(c),
+              Positioned(
+                right: 8,
+                bottom: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.fullscreen_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

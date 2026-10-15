@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:grand_public_v2/app/components/channels_drawer_tile.dart';
 import 'package:grand_public_v2/app/components/drawer_btn.dart';
 import 'package:grand_public_v2/app/components/drawer_parts.dart';
 import 'package:grand_public_v2/app/data/models/user.dart';
@@ -150,6 +151,8 @@ class ModuleDrawer extends StatelessWidget {
             keepColors: true,
             onTap: () => _switchTo(AppMode.youwiiin, '/youwiiin/home'),
           ),
+        // Chaînes de créateurs : juste sous Youwiiin, même modèle.
+        ChannelsDrawerTile(accentColor: accentColor),
         const DrawerSep(),
         Padding(
           padding: const EdgeInsets.only(bottom: 10),

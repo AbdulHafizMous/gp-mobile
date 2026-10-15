@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:grand_public_v2/app/components/live_fullscreen_page.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
 
@@ -20,12 +22,24 @@ class BmTrack {
   final String? coverUrl;
   final String audioUrl;
 
+  /// 'audio' | 'video'. Un titre vidéo se lit avec l'image, ou en « audio
+  /// seul » (même fichier, image masquée) selon le choix de l'utilisateur.
+  final String mediaType;
+  final String? videoUrl;
+
+  bool get isVideo => mediaType == 'video';
+
+  /// URL réellement jouée (la vidéo si présente, sinon l'audio).
+  String get playUrl => (isVideo && (videoUrl ?? '').isNotEmpty) ? videoUrl! : audioUrl;
+
   BmTrack.fromJson(Map<String, dynamic> j)
     : id = j['id'] is int ? j['id'] : int.tryParse('${j['id']}') ?? 0,
       title = j['title']?.toString() ?? '',
       artistName = j['artist']?['name']?.toString(),
       coverUrl = j['cover_url']?.toString(),
-      audioUrl = j['audio_url']?.toString() ?? '';
+      audioUrl = j['audio_url']?.toString() ?? '',
+      mediaType = j['media_type']?.toString() == 'video' ? 'video' : 'audio',
+      videoUrl = j['video_url']?.toString();
 }
 
 int _bmInt(dynamic v) => v is int ? v : int.tryParse('$v') ?? 0;
@@ -36,12 +50,28 @@ class BmPlaylistInfo {
   int count;
   bool isPublic;
   bool hasTrack;
+
+  /// Playlist suggérée par l'équipe Blowmusic (lecture seule).
+  final bool isSuggested;
+  final String description;
+  final String? coverUrl;
+  final int? userId;
+  bool isFavorite;
+
+  /// Modifiable seulement si elle m'appartient et n'est pas une suggestion.
+  bool get isReadOnly => isSuggested || (userId != null && userId != activeUser.value.id);
+
   BmPlaylistInfo.fromJson(Map<String, dynamic> j)
     : id = _bmInt(j['id']),
       name = j['name']?.toString() ?? '',
       count = _bmInt(j['items_count']),
       isPublic = j['is_public'] == true || j['is_public'] == 1,
-      hasTrack = j['has_track'] == true;
+      hasTrack = j['has_track'] == true,
+      isSuggested = j['is_suggested'] == true || j['is_suggested'] == 1,
+      description = j['description']?.toString() ?? '',
+      coverUrl = j['cover_url']?.toString(),
+      userId = j['user_id'] == null ? null : _bmInt(j['user_id']),
+      isFavorite = j['is_favorite'] == true;
 }
 
 class BlowMusicTab {
@@ -96,6 +126,20 @@ class BlowMusicController extends GetxController {
   final favoriteIds = <int>{}.obs;
   // Titres favoris complets (onglet « Favoris »), du plus récent au plus ancien.
   final favoriteTracks = <BmTrack>[].obs;
+
+  // Playlists suggérées par l'équipe + playlists mises en favoris
+  final suggestedPlaylists = <BmPlaylistInfo>[].obs;
+  final favoritePlaylists = <BmPlaylistInfo>[].obs;
+  final suggestedLoading = false.obs;
+
+  /// « Audio seul » : pour un titre VIDÉO, ne jouer que le son (image masquée).
+  /// Choix mémorisé entre les sessions.
+  static const _audioOnlyKey = 'bm_audio_only';
+  final audioOnly = false.obs;
+
+  /// Filtre de la bibliothèque : all | audio | video
+  final libType = 'all'.obs;
+  final latestVideos = <BmTrack>[].obs;
   final favoritesLoading = false.obs;
   final playlists = <BmPlaylistInfo>[].obs;
   final playlistsLoading = false.obs;
@@ -109,9 +153,12 @@ class BlowMusicController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    audioOnly.value = GetStorage().read<bool>(_audioOnlyKey) ?? false;
     loadHome();
     loadFavorites();
     loadPlaylists();
+    loadSuggestedPlaylists();
+    loadFavoritePlaylists();
     loadLibrary(reset: true);
     // Ouverture depuis une notification : onglet demandé (live / library…).
     final args = Get.arguments;
@@ -206,6 +253,11 @@ class BlowMusicController extends GetxController {
           (j) => BmTrack.fromJson(j),
         ),
       );
+      latestVideos.assignAll(
+        (data?['latest_videos'] as List<dynamic>? ?? []).map(
+          (j) => BmTrack.fromJson(j),
+        ),
+      );
     } catch (_) {
       hasError.value = true;
     } finally {
@@ -246,7 +298,7 @@ class BlowMusicController extends GetxController {
   }
 
   /// Initialise le lecteur avec une URL
-  Future<void> _initPlayer(String url, {required bool isLiveStream}) async {
+  Future<void> _initPlayer(String url, {required bool isLiveStream, bool? videoMode}) async {
     playbackState.value = BmPlaybackState.loading;
 
     // Arrêter et détruire l'ancien contrôleur (en douceur, voir _releasePlayer)
@@ -264,6 +316,9 @@ class BlowMusicController extends GetxController {
     isVideo.value =
         !liveIsAudio &&
         (lowerUrl.contains('.m3u8') || lowerUrl.contains('.mp4') || isLiveStream);
+    // Titre de la bibliothèque : l'image n'est affichée que pour une vidéo
+    // ET si l'utilisateur n'a pas choisi « audio seul ».
+    if (videoMode != null) isVideo.value = videoMode;
 
     try {
       final ctl = VideoPlayerController.networkUrl(
@@ -327,7 +382,11 @@ class BlowMusicController extends GetxController {
     currentTrack.value = track;
     isPlayingLive.value = false;
 
-    await _initPlayer(track.audioUrl, isLiveStream: false);
+    await _initPlayer(
+      track.playUrl,
+      isLiveStream: false,
+      videoMode: track.isVideo && !audioOnly.value,
+    );
 
     if (playbackState.value == BmPlaybackState.playing) {
       RecentHistoryService.addRecentTrack(
@@ -465,7 +524,11 @@ class BlowMusicController extends GetxController {
     try {
       final res = await RequestService().get(
         '/blowmusic/tracks',
-        queryParameters: {'page': _libPage, if (_libSearch.isNotEmpty) 'search': _libSearch},
+        queryParameters: {
+          'page': _libPage,
+          if (_libSearch.isNotEmpty) 'search': _libSearch,
+          if (libType.value != 'all') 'type': libType.value,
+        },
       );
       final d = res.data?['data'];
       final rows = (d?['data'] as List<dynamic>? ?? []).map((j) => BmTrack.fromJson(j)).toList();
@@ -476,6 +539,73 @@ class BlowMusicController extends GetxController {
     } catch (_) {
     } finally {
       libraryLoading.value = false;
+    }
+  }
+
+  /// Bascule « audio seul » ↔ « avec la vidéo » (effet immédiat si un titre
+  /// vidéo est en cours : le son continue sans coupure).
+  void toggleAudioOnly() {
+    audioOnly.value = !audioOnly.value;
+    GetStorage().write(_audioOnlyKey, audioOnly.value);
+    final t = currentTrack.value;
+    if (t != null && t.isVideo && !isPlayingLive.value) {
+      isVideo.value = !audioOnly.value;
+    }
+  }
+
+  void setLibType(String t) {
+    if (libType.value == t) return;
+    libType.value = t;
+    loadLibrary(reset: true);
+  }
+
+  // ── Playlists suggérées & favorites ─────────────────────────────────────
+  Future<void> loadSuggestedPlaylists() async {
+    suggestedLoading.value = true;
+    try {
+      final res = await RequestService().get('/blowmusic/playlists/suggested');
+      final list = res.data?['data'];
+      if (list is List) {
+        suggestedPlaylists.assignAll(list.map((j) => BmPlaylistInfo.fromJson(Map<String, dynamic>.from(j))));
+      }
+    } catch (_) {
+    } finally {
+      suggestedLoading.value = false;
+    }
+  }
+
+  Future<void> loadFavoritePlaylists() async {
+    try {
+      final res = await RequestService().get('/blowmusic/playlists/favorites');
+      final list = res.data?['data'];
+      if (list is List) {
+        favoritePlaylists.assignAll(list.map((j) => BmPlaylistInfo.fromJson(Map<String, dynamic>.from(j))));
+      }
+    } catch (_) {}
+  }
+
+  /// Ajoute / retire une playlist des favoris (mise à jour optimiste).
+  Future<void> toggleFavoritePlaylist(BmPlaylistInfo p) async {
+    final was = p.isFavorite;
+    void apply(bool fav) {
+      p.isFavorite = fav;
+      for (final s in suggestedPlaylists.where((x) => x.id == p.id)) {
+        s.isFavorite = fav;
+      }
+      if (fav) {
+        if (!favoritePlaylists.any((x) => x.id == p.id)) favoritePlaylists.insert(0, p);
+      } else {
+        favoritePlaylists.removeWhere((x) => x.id == p.id);
+      }
+      suggestedPlaylists.refresh();
+      favoritePlaylists.refresh();
+    }
+
+    apply(!was);
+    try {
+      await RequestService().post('/blowmusic/playlists/${p.id}/favorite');
+    } catch (_) {
+      apply(was);
     }
   }
 

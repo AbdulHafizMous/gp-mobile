@@ -508,12 +508,25 @@ class _SpaceHeroHeader extends StatelessWidget {
           if (Get.isRegistered<SpaceController>() &&
               Get.find<SpaceController>().channel.value?.bannerUrl != null)
             Positioned.fill(
-              child: Opacity(
-                opacity: 0.55,
-                child: Image.network(
-                  Get.find<SpaceController>().channel.value!.bannerUrl!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              child: Image.network(
+                Get.find<SpaceController>().channel.value!.bannerUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+          // Voile sombre : garantit la lisibilité du titre et de la description
+          // quelles que soient les couleurs de la bannière (claire ou chargée).
+          if (Get.isRegistered<SpaceController>() &&
+              Get.find<SpaceController>().channel.value?.bannerUrl != null)
+            const Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0x59000000), Color(0x99000000), Color(0xE6000000)],
+                    stops: [0.0, 0.55, 1.0],
+                  ),
                 ),
               ),
             ),
@@ -559,15 +572,21 @@ class _SpaceHeroHeader extends StatelessWidget {
                               fontWeight: FontWeight.w900,
                               letterSpacing: -0.5,
                               height: 1.1,
+                              shadows: [
+                                Shadow(color: Color(0xB3000000), blurRadius: 8, offset: Offset(0, 1)),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             space.description,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
+                              color: Colors.white.withValues(alpha: 0.93),
                               fontSize: 12.5,
                               height: 1.4,
+                              shadows: const [
+                                Shadow(color: Color(0xB3000000), blurRadius: 6, offset: Offset(0, 1)),
+                              ],
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,

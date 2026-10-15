@@ -15,6 +15,9 @@ class VinylDisc extends StatefulWidget {
   final Color accent;
   final String? coverUrl;
   final bool isCoverUrlAvailable;
+
+  /// true = le logo Blowmusic reste FIXE au centre pendant que le disque
+  /// tourne (aussi activé quand [isCoverUrlAvailable] est false).
   final bool isCenterFixed;
   final IconData fallbackIcon;
   final Duration period;
@@ -68,99 +71,117 @@ class _VinylDiscState extends State<VinylDisc>
   Widget build(BuildContext context) {
     final s = widget.size;
     final label = s * .36;
-    return RepaintBoundary(
-      child: AnimatedBuilder(
-        animation: _c,
-        builder: (_, child) =>
-            Transform.rotate(angle: _c.value * 2 * math.pi, child: child),
-        child: SizedBox(
-          width: s,
-          height: s,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: s,
-                height: s,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF0B0B0F),
-                  boxShadow: [
-                    BoxShadow(
-                      color: widget.accent.withOpacity(.45),
-                      blurRadius: s * .14,
-                      spreadRadius: 1,
+    // Logo Blowmusic central : jamais de rotation (le disque tourne autour).
+    final fixed = !widget.isCoverUrlAvailable || widget.isCenterFixed;
+
+    return SizedBox(
+      width: s,
+      height: s,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // ── Partie tournante : corps, sillons, étiquette ──────────────
+          RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _c,
+              builder: (_, child) =>
+                  Transform.rotate(angle: _c.value * 2 * math.pi, child: child),
+              child: _disc(s, label, fixed),
+            ),
+          ),
+          // ── Logo fixe (ne tourne pas) ─────────────────────────────────
+          if (fixed)
+            SizedBox(
+              width: label,
+              height: label,
+              child: ClipOval(
+                child: Padding(
+                  padding: EdgeInsets.all(label * .12),
+                  child: Image.asset(
+                    LOGO_BLOWMUSIC,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Icon(
+                      widget.fallbackIcon,
+                      color: Colors.white,
+                      size: label * .5,
                     ),
-                  ],
-                ),
-              ),
-              CustomPaint(
-                size: Size(s, s),
-                painter: _GroovePainter(widget.accent),
-              ),
-              Container(
-                alignment: Alignment.center,
-                width: label,
-                height: label,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      widget.accent,
-                      const Color(0xFF7C3AED),
-                      const Color(0xFFE11D48),
-                    ],
                   ),
-                  border: Border.all(color: Colors.black, width: s * .012),
                 ),
-                child: !widget.isCoverUrlAvailable || widget.isCenterFixed
-                    ? ClipOval(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Image.asset(
-                            LOGO_BLOWMUSIC,
-                            fit: BoxFit.contain,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _disc(double s, double label, bool fixed) {
+    return SizedBox(
+      width: s,
+      height: s,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: s,
+            height: s,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF0B0B0F),
+              boxShadow: [
+                BoxShadow(
+                  color: widget.accent.withOpacity(.45),
+                  blurRadius: s * .14,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+          ),
+          CustomPaint(size: Size(s, s), painter: _GroovePainter(widget.accent)),
+          // Étiquette (dégradé) ; son contenu ne tourne avec le disque que
+          // lorsque le centre n'est pas fixe.
+          Container(
+            alignment: Alignment.center,
+            width: label,
+            height: label,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  widget.accent,
+                  const Color(0xFF7C3AED),
+                  const Color(0xFFE11D48),
+                ],
+              ),
+              border: Border.all(color: Colors.black, width: s * .012),
+            ),
+            child: fixed
+                ? null
+                : ClipOval(
+                    child: (widget.coverUrl != null && widget.coverUrl!.isNotEmpty)
+                        ? Image.network(
+                            widget.coverUrl!,
+                            fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Icon(
                               widget.fallbackIcon,
                               color: Colors.white,
                               size: label * .5,
                             ),
-                          ),
-                        ),
-                      )
-                    : ClipOval(
-                        child:
-                            (widget.coverUrl != null &&
-                                widget.coverUrl!.isNotEmpty)
-                            ? Image.network(
-                                widget.coverUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Icon(
-                                  widget.fallbackIcon,
-                                  color: Colors.white,
-                                  size: label * .5,
-                                ),
-                              )
-                            : Icon(
-                                widget.fallbackIcon,
-                                color: Colors.white,
-                                size: label * .5,
-                              ),
-                      ),
-              ),
-              Container(
-                width: s * .035,
-                height: s * .035,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0xFF0B0B0F),
-                ),
-              ),
-            ],
+                          )
+                        : Icon(widget.fallbackIcon, color: Colors.white, size: label * .5),
+                  ),
           ),
-        ),
+          if (!fixed)
+            Container(
+              width: s * .035,
+              height: s * .035,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF0B0B0F),
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -244,6 +244,9 @@ class _BmPlaylistPageState extends State<BmPlaylistPage> {
 
   BmPlaylistInfo get p => widget.playlist;
 
+  /// Suggestion de l'équipe ou playlist d'un autre : lecture seule.
+  bool get _readOnly => p.isReadOnly;
+
   @override
   void initState() {
     super.initState();
@@ -406,11 +409,26 @@ class _BmPlaylistPageState extends State<BmPlaylistPage> {
           style: TextStyle(color: fg, fontWeight: FontWeight.w800),
         ),
         actions: [
+          // Playlist suggérée / publique : on peut la mettre en favoris.
+          if (_readOnly)
+            IconButton(
+              tooltip: p.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
+              icon: Icon(
+                p.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                color: p.isFavorite ? const Color(0xFFFB7185) : fg,
+              ),
+              onPressed: () async {
+                await ctrl.toggleFavoritePlaylist(p);
+                if (mounted) setState(() {});
+              },
+            ),
+          if (!_readOnly)
           IconButton(
             tooltip: 'Ajouter des titres',
             icon: Icon(Icons.playlist_add_rounded, color: fg),
             onPressed: _addTitles,
           ),
+          if (!_readOnly)
           PopupMenuButton<String>(
             iconColor: fg,
             onSelected: _menu,
@@ -431,7 +449,9 @@ class _BmPlaylistPageState extends State<BmPlaylistPage> {
                     children: [
                       Expanded(
                         child: Text(
-                          '${tracks.length} titre${tracks.length > 1 ? 's' : ''} · maintenez et glissez pour réordonner',
+                          '${tracks.length} titre${tracks.length > 1 ? 's' : ''}${_readOnly ? (p.description.isNotEmpty ? ' · ${p.description}' : ' · playlist suggérée') : ' · maintenez et glissez pour réordonner'}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: fg.withOpacity(.55),
                             fontSize: 12,
@@ -488,6 +508,7 @@ class _BmPlaylistPageState extends State<BmPlaylistPage> {
                                 ),
                               ),
                               const SizedBox(height: 10),
+                              if (!_readOnly)
                               FilledButton.icon(
                                 style: FilledButton.styleFrom(
                                   backgroundColor: accent,
@@ -504,6 +525,7 @@ class _BmPlaylistPageState extends State<BmPlaylistPage> {
                           buildDefaultDragHandles: false,
                           itemCount: tracks.length,
                           onReorder: (o, n) {
+                            if (_readOnly) return;
                             if (n > o) n--;
                             setState(
                               () => tracks.insert(n, tracks.removeAt(o)),
@@ -514,7 +536,9 @@ class _BmPlaylistPageState extends State<BmPlaylistPage> {
                             final t = tracks[i];
                             return Dismissible(
                               key: ValueKey('pl${t.id}'),
-                              direction: DismissDirection.endToStart,
+                              direction: _readOnly
+                                  ? DismissDirection.none
+                                  : DismissDirection.endToStart,
                               background: Container(
                                 color: Colors.red.shade600,
                                 alignment: Alignment.centerRight,
@@ -552,16 +576,20 @@ class _BmPlaylistPageState extends State<BmPlaylistPage> {
                                     fontSize: 12,
                                   ),
                                 ),
-                                trailing: ReorderableDragStartListener(
-                                  index: i,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8),
-                                    child: Icon(
-                                      Icons.drag_handle_rounded,
-                                      color: fg.withOpacity(.45),
-                                    ),
-                                  ),
-                                ),
+                                trailing: _readOnly
+                                    ? (t.isVideo
+                                        ? Icon(Icons.smart_display_rounded, color: fg.withOpacity(.4))
+                                        : null)
+                                    : ReorderableDragStartListener(
+                                        index: i,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8),
+                                          child: Icon(
+                                            Icons.drag_handle_rounded,
+                                            color: fg.withOpacity(.45),
+                                          ),
+                                        ),
+                                      ),
                                 onTap: () => ctrl.playTrack(
                                   t,
                                   queue: tracks,

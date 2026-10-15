@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/components/channels_drawer_tile.dart';
 import 'package:grand_public_v2/app/components/drawer_btn.dart';
 import 'package:grand_public_v2/app/components/drawer_parts.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
@@ -96,6 +97,8 @@ class HomeDrawer extends StatelessWidget {
             ),
           ),
         ),
+        // Chaînes de créateurs : juste sous Youwiiin, même modèle.
+        ChannelsDrawerTile(accentColor: linkColor),
         const DrawerSep(),
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
