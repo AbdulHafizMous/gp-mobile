@@ -86,6 +86,7 @@ class LoginView extends GetView<LoginController> {
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
                 ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
 

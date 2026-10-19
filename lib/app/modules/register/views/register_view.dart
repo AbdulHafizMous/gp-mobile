@@ -88,6 +88,7 @@ class RegisterView extends GetView<RegisterController> {
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
                   ),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -95,6 +96,7 @@ class RegisterView extends GetView<RegisterController> {
                       ? 'Plus qu\'une étape avant de commencer !'
                       : 'Nom, e-mail et mot de passe : 30 secondes !',
                   style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
 

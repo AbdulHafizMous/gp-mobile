@@ -10,10 +10,10 @@ const LOGO_MEDIA = 'assets/images/logo_gp_media.png';
 const LOGO_CLUB = 'assets/images/logo_gp_club.png';
 const GOOGLE_LOGO = 'assets/icons/google.png';
 const FACEBOOK_LOGO = 'assets/icons/facebook.png';
-const API_IP = "localhost";
-const API_URL = "http://$API_IP:8000/api";
-// const API_IP = "grandpublic.bj";
-// const API_URL = "https://grandpublic.bj/api";
+// const API_IP = "localhost";
+// const API_URL = "http://$API_IP:8000/api";
+const API_IP = "grandpublic.bj";
+const API_URL = "https://grandpublic.bj/api";
 // Site web (pages légales : /cgu, /politique-de-confidentialite...).
 const String WEBSITE_URL = "https://grandpublic.bj";
 const PUSHER_API_KEY = "0fe44ac921bf1cf4b22e";
@@ -57,7 +57,7 @@ const String REVENUECAT_IOS_API_KEY = "appl_PWZcuaTWEDfdfWQSLjWXOpPqTCy";
 // false -> affichage normal, tout est visible.
 // À repasser à false une fois la review Apple validée.
 // ══════════════════════════════════════════════════════════════════════════
-const bool skipMediaOnIos = true;
+const bool skipMediaOnIos = false;
 
 // ══════════════════════════════════════════════════════════════════════════
 // SOUMISSION APP STORE AVEC MÉDIAS MAIS SANS PAIEMENTS (iOS uniquement)
