@@ -3,6 +3,7 @@
 // sous « Youwiiin ». Déplié, il liste les chaînes disponibles.
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/channels/controllers/channels_list_controller.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
@@ -21,7 +22,8 @@ class ChannelsDrawerTile extends StatelessWidget {
 
     return Obx(() {
       // Rien à afficher tant qu'aucune chaîne n'existe.
-      if (!c.isLoading.value && c.channels.isEmpty) return const SizedBox.shrink();
+      final isPartner = activeUser.value.role == 'Partner';
+      if (!c.isLoading.value && c.channels.isEmpty && !isPartner) return const SizedBox.shrink();
 
       return Padding(
         padding: const EdgeInsets.only(bottom: 10),
@@ -83,15 +85,42 @@ class ChannelsDrawerTile extends StatelessWidget {
                       ]),
                     ),
                   ),
-                InkWell(
-                  onTap: () {
-                    Get.back();
-                    Get.toNamed('/channels');
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text('Voir toutes les chaînes',
-                        style: TextStyle(color: fg.withValues(alpha: 0.75), fontWeight: FontWeight.w700, fontSize: 12.5)),
+                if (activeUser.value.role == 'Partner')
+                  InkWell(
+                    onTap: () {
+                      Get.back();
+                      Get.toNamed('/partner-channels');
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(children: [
+                        Icon(Icons.settings_outlined, size: 18, color: fg),
+                        const SizedBox(width: 8),
+                        Text('Gérer mes chaînes', style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 13.5)),
+                      ]),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Material(
+                    color: GPTheme.primaryColor,
+                    borderRadius: BorderRadius.circular(20),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        Get.back();
+                        Get.toNamed('/channels');
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 9, horizontal: 14),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.format_list_bulleted_rounded, color: Colors.white, size: 16),
+                          SizedBox(width: 8),
+                          Text('Voir toutes les chaînes',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12.5)),
+                        ]),
+                      ),
+                    ),
                   ),
                 ),
               ],

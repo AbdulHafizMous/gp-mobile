@@ -17,6 +17,7 @@ abstract class Routes {
   static const SPACE_PAGE = _Paths.SPACE_PAGE;
   static const CHANNEL_PAGE = _Paths.CHANNEL_PAGE;
   static const CHANNELS = _Paths.CHANNELS;
+  static const PARTNER_CHANNELS = _Paths.PARTNER_CHANNELS;
   static const CLUB_PAGE = _Paths.CLUB_PAGE;
   static const INTEREST = _Paths.INTEREST;
   static const PAYEMENT = _Paths.PAYEMENT;
@@ -59,6 +60,7 @@ abstract class _Paths {
   static const SPACE_PAGE = '/home/spaces/:id';
   static const CHANNEL_PAGE = '/channel/:id';
   static const CHANNELS = '/channels';
+  static const PARTNER_CHANNELS = '/partner-channels';
   static const CLUB_PAGE = '/home/club/:id';
   static const INTEREST = '/interest';
   static const PAYEMENT = '/payement';

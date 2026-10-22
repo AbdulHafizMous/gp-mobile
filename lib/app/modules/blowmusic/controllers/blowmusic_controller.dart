@@ -12,6 +12,7 @@ import 'package:video_player/video_player.dart';
 
 import 'package:grand_public_v2/app/components/fullscreen_ad_page.dart';
 import 'package:grand_public_v2/app/services/app_mode_service.dart';
+import 'package:grand_public_v2/app/services/bm_audio_handler.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/services/recent_history_service.dart';
 
@@ -230,6 +231,7 @@ class BlowMusicController extends GetxController {
   }
 
   Future<void> stopLive() async {
+    BmAudioService.clear();
     await _releasePlayer();
     isPlayingLive.value = false;
     isPlaying.value = false;
@@ -323,7 +325,7 @@ class BlowMusicController extends GetxController {
     try {
       final ctl = VideoPlayerController.networkUrl(
         Uri.parse(resolvedUrl),
-        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: false, allowBackgroundPlayback: true),
       );
       videoPlayerController = ctl;
 
@@ -334,6 +336,9 @@ class BlowMusicController extends GetxController {
         return;
       }
 
+      // Lecture en arrière-plan : notification média + contrôles écran verrouillé
+      await _setupSystemMedia(isLiveStream, ctl.value.duration);
+
       // Écouteurs d'états
       ctl.addListener(() {
         if (videoPlayerController != ctl) return;
@@ -341,6 +346,13 @@ class BlowMusicController extends GetxController {
         isPlaying.value = v.isPlaying;
         position.value = v.position;
         duration.value = v.duration;
+        BmAudioService.setState(
+          playing: v.isPlaying,
+          loading: v.isBuffering,
+          position: v.position,
+          live: isPlayingLive.value,
+          hasQueue: !isPlayingLive.value && queue.length > 1,
+        );
 
         if (!isPlayingLive.value &&
             !_endHandled &&
@@ -365,6 +377,29 @@ class BlowMusicController extends GetxController {
     } catch (e) {
       playbackState.value = BmPlaybackState.error;
     }
+  }
+
+  /// Branche le lecteur sur le système (notification / écran verrouillé).
+  Future<void> _setupSystemMedia(bool live, Duration dur) async {
+    final h = await BmAudioService.ensure();
+    if (h == null) return;
+    BmAudioService.bind(
+      onPlay: () => videoPlayerController?.play(),
+      onPause: () => videoPlayerController?.pause(),
+      onNext: () => next(),
+      onPrev: () => previous(),
+      onStop: () => stopLive(),
+      onSeek: (d) => seekTo(d),
+    );
+    final t = currentTrack.value;
+    BmAudioService.setMedia(
+      id: live ? 'live' : 'track_${t?.id ?? 0}',
+      title: live ? (liveStream.value?['title']?.toString() ?? 'Blowmusic Live') : (t?.title ?? 'Blowmusic'),
+      artist: live ? null : t?.artistName,
+      cover: live ? liveStream.value != null ? liveStream.value!['cover_url'].toString() : t?.coverUrl : t?.coverUrl,
+      duration: dur,
+      live: live,
+    );
   }
 
   /// Lancer la lecture d'un morceau
@@ -762,6 +797,7 @@ class BlowMusicController extends GetxController {
   void onClose() {
     _livePoll?.cancel();
     _libDebounce?.cancel();
+    BmAudioService.clear();
     videoPlayerController?.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);

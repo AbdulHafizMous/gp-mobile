@@ -60,7 +60,8 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
   bool _ended = false;
   GzRoom? _endRoom;
   String _lastRoomSig = '';
-  final Set<int> _delivered = <int>{}; // ids d'événements déjà transmis au jeu (dédup)
+  final Set<int> _delivered =
+      <int>{}; // ids d'événements déjà transmis au jeu (dédup)
   Future<void> _sendChain = Future.value(); // garde l'ordre des envois API
 
   bool get _isMp => widget.room != null;
@@ -84,15 +85,23 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
     _webCtrl = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF0F0E13))
-      ..addJavaScriptChannel('GameZBridge', onMessageReceived: (m) => _onBridge(m.message))
-      ..setNavigationDelegate(NavigationDelegate(onPageStarted: (_) {
-        if (!_disposed) injectGameInAppStyle(_webCtrl);
-      }, onPageFinished: (_) async {
-        if (!_disposed && mounted) setState(() => _loading = false);
-        if (!_disposed) await injectGameInAppStyle(_webCtrl);
-        await _injectYw();
-        _syncMuted();
-      }));
+      ..addJavaScriptChannel(
+        'GameZBridge',
+        onMessageReceived: (m) => _onBridge(m.message),
+      )
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (_) {
+            if (!_disposed) injectGameInAppStyle(_webCtrl);
+          },
+          onPageFinished: (_) async {
+            if (!_disposed && mounted) setState(() => _loading = false);
+            if (!_disposed) await injectGameInAppStyle(_webCtrl);
+            await _injectYw();
+            _syncMuted();
+          },
+        ),
+      );
   }
 
   /// Exécute du JS sans jamais lever d'exception.
@@ -113,13 +122,17 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
     );
   }
 
-  Future<void> _sfx(String name) => _js("try{window.YW&&YW.sfx&&YW.sfx.play('$name')}catch(e){}");
+  Future<void> _sfx(String name) =>
+      _js("try{window.YW&&YW.sfx&&YW.sfx.play('$name')}catch(e){}");
 
-  Future<void> _native(Map<String, dynamic> obj) => _js('try{window.YW&&YW._native(${jsonEncode(obj)})}catch(e){}');
+  Future<void> _native(Map<String, dynamic> obj) =>
+      _js('try{window.YW&&YW._native(${jsonEncode(obj)})}catch(e){}');
 
   Future<void> _syncMuted() async {
     try {
-      final r = await _webCtrl.runJavaScriptReturningResult('(window.YW&&YW.sfx&&YW.sfx.muted)?"1":"0"');
+      final r = await _webCtrl.runJavaScriptReturningResult(
+        '(window.YW&&YW.sfx&&YW.sfx.muted)?"1":"0"',
+      );
       final m = r.toString().replaceAll('"', '') == '1';
       if (mounted && !_disposed && m != _muted) setState(() => _muted = m);
     } catch (_) {}
@@ -163,7 +176,8 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
     if (_scoreDuel && !_ended) {
       _queue(() async {
         final r = await _ctrl.postRoomResult(_code, score: score);
-        if (!r.ok && !_disposed) ToastHelper.showToast(r.error ?? 'Score non envoyé.');
+        if (!r.ok && !_disposed)
+          ToastHelper.showToast(r.error ?? 'Score non envoyé.');
       });
     }
 
@@ -173,27 +187,36 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
       score,
       duration: (p['duration'] as num?)?.toInt(),
       level: p['level']?.toString(),
-      metadata: p['metadata'] is Map ? Map<String, dynamic>.from(p['metadata']) : null,
+      metadata: p['metadata'] is Map
+          ? Map<String, dynamic>.from(p['metadata'])
+          : null,
     );
     if (r == null || !mounted || _disposed) return;
     final gained = (r['gcoin_awarded'] as num?)?.toInt() ?? 0;
     final best = r['is_new_best'] == true;
     // Son : succès si record ou GCoin, sinon game over (+ pièce si gain).
     _sfx(gained > 0 || best ? 'success' : 'gameOver');
-    if (gained > 0) Future.delayed(const Duration(milliseconds: 350), () => _sfx('coin'));
+    if (gained > 0)
+      Future.delayed(const Duration(milliseconds: 350), () => _sfx('coin'));
     if (gained > 0 || best) {
       HapticFeedback.mediumImpact();
       _showBanner(
         icon: gained > 0 ? Icons.toll_rounded : Icons.emoji_events_rounded,
         title: gained > 0 ? '+$gained GCoin gagnés' : 'Nouveau record !',
-        sub: gained > 0 && best ? 'Nouveau record personnel' : (gained > 0 ? '' : 'Score : $score'),
+        sub: gained > 0 && best
+            ? 'Nouveau record personnel'
+            : (gained > 0 ? '' : 'Score : $score'),
       );
     } else {
       HapticFeedback.lightImpact();
     }
   }
 
-  void _showBanner({required IconData icon, required String title, String sub = ''}) {
+  void _showBanner({
+    required IconData icon,
+    required String title,
+    String sub = '',
+  }) {
     _bannerTimer?.cancel();
     setState(() {
       _bannerIcon = icon;
@@ -243,10 +266,15 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
 
   void _onMpSend(Map p) {
     final evt = p['evt']?.toString() ?? 'move';
-    final payload = p['payload'] is Map ? Map<String, dynamic>.from(p['payload']) : <String, dynamic>{};
+    final payload = p['payload'] is Map
+        ? Map<String, dynamic>.from(p['payload'])
+        : <String, dynamic>{};
     if (evt == 'state') {
       // En cas de retard réseau on ne garde que les 6 derniers instantanés (les plus anciens sont périmés).
-      final idx = <int>[for (var i = 0; i < _outbox.length; i++) if (_outbox[i]['type'] == 'state') i];
+      final idx = <int>[
+        for (var i = 0; i < _outbox.length; i++)
+          if (_outbox[i]['type'] == 'state') i,
+      ];
       if (idx.length >= 6) _outbox.removeAt(idx.first);
     }
     _outbox.add({'type': evt, 'payload': payload});
@@ -265,7 +293,8 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
     _outbox.clear();
     _queue(() async {
       final r = await _ctrl.postRoomEvents(_code, batch);
-      if (!r.ok && !_disposed && batch.any((e) => e['type'] != 'state')) ToastHelper.showToast('Coup non envoyé : ${r.error}');
+      if (!r.ok && !_disposed && batch.any((e) => e['type'] != 'state'))
+        ToastHelper.showToast('Coup non envoyé : ${r.error}');
     });
   }
 
@@ -276,8 +305,14 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
     final score = p['score'] == null ? null : gzInt(p['score']);
     _flushNow();
     _queue(() async {
-      final r = await _ctrl.postRoomResult(_code, score: score, winnerUserId: winner, draw: draw);
-      if (!r.ok && !_disposed) ToastHelper.showToast(r.error ?? 'Résultat non envoyé.');
+      final r = await _ctrl.postRoomResult(
+        _code,
+        score: score,
+        winnerUserId: winner,
+        draw: draw,
+      );
+      if (!r.ok && !_disposed)
+        ToastHelper.showToast(r.error ?? 'Résultat non envoyé.');
     });
   }
 
@@ -314,20 +349,29 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
       final res = await _ctrl.fetchRoomEvents(_code, _lastEventId, rv: _rv);
       if (_disposed) return;
       if (!res.ok) {
-        _pollMs = (_pollMs * 2).clamp(500, 5000); // réseau/serveur en difficulté : on recule
+        _pollMs = (_pollMs * 2).clamp(
+          500,
+          5000,
+        ); // réseau/serveur en difficulté : on recule
         return;
       }
       final d = res.data!;
       if (d.nextPollMs > 0) _pollMs = d.nextPollMs;
       if (d.rv != null) _rv = d.rv;
-      for (final e in (_bridgeReady ? d.events : const <Map<String, dynamic>>[])) {
+      for (final e
+          in (_bridgeReady ? d.events : const <Map<String, dynamic>>[])) {
         final id = gzInt(e['id']);
         if (id <= 0 || !_delivered.add(id)) continue;
         if (id > _lastEventId) _lastEventId = id;
         if (_realtime) {
           _native({
             'kind': 'event',
-            'event': {'id': id, 'user_id': gzInt(e['user_id']), 'type': e['type'], 'payload': e['payload']},
+            'event': {
+              'id': id,
+              'user_id': gzInt(e['user_id']),
+              'type': e['type'],
+              'payload': e['payload'],
+            },
           });
         }
       }
@@ -353,7 +397,12 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
     final me = _ctrl.myId;
     final outcome = r.outcomeFor(me);
     final gained = r.gainedFor(me);
-    _native({'kind': 'end', 'room': r.raw, 'outcome': outcome, 'gained': gained});
+    _native({
+      'kind': 'end',
+      'room': r.raw,
+      'outcome': outcome,
+      'gained': gained,
+    });
     _sfx(outcome == 'win' ? 'win' : (outcome == 'lose' ? 'lose' : 'success'));
     HapticFeedback.heavyImpact();
     _ctrl.loadMe(); // solde à jour (gain / remboursement)
@@ -371,12 +420,17 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
       if (session == null) {
         if (mounted) {
           Get.back();
-          Get.snackbar('Jeu indisponible', 'Ce jeu est en pause ou inaccessible pour le moment.');
+          Get.snackbar(
+            'Jeu indisponible',
+            'Ce jeu est en pause ou inaccessible pour le moment.',
+          );
         }
         return;
       }
       _sessionToken = session['session_token'];
-      url = _scoreDuel ? widget.room!.playUrl : (session['entry_url'] ?? widget.game.entryUrl);
+      url = _scoreDuel
+          ? widget.room!.playUrl
+          : (session['entry_url'] ?? widget.game.entryUrl);
     }
     if (url.isEmpty) url = widget.game.entryUrl;
     if (_disposed) return;
@@ -391,7 +445,8 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
       }
       return;
     }
-    if (_isMp) _startPolling(); // suivre l'état de la salle (fin de partie) même sans mp_ready
+    if (_isMp)
+      _startPolling(); // suivre l'état de la salle (fin de partie) même sans mp_ready
     if (mounted) setState(() => _ready = true);
   }
 
@@ -426,7 +481,8 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
       if (!await _confirmLeave() || !mounted) return;
       _stopPolling();
       final r = await _ctrl.leaveRoom(_code);
-      if (!r.ok) ToastHelper.showToast(r.error ?? 'Impossible de quitter la salle.');
+      if (!r.ok)
+        ToastHelper.showToast(r.error ?? 'Impossible de quitter la salle.');
       _ctrl.loadMe();
       if (mounted) Get.back(result: true);
       return;
@@ -467,17 +523,31 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [const Color(0xFF26232F), Color.lerp(const Color(0xFF26232F), accent, .35)!]),
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF26232F),
+                    Color.lerp(const Color(0xFF26232F), accent, .35)!,
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: accent.withValues(alpha: .6)),
-                boxShadow: [BoxShadow(color: accent.withValues(alpha: .35), blurRadius: 22, offset: const Offset(0, 8))],
+                boxShadow: [
+                  BoxShadow(
+                    color: accent.withValues(alpha: .35),
+                    blurRadius: 22,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
                   Container(
                     width: 40,
                     height: 40,
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: accent.withValues(alpha: .25)),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: accent.withValues(alpha: .25),
+                    ),
                     child: Icon(_bannerIcon, color: Colors.white),
                   ),
                   const SizedBox(width: 12),
@@ -486,8 +556,22 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(_bannerTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
-                        if (_bannerSub.isNotEmpty) Text(_bannerSub, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                        Text(
+                          _bannerTitle,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                          ),
+                        ),
+                        if (_bannerSub.isNotEmpty)
+                          Text(
+                            _bannerSub,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -515,13 +599,30 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
       child: Center(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(color: const Color(0xE6000000), borderRadius: BorderRadius.circular(30)),
+          decoration: BoxDecoration(
+            color: const Color(0xE6000000),
+            borderRadius: BorderRadius.circular(30),
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+              const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              ),
               const SizedBox(width: 10),
-              Text('Score envoyé · en attente des autres ($done/${joined.length})', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+              Text(
+                'Score envoyé · en attente des autres ($done/${joined.length})',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
         ),
@@ -545,41 +646,94 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
           children: [
             SafeArea(
               bottom: false,
-              child: Column(children: [
-                SizedBox(
-                  height: 40,
-                  child: Row(children: [
-                    IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70, size: 18), onPressed: _leave),
-                    Expanded(
-                      child: Text(widget.game.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 40,
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white70,
+                            size: 18,
+                          ),
+                          onPressed: _leave,
+                        ),
+                        Expanded(
+                          child: Text(
+                            widget.game.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                        if (r != null && r.pot > 0)
+                          Container(
+                            margin: const EdgeInsets.only(right: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 9,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: GPTheme.primaryColor,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.toll_rounded,
+                                  size: 14,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Pot ${r.pot}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        IconButton(
+                          tooltip: _muted ? 'Activer le son' : 'Couper le son',
+                          icon: Icon(
+                            _muted
+                                ? Icons.volume_off_rounded
+                                : Icons.volume_up_rounded,
+                            color: Colors.white70,
+                            size: 22,
+                          ),
+                          onPressed: _toggleSound,
+                        ),
+                      ],
                     ),
-                    if (r != null && r.pot > 0)
-                      Container(
-                        margin: const EdgeInsets.only(right: 6),
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                        decoration: BoxDecoration(color: GPTheme.primaryColor, borderRadius: BorderRadius.circular(20)),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          const Icon(Icons.toll_rounded, size: 14, color: Colors.white),
-                          const SizedBox(width: 4),
-                          Text('Pot ${r.pot}', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
-                        ]),
-                      ),
-                    IconButton(
-                      tooltip: _muted ? 'Activer le son' : 'Couper le son',
-                      icon: Icon(_muted ? Icons.volume_off_rounded : Icons.volume_up_rounded, color: Colors.white70, size: 22),
-                      onPressed: _toggleSound,
+                  ),
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        if (_ready) WebViewWidget(controller: _webCtrl),
+                        if (_loading)
+                          const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          ),
+                        if (chip != null) chip,
+                        _banner(),
+                      ],
                     ),
-                  ]),
-                ),
-                Expanded(
-                  child: Stack(children: [
-                    if (_ready) WebViewWidget(controller: _webCtrl),
-                    if (_loading) const Center(child: CircularProgressIndicator()),
-                    if (chip != null) chip,
-                    _banner(),
-                  ]),
-                ),
-              ]),
+                  ),
+                ],
+              ),
             ),
             if (end != null)
               Positioned.fill(
@@ -589,9 +743,16 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
                   gameName: end.gameName,
                   cancelled: end.isCancelled,
                   ranking: [
-                    for (final p in ([...end.players.where((p) => p.status == 'joined')]
-                      ..sort((a, b) => (b.score ?? -1).compareTo(a.score ?? -1))))
-                      (name: p.name, score: p.score, winner: end.winnerIds.contains(p.userId)),
+                    for (final p
+                        in ([...end.players.where((p) => p.status == 'joined')]
+                          ..sort(
+                            (a, b) => (b.score ?? -1).compareTo(a.score ?? -1),
+                          )))
+                      (
+                        name: p.name,
+                        score: p.score,
+                        winner: end.winnerIds.contains(p.userId),
+                      ),
                   ],
                   onClose: () => Get.back(result: true),
                 ),

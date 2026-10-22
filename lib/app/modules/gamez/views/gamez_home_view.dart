@@ -108,7 +108,9 @@ class GameZHomeView extends GetView<GameZController> {
       ),
       body: Obx(() {
         if (controller.isLoading.value && controller.currentTab.value == 0) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          );
         }
         switch (controller.currentTab.value) {
           case 1:
@@ -1107,7 +1109,9 @@ void _showGameSheet(BuildContext context, GzGame g) {
               if (snap.connectionState != ConnectionState.done)
                 const Padding(
                   padding: EdgeInsets.all(30),
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
                 )
               else if (d == null)
                 Text(
@@ -1489,7 +1493,9 @@ class _ProfileTab extends StatelessWidget {
             if (c.historyLoading.value && c.gcoinHistory.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(30),
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
               )
             else if (c.gcoinHistory.isEmpty)
               const EmptyStateWidget(
@@ -1745,7 +1751,9 @@ class _LeaderboardTab extends StatelessWidget {
             if (c.lbLoading.value && c.lbRows.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(40),
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
               )
             else if (c.lbRows.isEmpty)
               const EmptyStateWidget(

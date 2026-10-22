@@ -136,25 +136,31 @@ class YouwiiinHomeView extends StatelessWidget {
           ],
         ),
       ),
-      body: Column(children: [
-        const ProfileCompletionBanner(module: 'youwiiin'),
-        const AdBannerWidget(screen: 'youwiiin'),
-        Expanded(child: Obx(() {
-        if (controller.isLoading.value &&
-            controller.catalog.isEmpty &&
-            controller.currentTab.value == 0) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        switch (controller.currentTab.value) {
-          case 1:
-            return _ProfileTab(accent: accent, fg: fg);
-          case 2:
-            return _LeaderboardTab(accent: accent, fg: fg);
-          default:
-            return _CatalogTab(accent: accent, fg: fg);
-        }
-      })),
-      ]),
+      body: Column(
+        children: [
+          const ProfileCompletionBanner(module: 'youwiiin'),
+          const AdBannerWidget(screen: 'youwiiin'),
+          Expanded(
+            child: Obx(() {
+              if (controller.isLoading.value &&
+                  controller.catalog.isEmpty &&
+                  controller.currentTab.value == 0) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                );
+              }
+              switch (controller.currentTab.value) {
+                case 1:
+                  return _ProfileTab(accent: accent, fg: fg);
+                case 2:
+                  return _LeaderboardTab(accent: accent, fg: fg);
+                default:
+                  return _CatalogTab(accent: accent, fg: fg);
+              }
+            }),
+          ),
+        ],
+      ),
       // Même rendu que la barre de Grandpublic (composant partagé).
       bottomNavigationBar: Obx(
         () => ModuleBottomBar(
@@ -497,7 +503,9 @@ class _CatalogTabState extends State<_CatalogTab> with WidgetsBindingObserver {
         if (c.favoritesLoading.value && c.favorites.isEmpty) {
           body = const Padding(
             padding: EdgeInsets.all(30),
-            child: Center(child: CircularProgressIndicator()),
+            child: Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
           );
         } else if (c.favorites.isEmpty) {
           body = const EmptyStateWidget(
@@ -993,7 +1001,7 @@ class _InvitationsBody extends StatelessWidget {
       if (!c.invitationsLoaded.value) {
         return const Padding(
           padding: EdgeInsets.all(30),
-          child: Center(child: CircularProgressIndicator()),
+          child: Center(child: CircularProgressIndicator(color: Colors.white)),
         );
       }
       return SizedBox(
@@ -1664,7 +1672,9 @@ void _showGameSheet(BuildContext context, GzGame g) {
               if (snap.connectionState != ConnectionState.done)
                 const Padding(
                   padding: EdgeInsets.all(30),
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
                 )
               else if (d == null)
                 Text(
@@ -2048,7 +2058,9 @@ class _ProfileTab extends StatelessWidget {
             if (c.historyLoading.value && c.gcoinHistory.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(30),
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
               )
             else if (c.gcoinHistory.isEmpty)
               const EmptyStateWidget(
@@ -2304,7 +2316,9 @@ class _LeaderboardTab extends StatelessWidget {
             if (c.lbLoading.value && c.lbRows.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(40),
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
               )
             else if (c.lbRows.isEmpty)
               const EmptyStateWidget(

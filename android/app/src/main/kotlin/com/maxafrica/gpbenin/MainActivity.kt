@@ -1,5 +1,6 @@
 package com.maxafrica.gpbenin
 
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 
-class MainActivity : FlutterActivity()
+// AudioServiceActivity : requis par audio_service (lecture Blowmusic en arrière-plan)
+class MainActivity : AudioServiceActivity()

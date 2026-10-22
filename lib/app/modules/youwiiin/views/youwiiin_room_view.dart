@@ -72,13 +72,17 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
       _loading = false;
     });
     final room = r.data!;
-    if (room.isPlaying && room.player(_c.myId)?.status == 'joined') _openGame(room);
+    if (room.isPlaying && room.player(_c.myId)?.status == 'joined')
+      _openGame(room);
   }
 
   Future<void> _openGame(GzRoom room) async {
     if (_inGame) return;
     _inGame = true;
-    await Get.to(() => YouwiiinGameView(game: room.toGame(), room: room), transition: Transition.downToUp);
+    await Get.to(
+      () => YouwiiinGameView(game: room.toGame(), room: room),
+      transition: Transition.downToUp,
+    );
     _inGame = false;
     if (_closed || !mounted) return;
     _c.loadMe();
@@ -87,7 +91,10 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
     Get.back();
   }
 
-  Future<void> _act(Future<GzResult<GzRoom>> Function() run, {bool closeAfter = false}) async {
+  Future<void> _act(
+    Future<GzResult<GzRoom>> Function() run, {
+    bool closeAfter = false,
+  }) async {
     if (_busy) return;
     setState(() => _busy = true);
     final r = await run();
@@ -97,7 +104,10 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
       if (r.ok) _room = r.data;
     });
     if (!r.ok) {
-      ToastHelper.showToast(r.error ?? 'Action impossible.', backgroundColor: Colors.red);
+      ToastHelper.showToast(
+        r.error ?? 'Action impossible.',
+        backgroundColor: Colors.red,
+      );
       return;
     }
     _c.loadInvitations();
@@ -117,7 +127,9 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
     );
     if (picked == null || picked.isEmpty) return;
     final r = await _c.inviteToRoom(_code, picked.map((u) => u.id).toList());
-    ToastHelper.showToast(r.ok ? 'Invitation envoyée.' : (r.error ?? 'Invitation impossible.'));
+    ToastHelper.showToast(
+      r.ok ? 'Invitation envoyée.' : (r.error ?? 'Invitation impossible.'),
+    );
     _refresh();
   }
 
@@ -127,7 +139,9 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
       context,
       icon: host ? Icons.cancel_outlined : Icons.logout_rounded,
       title: host ? 'Annuler la salle ?' : 'Quitter la salle ?',
-      message: host ? 'La salle sera annulée pour tous les joueurs invités.' : 'Vous ne participerez plus à cette partie. Vous pourrez la rejoindre tant qu\'elle n\'a pas commencé.',
+      message: host
+          ? 'La salle sera annulée pour tous les joueurs invités.'
+          : 'Vous ne participerez plus à cette partie. Vous pourrez la rejoindre tant qu\'elle n\'a pas commencé.',
       confirmLabel: host ? 'Annuler la salle' : 'Quitter la salle',
       cancelLabel: 'Rester dans la salle',
     );
@@ -176,22 +190,46 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
         backgroundColor: bg,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: IconButton(icon: Icon(Icons.arrow_back_ios_new_rounded, color: fg, size: 20), onPressed: () => Get.back()),
-        title: Text('Salle $_code', style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 18)),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: fg, size: 20),
+          onPressed: () => Get.back(),
+        ),
+        title: Text(
+          'Salle $_code',
+          style: TextStyle(
+            color: fg,
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
+          ),
+        ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : room == null
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.all(30),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.meeting_room_outlined, size: 54, color: fg.withValues(alpha: .35)),
-                  const SizedBox(height: 12),
-                  Text(_error ?? 'Salle introuvable.', textAlign: TextAlign.center, style: TextStyle(color: fg.withValues(alpha: .7))),
-                  const SizedBox(height: 14),
-                  OutlinedButton(onPressed: _refresh, child: const Text('Réessayer')),
-                ]),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.meeting_room_outlined,
+                      size: 54,
+                      color: fg.withValues(alpha: .35),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _error ?? 'Salle introuvable.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: fg.withValues(alpha: .7)),
+                    ),
+                    const SizedBox(height: 14),
+                    OutlinedButton(
+                      onPressed: _refresh,
+                      child: const Text('Réessayer'),
+                    ),
+                  ],
+                ),
               ),
             )
           : _body(room, fg, card, accent),
@@ -203,7 +241,8 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
     final mine = room.player(me);
     final isHost = room.hostId == me;
     final g = room.toGame();
-    final canStart = isHost && room.isWaiting && room.joinedCount >= room.minPlayers;
+    final canStart =
+        isHost && room.isWaiting && room.joinedCount >= room.minPlayers;
     final invitedMe = mine?.status == 'invited' && room.isWaiting;
     final joinedMe = mine?.status == 'joined';
 
@@ -213,51 +252,112 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
         // Jeu + statut
         Container(
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(20)),
-          child: Row(children: [
-            Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [g.accent, Color.lerp(g.accent, Colors.black, .35)!]),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Center(child: FaIcon(gzIcon(g.icon), color: Colors.white, size: 22)),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(room.gameName, style: TextStyle(color: fg, fontSize: 18, fontWeight: FontWeight.w900)),
-                const SizedBox(height: 2),
-                Text(
-                  room.isWaiting
-                      ? 'En attente des joueurs'
-                      : room.isPlaying
-                      ? 'Partie en cours'
-                      : room.isFinished
-                      ? 'Partie terminée'
-                      : 'Salle annulée',
-                  style: TextStyle(color: fg.withValues(alpha: .55), fontSize: 13),
+          decoration: BoxDecoration(
+            color: card,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      g.accent,
+                      Color.lerp(g.accent, Colors.black, .35)!,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              ]),
-            ),
-          ]),
+                child: Center(
+                  child: FaIcon(gzIcon(g.icon), color: Colors.white, size: 22),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      room.gameName,
+                      style: TextStyle(
+                        color: fg,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      room.isWaiting
+                          ? 'En attente des joueurs'
+                          : room.isPlaying
+                          ? 'Partie en cours'
+                          : room.isFinished
+                          ? 'Partie terminée'
+                          : 'Salle annulée',
+                      style: TextStyle(
+                        color: fg.withValues(alpha: .55),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
         // Pot / mise
-        Row(children: [
-          Expanded(child: _infoTile(Icons.toll_rounded, 'Pot', '${room.pot > 0 ? room.pot : room.stake * room.joinedCount} GCoin', const Color(0xFFFFC600), fg, card)),
-          const SizedBox(width: 12),
-          Expanded(child: _infoTile(Icons.sell_rounded, 'Mise', room.stake == 0 ? 'Gratuit' : '${room.stake} GCoin', accent, fg, card)),
-          const SizedBox(width: 12),
-          Expanded(child: _infoTile(Icons.group_rounded, 'Joueurs', '${room.joinedCount}/${room.maxPlayers}', const Color(0xFF0086C9), fg, card)),
-        ]),
+        Row(
+          children: [
+            Expanded(
+              child: _infoTile(
+                Icons.toll_rounded,
+                'Pot',
+                '${room.pot > 0 ? room.pot : room.stake * room.joinedCount} GCoin',
+                const Color(0xFFFFC600),
+                fg,
+                card,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _infoTile(
+                Icons.sell_rounded,
+                'Mise',
+                room.stake == 0 ? 'Gratuit' : '${room.stake} GCoin',
+                accent,
+                fg,
+                card,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _infoTile(
+                Icons.group_rounded,
+                'Joueurs',
+                '${room.joinedCount}/${room.maxPlayers}',
+                const Color(0xFF0086C9),
+                fg,
+                card,
+              ),
+            ),
+          ],
+        ),
         if (room.mode != null || room.settings.isNotEmpty) ...[
           const SizedBox(height: 12),
           _rulesCard(room, fg, card),
         ],
         const SizedBox(height: 18),
-        Text('Joueurs', style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 16)),
+        Text(
+          'Joueurs',
+          style: TextStyle(
+            color: fg,
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+          ),
+        ),
         const SizedBox(height: 8),
         for (final p in room.players)
           Container(
@@ -266,63 +366,204 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
             decoration: BoxDecoration(
               color: card,
               borderRadius: BorderRadius.circular(16),
-              border: room.winnerIds.contains(p.userId) ? Border.all(color: const Color(0xFFFFC600), width: 1.4) : null,
+              border: room.winnerIds.contains(p.userId)
+                  ? Border.all(color: const Color(0xFFFFC600), width: 1.4)
+                  : null,
             ),
-            child: Row(children: [
-              gzAvatar(p.name, p.avatarUrl, color: accent),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(p.userId == me ? '${p.name} (vous)' : p.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontWeight: FontWeight.w700)),
-                  if (p.score != null) Text('${p.score} pts', style: TextStyle(color: fg.withValues(alpha: .55), fontSize: 12)),
-                ]),
-              ),
-              if (room.winnerIds.contains(p.userId)) const Padding(padding: EdgeInsets.only(right: 8), child: Icon(Icons.emoji_events_rounded, color: Color(0xFFFFC600), size: 20)),
-              if (room.hostId == p.userId) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.star_rounded, color: accent, size: 18)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: _statusColor(p.status).withValues(alpha: .15), borderRadius: BorderRadius.circular(20)),
-                child: Text(_statusLabel(p, room), style: TextStyle(color: _statusColor(p.status), fontSize: 11, fontWeight: FontWeight.w800)),
-              ),
-            ]),
+            child: Row(
+              children: [
+                gzAvatar(p.name, p.avatarUrl, color: accent),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        p.userId == me ? '${p.name} (vous)' : p.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: fg,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (p.score != null)
+                        Text(
+                          '${p.score} pts',
+                          style: TextStyle(
+                            color: fg.withValues(alpha: .55),
+                            fontSize: 12,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (room.winnerIds.contains(p.userId))
+                  const Padding(
+                    padding: EdgeInsets.only(right: 8),
+                    child: Icon(
+                      Icons.emoji_events_rounded,
+                      color: Color(0xFFFFC600),
+                      size: 20,
+                    ),
+                  ),
+                if (room.hostId == p.userId)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Icon(Icons.star_rounded, color: accent, size: 18),
+                  ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _statusColor(p.status).withValues(alpha: .15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _statusLabel(p, room),
+                    style: TextStyle(
+                      color: _statusColor(p.status),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         const SizedBox(height: 14),
         if (room.isFinished || room.isCancelled)
           _resultBanner(room, fg, card)
         else if (invitedMe) ...[
-          Row(children: [
-            Expanded(child: _btn('Refuser', Icons.close_rounded, null, fg, outlined: true, onTap: () => _act(() => _c.declineRoom(_code), closeAfter: true))),
-            const SizedBox(width: 12),
-            Expanded(child: _btn('Accepter', Icons.check_rounded, accent, Colors.white, onTap: () => _act(() => _c.joinRoom(_code)))),
-          ]),
-          if (room.stake > 0) Padding(padding: const EdgeInsets.only(top: 8), child: Text('Accepter engage une mise de ${room.stake} GCoin au lancement.', textAlign: TextAlign.center, style: TextStyle(color: fg.withValues(alpha: .5), fontSize: 12))),
+          Row(
+            children: [
+              Expanded(
+                child: _btn(
+                  'Refuser',
+                  Icons.close_rounded,
+                  null,
+                  fg,
+                  outlined: true,
+                  onTap: () =>
+                      _act(() => _c.declineRoom(_code), closeAfter: true),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _btn(
+                  'Accepter',
+                  Icons.check_rounded,
+                  accent,
+                  Colors.white,
+                  onTap: () => _act(() => _c.joinRoom(_code)),
+                ),
+              ),
+            ],
+          ),
+          if (room.stake > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'Accepter engage une mise de ${room.stake} GCoin au lancement.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: fg.withValues(alpha: .5), fontSize: 12),
+              ),
+            ),
         ] else if (room.isWaiting && joinedMe) ...[
           if (isHost) ...[
-            _btn('Lancer la partie', Icons.play_arrow_rounded, canStart ? accent : Colors.grey, Colors.white, onTap: canStart ? () => _act(() => _c.startRoom(_code)) : null),
-            if (!canStart) Padding(padding: const EdgeInsets.only(top: 8), child: Text('Il faut au moins ${room.minPlayers} joueurs prêts.', textAlign: TextAlign.center, style: TextStyle(color: fg.withValues(alpha: .5), fontSize: 12))),
+            _btn(
+              'Lancer la partie',
+              Icons.play_arrow_rounded,
+              canStart ? accent : Colors.grey,
+              Colors.white,
+              onTap: canStart ? () => _act(() => _c.startRoom(_code)) : null,
+            ),
+            if (!canStart)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'Il faut au moins ${room.minPlayers} joueurs prêts.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: fg.withValues(alpha: .5),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
             const SizedBox(height: 10),
-            if (room.players.length < room.maxPlayers) _btn('Inviter d\'autres joueurs', Icons.person_add_alt_1_rounded, null, fg, outlined: true, onTap: () => _invite(room)),
+            if (room.players.length < room.maxPlayers)
+              _btn(
+                'Inviter d\'autres joueurs',
+                Icons.person_add_alt_1_rounded,
+                null,
+                fg,
+                outlined: true,
+                onTap: () => _invite(room),
+              ),
             const SizedBox(height: 10),
           ] else
-            Padding(padding: const EdgeInsets.only(bottom: 10), child: Text('En attente du lancement par l\'hôte…', textAlign: TextAlign.center, style: TextStyle(color: fg.withValues(alpha: .6)))),
-          _btn(isHost ? 'Annuler la salle' : 'Quitter', Icons.logout_rounded, null, Colors.redAccent, outlined: true, onTap: () => _confirmLeave(room)),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                'En attente du lancement par l\'hôte…',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: fg.withValues(alpha: .6)),
+              ),
+            ),
+          _btn(
+            isHost ? 'Annuler la salle' : 'Quitter',
+            Icons.logout_rounded,
+            null,
+            Colors.redAccent,
+            outlined: true,
+            onTap: () => _confirmLeave(room),
+          ),
         ] else if (room.isPlaying)
-          _btn('Rejoindre la partie', Icons.sports_esports_rounded, accent, Colors.white, onTap: joinedMe ? () => _openGame(room) : null),
+          _btn(
+            'Rejoindre la partie',
+            Icons.sports_esports_rounded,
+            accent,
+            Colors.white,
+            onTap: joinedMe ? () => _openGame(room) : null,
+          ),
       ],
     );
   }
 
   Widget _resultBanner(GzRoom room, Color fg, Color card) {
     final o = room.outcomeFor(_c.myId);
-    final text = room.isCancelled ? 'Salle annulée — mises remboursées.' : (o == 'win' ? 'Vous avez gagné ! +${room.gainedFor(_c.myId)} GCoin' : (o == 'draw' ? 'Égalité — mises remboursées.' : 'Vous avez perdu cette partie.'));
+    final text = room.isCancelled
+        ? 'Salle annulée — mises remboursées.'
+        : (o == 'win'
+              ? 'Vous avez gagné ! +${room.gainedFor(_c.myId)} GCoin'
+              : (o == 'draw'
+                    ? 'Égalité — mises remboursées.'
+                    : 'Vous avez perdu cette partie.'));
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(18)),
-      child: Row(children: [
-        Icon(o == 'win' && !room.isCancelled ? Icons.emoji_events_rounded : Icons.flag_rounded, color: const Color(0xFFFFC600)),
-        const SizedBox(width: 12),
-        Expanded(child: Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.w800))),
-      ]),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            o == 'win' && !room.isCancelled
+                ? Icons.emoji_events_rounded
+                : Icons.flag_rounded,
+            color: const Color(0xFFFFC600),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(color: fg, fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -330,62 +571,153 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
   Widget _rulesCard(GzRoom room, Color fg, Color card) {
     GzGame? g;
     for (final x in [..._c.catalog, ..._c.featured]) {
-      if (x.id == gzInt(room.gameJson['id']) || x.slug == room.gameJson['slug']) g = x;
+      if (x.id == gzInt(room.gameJson['id']) || x.slug == room.gameJson['slug'])
+        g = x;
     }
     final lines = room.settingsLines(g?.mpSettings ?? const <GzSetting>[]);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Icon(Icons.tune_rounded, size: 18, color: fg.withValues(alpha: .6)),
-          const SizedBox(width: 8),
-          Text('Règles choisies par l\'hôte', style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 14)),
-        ]),
-        const SizedBox(height: 8),
-        if (room.mode != null) _ruleRow('Mode', gzModeLabel(room.mode), fg),
-        for (final l in lines) _ruleRow(l.$1, l.$2, fg),
-      ]),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.tune_rounded,
+                size: 18,
+                color: fg.withValues(alpha: .6),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Règles choisies par l\'hôte',
+                style: TextStyle(
+                  color: fg,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (room.mode != null) _ruleRow('Mode', gzModeLabel(room.mode), fg),
+          for (final l in lines) _ruleRow(l.$1, l.$2, fg),
+        ],
+      ),
     );
   }
 
   Widget _ruleRow(String k, String v, Color fg) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 3),
-    child: Row(children: [
-      Expanded(child: Text(k, style: TextStyle(color: fg.withValues(alpha: .6), fontSize: 13))),
-      Flexible(child: Text(v, textAlign: TextAlign.end, style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 13))),
-    ]),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            k,
+            style: TextStyle(color: fg.withValues(alpha: .6), fontSize: 13),
+          ),
+        ),
+        Flexible(
+          child: Text(
+            v,
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              color: fg,
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+            ),
+          ),
+        ),
+      ],
+    ),
   );
 
-  Widget _infoTile(IconData icon, String label, String value, Color color, Color fg, Color card) => Container(
+  Widget _infoTile(
+    IconData icon,
+    String label,
+    String value,
+    Color color,
+    Color fg,
+    Color card,
+  ) => Container(
     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-    decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16)),
-    child: Column(children: [
-      Icon(icon, color: color, size: 20),
-      const SizedBox(height: 4),
-      Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontWeight: FontWeight.w900, fontSize: 14)),
-      Text(label, style: TextStyle(color: fg.withValues(alpha: .5), fontSize: 11)),
-    ]),
+    decoration: BoxDecoration(
+      color: card,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: fg,
+            fontWeight: FontWeight.w900,
+            fontSize: 14,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(color: fg.withValues(alpha: .5), fontSize: 11),
+        ),
+      ],
+    ),
   );
 
-  Widget _btn(String label, IconData icon, Color? bg, Color fgc, {required VoidCallback? onTap, bool outlined = false}) {
-    final child = _busy ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Icon(icon);
+  Widget _btn(
+    String label,
+    IconData icon,
+    Color? bg,
+    Color fgc, {
+    required VoidCallback? onTap,
+    bool outlined = false,
+  }) {
+    final child = _busy
+        ? const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : Icon(icon);
     return SizedBox(
       height: 50,
       width: double.infinity,
       child: outlined
           ? OutlinedButton.icon(
               onPressed: _busy ? null : onTap,
-              style: OutlinedButton.styleFrom(foregroundColor: fgc, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: fgc,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
               icon: child,
-              label: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+              label: Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
             )
           : ElevatedButton.icon(
               onPressed: _busy ? null : onTap,
-              style: ElevatedButton.styleFrom(backgroundColor: bg, foregroundColor: fgc, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: bg,
+                foregroundColor: fgc,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
               icon: child,
-              label: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+              label: Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
             ),
     );
   }

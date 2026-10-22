@@ -412,9 +412,13 @@ class _BmPlaylistPageState extends State<BmPlaylistPage> {
           // Playlist suggérée / publique : on peut la mettre en favoris.
           if (_readOnly)
             IconButton(
-              tooltip: p.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
+              tooltip: p.isFavorite
+                  ? 'Retirer des favoris'
+                  : 'Ajouter aux favoris',
               icon: Icon(
-                p.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                p.isFavorite
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
                 color: p.isFavorite ? const Color(0xFFFB7185) : fg,
               ),
               onPressed: () async {
@@ -423,24 +427,24 @@ class _BmPlaylistPageState extends State<BmPlaylistPage> {
               },
             ),
           if (!_readOnly)
-          IconButton(
-            tooltip: 'Ajouter des titres',
-            icon: Icon(Icons.playlist_add_rounded, color: fg),
-            onPressed: _addTitles,
-          ),
+            IconButton(
+              tooltip: 'Ajouter des titres',
+              icon: Icon(Icons.playlist_add_rounded, color: fg),
+              onPressed: _addTitles,
+            ),
           if (!_readOnly)
-          PopupMenuButton<String>(
-            iconColor: fg,
-            onSelected: _menu,
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'rename', child: Text('Renommer')),
-              PopupMenuItem(value: 'delete', child: Text('Supprimer')),
-            ],
-          ),
+            PopupMenuButton<String>(
+              iconColor: fg,
+              onSelected: _menu,
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'rename', child: Text('Renommer')),
+                PopupMenuItem(value: 'delete', child: Text('Supprimer')),
+              ],
+            ),
         ],
       ),
       body: loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : Column(
               children: [
                 Padding(
@@ -509,14 +513,14 @@ class _BmPlaylistPageState extends State<BmPlaylistPage> {
                               ),
                               const SizedBox(height: 10),
                               if (!_readOnly)
-                              FilledButton.icon(
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: accent,
+                                FilledButton.icon(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: accent,
+                                  ),
+                                  onPressed: _addTitles,
+                                  icon: const Icon(Icons.add_rounded),
+                                  label: const Text('Ajouter des titres'),
                                 ),
-                                onPressed: _addTitles,
-                                icon: const Icon(Icons.add_rounded),
-                                label: const Text('Ajouter des titres'),
-                              ),
                             ],
                           ),
                         )
@@ -578,8 +582,11 @@ class _BmPlaylistPageState extends State<BmPlaylistPage> {
                                 ),
                                 trailing: _readOnly
                                     ? (t.isVideo
-                                        ? Icon(Icons.smart_display_rounded, color: fg.withOpacity(.4))
-                                        : null)
+                                          ? Icon(
+                                              Icons.smart_display_rounded,
+                                              color: fg.withOpacity(.4),
+                                            )
+                                          : null)
                                     : ReorderableDragStartListener(
                                         index: i,
                                         child: Padding(

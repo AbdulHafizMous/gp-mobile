@@ -445,7 +445,7 @@ class _PreviewVideoDialogState extends State<_PreviewVideoDialog> {
                     )
                   : const AspectRatio(
                       aspectRatio: 16 / 9,
-                      child: Center(child: CircularProgressIndicator()),
+                      child: Center(child: CircularProgressIndicator(color: Colors.white,)),
                     ),
             ),
           ),
@@ -793,7 +793,7 @@ class _CategoryContentView extends StatelessWidget {
           category;
 
       if (isLoading && updatedCat.videos.isEmpty) {
-        return const Center(child: CircularProgressIndicator());
+        return const Center(child: CircularProgressIndicator(color: Colors.white,));
       }
 
       final hasDescription = updatedCat.description.trim().isNotEmpty;
@@ -867,13 +867,13 @@ class _CategoryContentView extends StatelessWidget {
                       Icon(
                         Icons.video_library_outlined,
                         size: 48,
-                        color: context.subtleText,
+                        color: Colors.white,
                       ),
                       const SizedBox(height: 12),
                       Text(
                         'Bientôt disponible',
                         style: TextStyle(
-                          color: context.subtleText,
+                          color: Colors.white,
                           fontSize: 15,
                         ),
                       ),

@@ -53,7 +53,11 @@ class _CrushPacksSheetContent extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.favorite_rounded, color: Colors.pinkAccent, size: 32),
+          const Icon(
+            Icons.favorite_rounded,
+            color: Colors.pinkAccent,
+            size: 32,
+          ),
           const SizedBox(height: 10),
           const Text(
             'Vous avez atteint votre quota de messages gratuits',
@@ -74,7 +78,9 @@ class _CrushPacksSheetContent extends StatelessWidget {
             if (quotaService.isLoadingPacks.value) {
               return const Padding(
                 padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
               );
             }
             final packs = quotaService.packs;
@@ -93,9 +99,11 @@ class _CrushPacksSheetContent extends StatelessWidget {
                   // pas être vendu (Apple Guideline 3.1.1) : on le masque.
                   // Sur les autres plateformes, tous les packs restent
                   // vendables via Moneroo.
-                  .where((p) => (!kIsWeb && Platform.isIOS)
-                      ? p.isPurchasableOnCurrentPlatform
-                      : true)
+                  .where(
+                    (p) => (!kIsWeb && Platform.isIOS)
+                        ? p.isPurchasableOnCurrentPlatform
+                        : true,
+                  )
                   .map(
                     (pack) => Padding(
                       padding: const EdgeInsets.only(bottom: 10),
@@ -131,7 +139,13 @@ class _PackTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(pack.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                  Text(
+                    pack.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
                   Text(
                     '${pack.credits} messages',
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
@@ -143,16 +157,24 @@ class _PackTile extends StatelessWidget {
               onPressed: ctrl.isPurchasing.value
                   ? null
                   : () => ctrl.purchasePack(context: context, pack: pack),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.pinkAccent),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.pinkAccent,
+              ),
               child: ctrl.isPurchasing.value
                   ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : Text(
                       '${pack.price.toInt()} FCFA',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
             ),
           ],

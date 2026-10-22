@@ -15,6 +15,7 @@ import 'package:grand_public_v2/app/modules/update_required/bindings/update_requ
 import 'package:grand_public_v2/app/modules/update_required/views/update_required_view.dart';
 import 'package:grand_public_v2/app/modules/channels/bindings/channel_binding.dart';
 import 'package:grand_public_v2/app/modules/channels/views/channels_list_view.dart';
+import 'package:grand_public_v2/app/modules/channels/views/partner_channels_page.dart';
 import 'package:grand_public_v2/app/modules/space/bindings/space_binding.dart';
 import 'package:grand_public_v2/app/modules/space/views/space_view.dart';
 import 'package:grand_public_v2/app/modules/blowmusic/bindings/blowmusic_binding.dart';
@@ -154,6 +155,11 @@ class AppPages {
       name: '${_Paths.CHANNELS}/:id',
       page: () => const SpaceView(),
       binding: ChannelBinding(),
+      transition: Transition.rightToLeftWithFade,
+    ),
+    GetPage(
+      name: _Paths.PARTNER_CHANNELS,
+      page: () => const PartnerChannelsPage(),
       transition: Transition.rightToLeftWithFade,
     ),
     GetPage(

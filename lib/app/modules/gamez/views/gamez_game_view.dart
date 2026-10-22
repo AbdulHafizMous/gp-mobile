@@ -35,46 +35,68 @@ class _GameZGameViewState extends State<GameZGameView> {
     _webCtrl = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF0F0E13))
-      ..addJavaScriptChannel('GameZBridge', onMessageReceived: (message) async {
-        try {
-          final p = jsonDecode(message.message) as Map<String, dynamic>;
-          if (p['type'] != 'score' || _sessionToken == null) return;
-          final score = (p['score'] as num?)?.toInt() ?? 0;
-          final r = await ctrl.submitScore(
-            _sessionToken!,
-            score,
-            duration: (p['duration'] as num?)?.toInt(),
-            level: p['level']?.toString(),
-            metadata: p['metadata'] is Map ? Map<String, dynamic>.from(p['metadata']) : null,
-          );
-          if (r == null || !mounted) return;
-          final gained = (r['gcoin_awarded'] as num?)?.toInt() ?? 0;
-          final best = r['is_new_best'] == true;
-          if (gained > 0 || best) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: const Color(0xFF1F1D27),
-              content: Row(children: [
-                Icon(gained > 0 ? Icons.toll_rounded : Icons.emoji_events_rounded, color: GPTheme.clubColor),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    [if (gained > 0) '+$gained GCoin gagnés', if (best) 'Nouveau record personnel'].join(' · '),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+      ..addJavaScriptChannel(
+        'GameZBridge',
+        onMessageReceived: (message) async {
+          try {
+            final p = jsonDecode(message.message) as Map<String, dynamic>;
+            if (p['type'] != 'score' || _sessionToken == null) return;
+            final score = (p['score'] as num?)?.toInt() ?? 0;
+            final r = await ctrl.submitScore(
+              _sessionToken!,
+              score,
+              duration: (p['duration'] as num?)?.toInt(),
+              level: p['level']?.toString(),
+              metadata: p['metadata'] is Map
+                  ? Map<String, dynamic>.from(p['metadata'])
+                  : null,
+            );
+            if (r == null || !mounted) return;
+            final gained = (r['gcoin_awarded'] as num?)?.toInt() ?? 0;
+            final best = r['is_new_best'] == true;
+            if (gained > 0 || best) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  behavior: SnackBarBehavior.floating,
+                  backgroundColor: const Color(0xFF1F1D27),
+                  content: Row(
+                    children: [
+                      Icon(
+                        gained > 0
+                            ? Icons.toll_rounded
+                            : Icons.emoji_events_rounded,
+                        color: GPTheme.clubColor,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          [
+                            if (gained > 0) '+$gained GCoin gagnés',
+                            if (best) 'Nouveau record personnel',
+                          ].join(' · '),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ]),
-            ));
-          }
-        } catch (_) {}
-      })
-      ..setNavigationDelegate(NavigationDelegate(
-        onPageStarted: (_) => _injectInAppStyle(),
-        onPageFinished: (_) {
-          _injectInAppStyle();
-          if (mounted) setState(() => _loading = false);
+              );
+            }
+          } catch (_) {}
         },
-      ));
+      )
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (_) => _injectInAppStyle(),
+          onPageFinished: (_) {
+            _injectInAppStyle();
+            if (mounted) setState(() => _loading = false);
+          },
+        ),
+      );
   }
 
   Future<void> _injectInAppStyle() => injectGameInAppStyle(_webCtrl);
@@ -85,7 +107,10 @@ class _GameZGameViewState extends State<GameZGameView> {
     if (session == null) {
       if (mounted) {
         Get.back();
-        Get.snackbar('Jeu indisponible', 'Ce jeu est en pause ou inaccessible pour le moment.');
+        Get.snackbar(
+          'Jeu indisponible',
+          'Ce jeu est en pause ou inaccessible pour le moment.',
+        );
       }
       return;
     }
@@ -121,29 +146,51 @@ class _GameZGameViewState extends State<GameZGameView> {
         backgroundColor: const Color(0xFF0F0E13),
         body: SafeArea(
           bottom: false,
-          child: Column(children: [
-            SizedBox(
-              height: 36,
-              child: Row(children: [
-                IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 40, minHeight: 36),
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70, size: 18),
-                  onPressed: _leave,
+          child: Column(
+            children: [
+              SizedBox(
+                height: 36,
+                child: Row(
+                  children: [
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 36,
+                      ),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white70,
+                        size: 18,
+                      ),
+                      onPressed: _leave,
+                    ),
+                    Expanded(
+                      child: Text(
+                        widget.game.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: Text(widget.game.name,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
+              ),
+              Expanded(
+                child: Stack(
+                  children: [
+                    if (_ready) WebViewWidget(controller: _webCtrl),
+                    if (_loading)
+                      const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                  ],
                 ),
-              ]),
-            ),
-            Expanded(
-              child: Stack(children: [
-                if (_ready) WebViewWidget(controller: _webCtrl),
-                if (_loading) const Center(child: CircularProgressIndicator()),
-              ]),
-            ),
-          ]),
+              ),
+            ],
+          ),
         ),
       ),
     );

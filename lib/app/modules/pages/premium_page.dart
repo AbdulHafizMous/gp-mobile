@@ -133,7 +133,9 @@ class _PremiumPageState extends State<PremiumPage> {
             future: controller.fetchSubscriptions(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                );
               }
               if (snapshot.hasError) {
                 return const Center(

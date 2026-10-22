@@ -124,7 +124,9 @@ class NotificationPage extends StatelessWidget {
                     ctrl.fetchNotifications();
                     return const Padding(
                       padding: EdgeInsets.all(16),
-                      child: Center(child: CircularProgressIndicator()),
+                      child: Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
                     );
                   }
                   return _NotifTile(

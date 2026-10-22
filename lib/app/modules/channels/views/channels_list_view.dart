@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/ad_banner_widget.dart';
+import 'package:grand_public_v2/app/components/app_field.dart';
+import 'package:grand_public_v2/app/themes/app_theme.dart';
 import 'package:grand_public_v2/app/components/ad_native_card.dart';
 import 'package:grand_public_v2/app/data/models/channel_model.dart';
 import 'package:grand_public_v2/app/modules/channels/controllers/channels_list_controller.dart';
@@ -10,8 +12,8 @@ import 'package:grand_public_v2/app/modules/channels/controllers/channels_list_c
 void openChannel(int id) => Get.toNamed('/channel/$id');
 
 class ChannelsListBody extends StatelessWidget {
-  final Color accent;
-  const ChannelsListBody({super.key, this.accent = const Color(0xFF6C63FF)});
+  final Color? accentColor;
+  const ChannelsListBody({super.key, this.accentColor});
 
   @override
   Widget build(BuildContext context) {
@@ -19,39 +21,34 @@ class ChannelsListBody extends StatelessWidget {
         ? Get.find<ChannelsListController>()
         : Get.put(ChannelsListController());
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = accentColor ?? GPTheme.primaryColor;
 
     return Column(children: [
       const AdBannerWidget(screen: 'channels'),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(14, 6, 6, 4),
+      // Bandeau de recherche brandé (couleur primaire) — champ AppField
+      // (source unique du design des champs) + bascule grille/liste.
+      Container(
+        color: GPTheme.primaryColor,
+        padding: const EdgeInsets.fromLTRB(14, 4, 6, 12),
         child: Row(children: [
           Expanded(
-            child: Container(
-              height: 40,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(20)),
-              child: Row(children: [
-                const Icon(Icons.search_rounded, size: 19),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    onChanged: (v) => c.search.value = v,
-                    decoration: const InputDecoration(hintText: 'Rechercher une chaîne', border: InputBorder.none, isDense: true),
-                  ),
-                ),
-              ]),
+            child: AppField(
+              hint: 'Rechercher une chaîne',
+              icon: Icons.search_rounded,
+              action: TextInputAction.search,
+              onChanged: (v) => c.search.value = v,
             ),
           ),
           Obx(() => IconButton(
                 tooltip: c.isGrid.value ? 'Afficher en liste' : 'Afficher en grille',
-                icon: Icon(c.isGrid.value ? Icons.view_agenda_outlined : Icons.grid_view_rounded),
+                icon: Icon(c.isGrid.value ? Icons.view_agenda_outlined : Icons.grid_view_rounded, color: Colors.white),
                 onPressed: c.toggleLayout,
               )),
         ]),
       ),
       Expanded(
         child: Obx(() {
-          if (c.isLoading.value) return const Center(child: CircularProgressIndicator());
+          if (c.isLoading.value) return Center(child: CircularProgressIndicator(color: accent));
           if (c.hasError.value) {
             return Center(child: TextButton.icon(onPressed: c.load, icon: const Icon(Icons.refresh), label: const Text('Réessayer')));
           }
@@ -226,15 +223,27 @@ class _ChannelRow extends StatelessWidget {
   }
 }
 
-/// Page autonome (deep link, drawer…) listant les chaînes.
+/// Page autonome (deep link, drawer, wall start) listant les chaînes :
+/// brandée couleur primaire, flèche de retour blanche, dark/light géré.
 class ChannelsPage extends StatelessWidget {
   const ChannelsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Chaînes')),
-      body: const SafeArea(child: ChannelsListBody()),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: GPTheme.primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          onPressed: Get.back,
+        ),
+        title: const Text('Chaînes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+      ),
+      body: const SafeArea(top: false, child: ChannelsListBody()),
     );
   }
 }

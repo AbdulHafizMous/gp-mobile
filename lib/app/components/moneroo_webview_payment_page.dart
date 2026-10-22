@@ -89,7 +89,10 @@ class _MonerooWebviewPaymentPageState extends State<MonerooWebviewPaymentPage> {
         body: Stack(
           children: [
             WebViewWidget(controller: _controller),
-            if (_loading) const Center(child: CircularProgressIndicator()),
+            if (_loading)
+              const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
           ],
         ),
       ),

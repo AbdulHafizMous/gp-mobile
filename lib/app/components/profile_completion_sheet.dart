@@ -31,7 +31,9 @@ class ProfileCompletionSheet extends StatefulWidget {
 class _ProfileCompletionSheetState extends State<ProfileCompletionSheet> {
   final _audience = AudienceFormState();
   final _phone = TextEditingController();
-  final _country = ValueNotifier<Country>(CountryPickerUtils.getCountryByIsoCode('BJ'));
+  final _country = ValueNotifier<Country>(
+    CountryPickerUtils.getCountryByIsoCode('BJ'),
+  );
   final _identityKey = GlobalKey<FormState>();
   final _workKey = GlobalKey<FormState>();
   final _phoneKey = GlobalKey<FormState>();
@@ -67,11 +69,11 @@ class _ProfileCompletionSheetState extends State<ProfileCompletionSheet> {
   }
 
   String _label(_Step s) => switch (s) {
-        _Step.phone => 'Téléphone',
-        _Step.identity => 'Identité',
-        _Step.work => 'Profession',
-        _Step.interests => 'Intérêts',
-      };
+    _Step.phone => 'Téléphone',
+    _Step.identity => 'Identité',
+    _Step.work => 'Profession',
+    _Step.interests => 'Intérêts',
+  };
 
   Future<void> _loadInterests() async {
     setState(() => _interestsLoading = true);
@@ -80,7 +82,11 @@ class _ProfileCompletionSheetState extends State<ProfileCompletionSheet> {
       final list = r.data['data']['interest_centers'] as List<dynamic>;
       _interests
         ..clear()
-        ..addAll(list.map((e) => ProfileInterest(id: e['id'], name: e['name'].toString())));
+        ..addAll(
+          list.map(
+            (e) => ProfileInterest(id: e['id'], name: e['name'].toString()),
+          ),
+        );
     } catch (_) {
       // Silencieux : l'étape affichera « aucun centre d'intérêt ».
     } finally {
@@ -98,23 +104,38 @@ class _ProfileCompletionSheetState extends State<ProfileCompletionSheet> {
       case _Step.phone:
         if (!(_phoneKey.currentState?.validate() ?? false)) return;
         final raw = _phone.text.replaceAll(' ', '').trim();
-        payload = {'phone': '+${_country.value.phoneCode}$raw', 'country_code': _country.value.isoCode};
+        payload = {
+          'phone': '+${_country.value.phoneCode}$raw',
+          'country_code': _country.value.isoCode,
+        };
       case _Step.identity:
         if (!(_identityKey.currentState?.validate() ?? false)) return;
-        payload = {'birthday': _audience.birthday.text, 'gender': _audience.gender.value};
+        payload = {
+          'birthday': _audience.birthday.text,
+          'gender': _audience.gender.value,
+        };
       case _Step.work:
         if (!(_workKey.currentState?.validate() ?? false)) return;
         payload = {'profession': _audience.profession.text.trim()};
       case _Step.interests:
-        final ids = _interests.where((e) => e.isSelected).map((e) => e.id).toList();
+        final ids = _interests
+            .where((e) => e.isSelected)
+            .map((e) => e.id)
+            .toList();
         if (ids.isEmpty) {
-          ToastHelper.showToast("Choisissez au moins un centre d'intérêt",
-              backgroundColor: Colors.orange, textColor: Colors.white);
+          ToastHelper.showToast(
+            "Choisissez au moins un centre d'intérêt",
+            backgroundColor: Colors.orange,
+            textColor: Colors.white,
+          );
           return;
         }
         setState(() => _saving = true);
         try {
-          await RequestService().post('/interest-centers', data: {'interest_center_ids': ids});
+          await RequestService().post(
+            '/interest-centers',
+            data: {'interest_center_ids': ids},
+          );
           _markDone('interests');
         } on DioException catch (e) {
           _fail(e);
@@ -126,7 +147,10 @@ class _ProfileCompletionSheetState extends State<ProfileCompletionSheet> {
 
     setState(() => _saving = true);
     try {
-      final res = await RequestService().post('/users/complete-profile', data: payload);
+      final res = await RequestService().post(
+        '/users/complete-profile',
+        data: payload,
+      );
       final user = res.data?['data']?['user'];
       if (user is Map<String, dynamic>) {
         activeUser.value = User.fromJson(user);
@@ -141,15 +165,22 @@ class _ProfileCompletionSheetState extends State<ProfileCompletionSheet> {
   void _markDone(String field) {
     final u = activeUser.value;
     activeUser.value = u.copyWith(
-      profileMissingFields: u.profileMissingFields.where((f) => f != field).toList(),
+      profileMissingFields: u.profileMissingFields
+          .where((f) => f != field)
+          .toList(),
     );
   }
 
   void _fail(DioException e) {
     final errs = e.response?.data is Map ? e.response?.data['errors'] : null;
-    final first = errs is Map && errs.isNotEmpty ? (errs.values.first as List).first.toString() : null;
-    ToastHelper.showToast(first ?? "Impossible d'enregistrer. Réessayez.",
-        backgroundColor: Colors.red, textColor: Colors.white);
+    final first = errs is Map && errs.isNotEmpty
+        ? (errs.values.first as List).first.toString()
+        : null;
+    ToastHelper.showToast(
+      first ?? "Impossible d'enregistrer. Réessayez.",
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+    );
     if (mounted) setState(() => _saving = false);
   }
 
@@ -157,8 +188,11 @@ class _ProfileCompletionSheetState extends State<ProfileCompletionSheet> {
     if (!mounted) return;
     if (_index >= _steps.length - 1) {
       Navigator.of(context).pop();
-      ToastHelper.showToast('Profil complété, merci ! 🎉',
-          backgroundColor: Colors.green, textColor: Colors.white);
+      ToastHelper.showToast(
+        'Profil complété, merci ! 🎉',
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+      );
       return;
     }
     setState(() {
@@ -181,11 +215,17 @@ class _ProfileCompletionSheetState extends State<ProfileCompletionSheet> {
         color: bg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
       ),
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Theme(
         data: Theme.of(context).copyWith(
           inputDecorationTheme: AppFieldStyle.theme.copyWith(
-            errorStyle: const TextStyle(color: AppFieldStyle.error, fontSize: 12, fontWeight: FontWeight.w600),
+            errorStyle: const TextStyle(
+              color: AppFieldStyle.error,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         child: SingleChildScrollView(
@@ -198,15 +238,24 @@ class _ProfileCompletionSheetState extends State<ProfileCompletionSheet> {
                 child: Container(
                   width: 42,
                   height: 4,
-                  decoration: BoxDecoration(color: muted.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(4)),
+                  decoration: BoxDecoration(
+                    color: muted.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('Complétez votre profil',
-                  textAlign: TextAlign.center, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              const Text(
+                'Complétez votre profil',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+              ),
               const SizedBox(height: 6),
-              Text('Quelques infos pour des contenus et offres adaptés à vous.',
-                  textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 13)),
+              Text(
+                'Quelques infos pour des contenus et offres adaptés à vous.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: muted, fontSize: 13),
+              ),
               const SizedBox(height: 18),
               if (_steps.length > 1)
                 AppStepper(
@@ -225,17 +274,34 @@ class _ProfileCompletionSheetState extends State<ProfileCompletionSheet> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GPTheme.primaryColor,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                   ),
                   child: _saving
                       ? const SizedBox(
-                          width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text(last ? 'Terminer' : 'Suivant', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          last ? 'Terminer' : 'Suivant',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
                 ),
               ),
               TextButton(
                 onPressed: _saving ? null : () => Navigator.of(context).pop(),
-                child: Text('Plus tard', style: TextStyle(color: muted, fontWeight: FontWeight.w700)),
+                child: Text(
+                  'Plus tard',
+                  style: TextStyle(color: muted, fontWeight: FontWeight.w700),
+                ),
               ),
             ],
           ),
@@ -255,35 +321,57 @@ class _ProfileCompletionSheetState extends State<ProfileCompletionSheet> {
               controller: _phone,
               hint: 'Numéro de téléphone',
               keyboardType: TextInputType.phone,
-              prefix: CountryPickerWidget(selectedCountry: country, onChanged: (c) => _country.value = c),
-              formatters: [FilteringTextInputFormatter.digitsOnly, SimplePhoneFormatter()],
-              validator: (v) => (v == null || v.length < 6) ? 'Numéro invalide' : null,
+              prefix: CountryPickerWidget(
+                selectedCountry: country,
+                onChanged: (c) => _country.value = c,
+              ),
+              formatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                SimplePhoneFormatter(),
+              ],
+              validator: (v) =>
+                  (v == null || v.length < 6) ? 'Numéro invalide' : null,
             ),
           ),
         );
       case _Step.identity:
         return Form(
           key: _identityKey,
-          child: AudienceFields(state: _audience, showWork: false, onPrimary: false),
+          child: AudienceFields(
+            state: _audience,
+            showWork: false,
+            onPrimary: false,
+          ),
         );
       case _Step.work:
         return Form(
           key: _workKey,
-          child: AudienceFields(state: _audience, showIdentity: false, onPrimary: false),
+          child: AudienceFields(
+            state: _audience,
+            showIdentity: false,
+            onPrimary: false,
+          ),
         );
       case _Step.interests:
         if (_interestsLoading) {
-          return const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()));
+          return const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          );
         }
         return Wrap(
+          alignment: WrapAlignment.center,
           spacing: 8,
-          runSpacing: 8,
+          runSpacing: 10,
           children: [
             for (final i in _interests)
               InterestItem(
                 title: i.name,
                 isSelected: i.isSelected,
                 fromProfile: true,
+                accent: GPTheme.primaryColor,
                 onTap: () => setState(() => i.isSelected = !i.isSelected),
               ),
           ],

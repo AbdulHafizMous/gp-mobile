@@ -141,12 +141,14 @@ class _ChannelsSection extends StatelessWidget {
           const Text('Chaînes',
               style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
           const Spacer(),
-          if (c.channels.length > 3)
-            GestureDetector(
-              onTap: () => Get.toNamed('/channels'),
-              child: const Text('Voir tout',
-                  style: TextStyle(color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.w700)),
+          InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () => Get.toNamed('/channels'),
+            child: const Padding(
+              padding: EdgeInsets.all(6),
+              child: Icon(Icons.format_list_bulleted_rounded, color: Colors.white, size: 22),
             ),
+          ),
         ]),
         const SizedBox(height: 10),
         ...c.channels.take(3).map(

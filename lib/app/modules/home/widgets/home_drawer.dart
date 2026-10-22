@@ -112,7 +112,10 @@ class HomeDrawer extends StatelessWidget {
         const SizedBox(height: 20),
         DrawerLogo(
           asset: GPTheme.logoForSection(activeSectionIndex),
-          onTap: () => ctrl.goToSection(0, showToast: false),
+          onTap: () {
+            Get.back();
+            Get.offAllNamed('/module-choice');
+          },
         ),
         const SizedBox(height: 20),
       ],

@@ -17,8 +17,7 @@ class VideosView extends StatelessWidget {
     final id = videoId ?? int.tryParse(Get.parameters['id'] ?? '') ?? 1;
 
     if (id <= 0) {
-      return const Scaffold(
-          body: Center(child: Text('ID vidéo invalide')));
+      return const Scaffold(body: Center(child: Text('ID vidéo invalide')));
     }
 
     return Scaffold(
@@ -27,7 +26,9 @@ class VideosView extends StatelessWidget {
         future: ctrl.fetchVideoById(id),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            );
           }
           if (snapshot.hasError) {
             return const Center(child: Text('Erreur'));

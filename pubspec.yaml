@@ -54,6 +54,7 @@ dependencies:
   # ── Social additions ──────────────────────────────────────────────────────
   file_picker: ^8.3.7          # Sélection fichiers génériques (PDF, doc…)
   record: ^5.2.0               # Enregistrement audio
+  audio_service: ^0.18.17      # Lecture Blowmusic en arrière-plan + contrôles notif/écran verrouillé
   audioplayers: ^6.4.0         # Lecture audio messages vocaux
   just_the_tooltip: ^0.0.12    # (optionnel – tooltips)
   open_filex: ^4.7.0

@@ -51,7 +51,9 @@ class ShopDetailView extends GetView<ShopController> {
                   onPressed: () => ShareHelper.showShareSheet(
                     context,
                     title: listing.title,
-                    subtitle: listing.price != null ? '${listing.price} FCFA' : null,
+                    subtitle: listing.price != null
+                        ? '${listing.price} FCFA'
+                        : null,
                     type: 'listing',
                     id: '${listing.id}',
                   ),
@@ -60,58 +62,55 @@ class ShopDetailView extends GetView<ShopController> {
               flexibleSpace: FlexibleSpaceBar(
                 background: listing.media.isNotEmpty
                     ? PageView(
-  children: listing.media.map((m) {
-    if (m.type == 'image') {
-      return GestureDetector(
-        onTap: () {
-          Get.to(
-            () => FullscreenImageViewer(url: m.url),
-            transition: Transition.fadeIn,
-          );
-        },
-        child: Hero(
-          tag: m.url,
-          child: Image.network(
-            m.url,
-            fit: BoxFit.cover,
-          ),
-        ),
-      );
-    }
+                        children: listing.media.map((m) {
+                          if (m.type == 'image') {
+                            return GestureDetector(
+                              onTap: () {
+                                Get.to(
+                                  () => FullscreenImageViewer(url: m.url),
+                                  transition: Transition.fadeIn,
+                                );
+                              },
+                              child: Hero(
+                                tag: m.url,
+                                child: Image.network(m.url, fit: BoxFit.cover),
+                              ),
+                            );
+                          }
 
-    return GestureDetector(
-      onTap: () {
-        Get.to(
-          () => FullscreenVideoPlayer(url: m.url),
-          transition: Transition.fadeIn,
-        );
-      },
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          _ListingVideoPlayer(url: m.url),
+                          return GestureDetector(
+                            onTap: () {
+                              Get.to(
+                                () => FullscreenVideoPlayer(url: m.url),
+                                transition: Transition.fadeIn,
+                              );
+                            },
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                _ListingVideoPlayer(url: m.url),
 
-          IgnorePointer(
-            child: Center(
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.black38,
-                  shape: BoxShape.circle,
-                ),
-                padding: const EdgeInsets.all(14),
-                child: const Icon(
-                  Icons.fullscreen,
-                  color: Colors.white,
-                  size: 34,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }).toList(),
-)
+                                IgnorePointer(
+                                  child: Center(
+                                    child: Container(
+                                      decoration: const BoxDecoration(
+                                        color: Colors.black38,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      padding: const EdgeInsets.all(14),
+                                      child: const Icon(
+                                        Icons.fullscreen,
+                                        color: Colors.white,
+                                        size: 34,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      )
                     : Container(color: context.inputBg),
               ),
             ),
@@ -371,7 +370,9 @@ class _ListingVideoPlayerState extends State<_ListingVideoPlayer> {
   @override
   Widget build(BuildContext context) {
     if (!_ready) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
     }
 
     return FittedBox(
