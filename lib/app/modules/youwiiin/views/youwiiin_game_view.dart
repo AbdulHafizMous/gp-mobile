@@ -281,7 +281,7 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
     if (evt != 'state') {
       _flushNow();
     } else {
-      _flushTimer ??= Timer(const Duration(milliseconds: 200), _flushNow);
+      _flushTimer ??= Timer(const Duration(milliseconds: 70), _flushNow);
     }
   }
 
@@ -318,7 +318,7 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
 
   bool _polling = false;
   String? _rv;
-  int _pollMs = 400;
+  int _pollMs = 60;
 
   void _startPolling() {
     if (_polling || !_isMp) return;
@@ -336,7 +336,7 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
   void _schedule() {
     if (!_polling || _disposed) return;
     _poll?.cancel();
-    _poll = Timer(Duration(milliseconds: _pollMs.clamp(250, 5000)), () async {
+    _poll = Timer(Duration(milliseconds: _pollMs.clamp(30, 5000)), () async {
       await _tick();
       _schedule();
     });
@@ -346,11 +346,16 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
     if (_pollBusy || _disposed || _ended) return;
     _pollBusy = true;
     try {
-      final res = await _ctrl.fetchRoomEvents(_code, _lastEventId, rv: _rv);
+      final res = await _ctrl.fetchRoomEvents(
+        _code,
+        _lastEventId,
+        rv: _rv,
+        wait: 3,
+      );
       if (_disposed) return;
       if (!res.ok) {
         _pollMs = (_pollMs * 2).clamp(
-          500,
+          300,
           5000,
         ); // réseau/serveur en difficulté : on recule
         return;

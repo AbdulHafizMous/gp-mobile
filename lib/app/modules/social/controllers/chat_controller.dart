@@ -35,6 +35,28 @@ class ChatController extends GetxController {
   final activeConversation = Rxn<PrivateConversation>();
   final privateMessages    = <ChatMessage>[].obs;
 
+  // ── Présence / saisie / accusés (conversations privées) ────────────────────
+  final peerOnline   = false.obs;
+  final peerLastSeen = Rxn<DateTime>();
+  final peerTyping   = ''.obs;          // '' | text | audio
+  int _peerDeliveredId = 0, _peerReadId = 0;
+  Timer? _presenceTimer;
+  DateTime _lastTypingPing = DateTime.fromMillisecondsSinceEpoch(0);
+  int _pollTick = 0;
+  final _box = GetStorage();
+
+  /// « vu aujourd'hui à 14:32 » / « vu hier à … » / « vu le 12/10 à … ».
+  String lastSeenLabel(DateTime? t) {
+    if (t == null) return 'Hors ligne';
+    final l = t.toLocal(), n = DateTime.now();
+    final hm = '${l.hour.toString().padLeft(2, '0')}:${l.minute.toString().padLeft(2, '0')}';
+    final d0 = DateTime(n.year, n.month, n.day), d1 = DateTime(l.year, l.month, l.day);
+    final diff = d0.difference(d1).inDays;
+    if (diff == 0) return 'vu aujourd\'hui à $hm';
+    if (diff == 1) return 'vu hier à $hm';
+    return 'vu le ${l.day.toString().padLeft(2, '0')}/${l.month.toString().padLeft(2, '0')} à $hm';
+  }
+
   // ── Typing ─────────────────────────────────────────────────────────────────
   final typingUsers   = <String>{}.obs;
   final otherIsTyping = false.obs;
@@ -55,13 +77,37 @@ class ChatController extends GetxController {
 
   // ── Polling ────────────────────────────────────────────────────────────────
   Timer? _pollingTimer;
-  static const _pollInterval = Duration(seconds: 4);
+  // static const _pollInterval = Duration(seconds: 4);
 
   VoidCallback? onScrollToBottom;
 
   // ── Pièce jointe ──────────────────────────────────────────────────────────
   final pendingFile     = Rxn<File>();
   final pendingFileType = Rxn<MessageType>();
+  final pendingViewOnce = false.obs; // photo/vidéo envoyée en « vue unique »
+
+  // ── Thème & fond d'écran (locaux à l'appareil, par discussion) ─────────────
+  final myBubbleColor = Rxn<Color>();
+  final wallpaper     = 'none'.obs; // none | preset id | file:<path>
+  int? _themeConv;
+
+  void loadTheme(int? convId) {
+    _themeConv = convId;
+    final m = _box.read('chat_theme_${convId ?? 'default'}') ?? _box.read('chat_theme_default');
+    if (m is Map) {
+      myBubbleColor.value = m['accent'] != null ? Color(m['accent'] as int) : null;
+      wallpaper.value = m['wallpaper']?.toString() ?? 'none';
+    } else {
+      myBubbleColor.value = null;
+      wallpaper.value = 'none';
+    }
+  }
+
+  void saveTheme({bool asDefault = false}) {
+    final data = {'accent': myBubbleColor.value?.toARGB32(), 'wallpaper': wallpaper.value};
+    _box.write('chat_theme_${_themeConv ?? 'default'}', data);
+    if (asDefault) _box.write('chat_theme_default', data);
+  }
 
   // ── Audio recorder ────────────────────────────────────────────────────────
   final _recorder         = AudioRecorder();
@@ -98,6 +144,8 @@ class ChatController extends GetxController {
     super.onInit();
     loadChannels();
     loadPrivateConversations();
+    _presenceTimer = Timer.periodic(const Duration(seconds: 40), (_) => _pingPresence());
+    _pingPresence();
     messageCtrl.addListener(() {
       messageText.value = messageCtrl.text;
       _onTyping();
@@ -108,6 +156,8 @@ class ChatController extends GetxController {
   @override
   void onClose() {
     _pollingTimer?.cancel();
+    _presenceTimer?.cancel();
+    _stateTimer?.cancel();
     _typingDebounce?.cancel();
     _recordTimer?.cancel();
     _recorder.dispose();
@@ -135,17 +185,100 @@ class ChatController extends GetxController {
     if (messageCtrl.text.isEmpty) { _typingDebounce?.cancel(); return; }
     _typingDebounce?.cancel();
     _typingDebounce = Timer(const Duration(seconds: 2), () {});
+    // « écrit… » : au plus un ping toutes les 3 s, uniquement en privé.
+    final conv = activeConversation.value;
+    if (useMock || conv == null) return;
+    final now = DateTime.now();
+    if (now.difference(_lastTypingPing).inSeconds < 3) return;
+    _lastTypingPing = now;
+    RequestService().post('/social/conversations/${conv.id}/typing');
+  }
+
+  Future<void> _pingPresence() async {
+    if (useMock) return;
+    try { await RequestService().post('/social/presence'); } catch (_) {}
+  }
+
+  /// Accusés + présence de l'autre (léger, appelé par le polling).
+  Future<void> _pollState() async {
+    final conv = activeConversation.value;
+    if (useMock || conv == null) return;
+    try {
+      final d = (await RequestService().get('/social/conversations/${conv.id}/state')).data['data'] as Map;
+      peerOnline.value = d['online'] == true;
+      peerLastSeen.value = d['last_seen_at'] != null ? DateTime.tryParse(d['last_seen_at'].toString()) : null;
+      peerTyping.value = d['typing']?.toString() ?? '';
+      otherIsTyping.value = peerTyping.value.isNotEmpty;
+      _peerDeliveredId = int.tryParse('${d['peer_delivered_id']}') ?? 0;
+      _peerReadId = int.tryParse('${d['peer_read_id']}') ?? 0;
+      _applyReceipts();
+    } catch (_) {}
+  }
+
+  /// ✓ envoyé · ✓✓ reçu · ✓✓ bleu lu — calculés depuis les ids vus par l'autre.
+  void _applyReceipts() {
+    for (var i = 0; i < privateMessages.length; i++) {
+      final m = privateMessages[i];
+      if (!m.isMe || m.isPending || m.id <= 0) continue;
+      final st = m.id <= _peerReadId ? MessageStatus.read : (m.id <= _peerDeliveredId ? MessageStatus.delivered : MessageStatus.sent);
+      if (st != m.status) privateMessages[i] = m.copyWith(status: st);
+    }
+  }
+
+  DateTime _lastReadPing = DateTime.fromMillisecondsSinceEpoch(0);
+  Future<void> _markRead({bool force = false}) async {
+    final conv = activeConversation.value;
+    if (useMock || conv == null) return;
+    if (!force && DateTime.now().difference(_lastReadPing).inSeconds < 3) return;
+    _lastReadPing = DateTime.now();
+    try {
+      await RequestService().post('/social/conversations/${conv.id}/read');
+      final i = privateConversations.indexWhere((c) => c.id == conv.id);
+      if (i != -1) privateConversations[i] = privateConversations[i].copyWith(unreadCount: 0);
+    } catch (_) {}
+  }
+
+  // ── Cache local (évite de re-télécharger l'historique à chaque ouverture) ──
+  List<dynamic> _cachedMsgs(int convId) {
+    final v = _box.read('chat_msgs_$convId');
+    return v is List ? v : <dynamic>[];
+  }
+
+  void _saveMsgs(int convId, List<dynamic> raw) {
+    final cut = raw.length > 150 ? raw.sublist(raw.length - 150) : raw;
+    _box.write('chat_msgs_$convId', cut);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
   // POLLING
   // ─────────────────────────────────────────────────────────────────────────
+  // Réception quasi instantanée : long-polling (le serveur répond dès qu'un message arrive) ;
+  // « écrit… » / accusés / présence : état léger toutes les 1,5 s, indépendant du long-polling.
+  bool _pollOn = false, _loopRunning = false;
+  Timer? _stateTimer;
+
   void _startPolling() {
     _pollingTimer?.cancel();
-    _pollingTimer = Timer.periodic(_pollInterval, (_) => _pollMessages());
+    _stateTimer?.cancel();
+    _pollOn = true;
+    _stateTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) => _pollState());
+    _pollLoop();
   }
 
-  void _stopPolling() { _pollingTimer?.cancel(); _pollingTimer = null; }
+  Future<void> _pollLoop() async {
+    if (_loopRunning) return;
+    _loopRunning = true;
+    while (_pollOn) {
+      final t0 = DateTime.now();
+      try { await _pollMessages(); } catch (_) {}
+      final el = DateTime.now().difference(t0).inMilliseconds;
+      final gap = activeChannel.value != null ? 3000 : 350;
+      if (el < gap) await Future.delayed(Duration(milliseconds: gap - el));
+    }
+    _loopRunning = false;
+  }
+
+  void _stopPolling() { _pollOn = false; _pollingTimer?.cancel(); _pollingTimer = null; _stateTimer?.cancel(); _stateTimer = null; }
 
   Future<void> _pollMessages() async {
     if (useMock) return;
@@ -155,9 +288,25 @@ class ChatController extends GetxController {
         _mergeMessages(messages, (r.data['data'] as List).map((e) => ChatMessage.fromJson(e)).toList());
         onScrollToBottom?.call();
       } else if (activeConversation.value != null) {
-        final r = await RequestService().get('/social/conversations/${activeConversation.value!.id}/messages');
-        _mergeMessages(privateMessages, (r.data['data'] as List).map((e) => ChatMessage.fromJson(e)).toList());
-        onScrollToBottom?.call();
+        final cid = activeConversation.value!.id;
+        // Delta : seulement les nouveaux messages (data minimale) ; refresh complet
+        // toutes les ~10 passes pour répercuter suppressions / modérations.
+        final lastId = privateMessages.where((m) => !m.isPending && m.id > 0).fold<int>(0, (a, m) => m.id > a ? m.id : a);
+        final full = _pollTick++ % 10 == 0 || lastId == 0;
+        final r = await RequestService().get('/social/conversations/$cid/messages', queryParameters: full ? null : {'after_id': lastId, 'wait': 3});
+        final raw = (r.data['data'] as List);
+        final fresh = raw.map((e) => ChatMessage.fromJson(e)).toList();
+        if (full) {
+          _mergeMessages(privateMessages, fresh);
+          _saveMsgs(cid, raw);
+        } else if (fresh.isNotEmpty) {
+          final have = privateMessages.map((m) => m.id).toSet();
+          privateMessages.addAll(fresh.where((m) => !have.contains(m.id)));
+          _saveMsgs(cid, [..._cachedMsgs(cid), ...raw]);
+          onScrollToBottom?.call();
+          if (fresh.any((m) => !m.isMe)) _markRead();
+        }
+        _applyReceipts();
       }
     } catch (_) {}
   }
@@ -529,7 +678,14 @@ class ChatController extends GetxController {
         privateConversations.value = _mockPrivateConversations();
         return;
       }
+      // Cache : la liste s'affiche instantanément, puis se rafraîchit.
+      final cachedList = _box.read('chat_convs');
+      if (privateConversations.isEmpty && cachedList is List && cachedList.isNotEmpty) {
+        privateConversations.value = cachedList.map((e) => PrivateConversation.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+        isConvsLoading.value = false;
+      }
       final r = await RequestService().get('/social/conversations');
+      _box.write('chat_convs', r.data['data']);
       privateConversations.value = (r.data['data'] as List)
           .map((e) => PrivateConversation.fromJson(e)).toList();
     } catch (e) { debugPrint('loadConvs error: $e'); }
@@ -548,9 +704,29 @@ class ChatController extends GetxController {
         await Future.delayed(const Duration(milliseconds: 400));
         privateMessages.value = _mockPrivateMessages(conv.id);
       } else {
-        final r = await RequestService().get('/social/conversations/${conv.id}/messages');
-        privateMessages.value = (r.data['data'] as List)
-            .map((e) => ChatMessage.fromJson(e)).toList();
+        // 1) Affichage immédiat depuis le cache local, 2) puis mise à jour par delta.
+        final cached = _cachedMsgs(conv.id);
+        if (cached.isNotEmpty) {
+          privateMessages.value = cached.map((e) => ChatMessage.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+          isMessagesLoading.value = false;
+          onScrollToBottom?.call();
+        }
+        final lastCached = privateMessages.fold<int>(0, (a, m) => m.id > a ? m.id : a);
+        final r = await RequestService().get('/social/conversations/${conv.id}/messages',
+            queryParameters: lastCached > 0 ? {'after_id': lastCached} : null);
+        final raw = (r.data['data'] as List);
+        final fresh = raw.map((e) => ChatMessage.fromJson(e)).toList();
+        if (lastCached > 0) {
+          final have = privateMessages.map((m) => m.id).toSet();
+          privateMessages.addAll(fresh.where((m) => !have.contains(m.id)));
+          _saveMsgs(conv.id, [...cached, ...raw]);
+        } else {
+          privateMessages.value = fresh;
+          _saveMsgs(conv.id, raw);
+        }
+        peerOnline.value = conv.otherIsOnline;
+        await _pollState();
+        _markRead(force: true);
       }
     } finally {
       isMessagesLoading.value = false;
@@ -586,6 +762,7 @@ class ChatController extends GetxController {
       type: pendingFileType.value ?? MessageType.text,
       status: MessageStatus.sending, isPending: true,
       localFilePath: file?.path,
+      viewOnce: pendingViewOnce.value && file != null,
       replyToId: reply?.id,
       replyToSenderName: reply?.senderName,
       replyToContent: reply?.content,
@@ -607,6 +784,7 @@ class ChatController extends GetxController {
     }
     try {
       final data = await _buildFormData(text, capturedFile, capturedType, replyId: reply?.id);
+      pendingViewOnce.value = false;
       await RequestService().post('/social/conversations/$convId/messages', data: data);
       _confirmPending(privateMessages, tempId);
       // Message Crush envoyé avec succès : le quota a été décompté côté
@@ -709,6 +887,52 @@ class ChatController extends GetxController {
   // ─────────────────────────────────────────────────────────────────────────
   // MEDIA PICKERS
   // ─────────────────────────────────────────────────────────────────────────
+  // ── Sondages ────────────────────────────────────────────────────────────────
+  Future<bool> sendPoll(int convId, String question, List<String> options, {bool multiple = false}) async {
+    try {
+      final r = await RequestService().post('/social/conversations/$convId/poll', data: {
+        'question': question, 'options': options, 'multiple': multiple,
+      });
+      privateMessages.add(ChatMessage.fromJson(Map<String, dynamic>.from(r.data['data'] as Map)));
+      onScrollToBottom?.call();
+      return true;
+    } on DioException catch (e) { _dioErr(e); return false; }
+  }
+
+  Future<void> votePoll(ChatMessage m, List<int> picked) async {
+    try {
+      final r = await RequestService().post('/social/messages/${m.id}/vote', data: {'options': picked});
+      final upd = ChatMessage.fromJson(Map<String, dynamic>.from(r.data['data'] as Map));
+      final i = privateMessages.indexWhere((x) => x.id == m.id);
+      if (i != -1) privateMessages[i] = privateMessages[i].copyWith(poll: upd.poll);
+    } on DioException catch (e) { _dioErr(e); }
+  }
+
+  // ── Vue unique : le serveur ne sert le média qu'une fois ───────────────────
+  Future<List<int>?> openViewOnce(ChatMessage m) async {
+    try {
+      final r = await RequestService().getBytes('/social/messages/${m.id}/view-once');
+      final i = privateMessages.indexWhere((x) => x.id == m.id);
+      if (i != -1) privateMessages[i] = privateMessages[i].copyWith(viewOnceOpened: true);
+      return r.data;
+    } on DioException catch (e) {
+      final i = privateMessages.indexWhere((x) => x.id == m.id);
+      if (i != -1 && e.response?.statusCode == 410) privateMessages[i] = privateMessages[i].copyWith(viewOnceOpened: true);
+      ToastHelper.showToast(e.response?.statusCode == 410 ? 'Ce média a déjà été ouvert.' : 'Ouverture impossible.');
+      return null;
+    }
+  }
+
+  Future<bool> savePrivacy({bool? hideLastSeen, bool? hideReadReceipts}) async {
+    try {
+      await RequestService().put('/social/privacy', data: {
+        if (hideLastSeen != null) 'hide_last_seen': hideLastSeen,
+        if (hideReadReceipts != null) 'hide_read_receipts': hideReadReceipts,
+      });
+      return true;
+    } catch (_) { return false; }
+  }
+
   Future<void> pickImage({bool fromCamera = false}) async {
     try {
       final XFile? xfile = await _picker.pickImage(
@@ -737,7 +961,7 @@ class ChatController extends GetxController {
     } catch (e) { debugPrint('pickFile error: $e'); }
   }
 
-  void clearPendingFile() { pendingFile.value = null; pendingFileType.value = null; }
+  void clearPendingFile() { pendingFile.value = null; pendingFileType.value = null; pendingViewOnce.value = false; }
 
   // ─────────────────────────────────────────────────────────────────────────
   // FILE DOWNLOAD
@@ -893,6 +1117,7 @@ class ChatController extends GetxController {
       'content': text,
       'type': type?.name ?? 'text',
       if (replyId != null) 'reply_to_id': replyId,
+      if (pendingViewOnce.value && (type == MessageType.image || type == MessageType.video)) 'view_once': 1,
     };
     if (file != null) {
       map['file'] = await MultipartFile.fromFile(file.path, filename: file.path.split('/').last);

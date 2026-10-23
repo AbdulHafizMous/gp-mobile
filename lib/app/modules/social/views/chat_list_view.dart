@@ -1198,6 +1198,10 @@ class _LastMessagePreview extends StatelessWidget {
         preview = 'Fichier';
         icon = Icons.attach_file;
         break;
+      case MessageType.poll:
+        preview = 'Sondage : ${msg!.content}';
+        icon = Icons.poll_rounded;
+        break;
       default:
         preview = msg!.content;
     }

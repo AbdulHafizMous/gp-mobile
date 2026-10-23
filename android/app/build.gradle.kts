@@ -32,7 +32,7 @@ android {
 
     defaultConfig {
         applicationId = "com.maxafrica.gpbenin"
-        minSdk = flutter.minSdkVersion
+        minSdk = flutter.minSdkVersion // 26 // requis par jitsi_meet_flutter_sdk (appels messagerie)
         targetSdk = flutter.targetSdkVersion
         versionCode = 21
         versionName = "21"

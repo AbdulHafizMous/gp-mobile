@@ -54,6 +54,9 @@ dependencies:
   # ── Social additions ──────────────────────────────────────────────────────
   file_picker: ^8.3.7          # Sélection fichiers génériques (PDF, doc…)
   record: ^5.2.0               # Enregistrement audio
+  screen_protector: ^1.4.2+1     # blocage captures/enregistrement d'écran (médias à vue unique)
+  jitsi_meet_flutter_sdk: ^10.3.0 # appels vocaux / vidéo (messagerie)
+  cached_network_image: ^3.4.1   # cache disque des images du chat (économie de data)
   audio_service: ^0.18.17      # Lecture Blowmusic en arrière-plan + contrôles notif/écran verrouillé
   audioplayers: ^6.4.0         # Lecture audio messages vocaux
   just_the_tooltip: ^0.0.12    # (optionnel – tooltips)

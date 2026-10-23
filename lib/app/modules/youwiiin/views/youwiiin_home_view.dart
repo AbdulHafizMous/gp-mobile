@@ -1136,6 +1136,8 @@ class _InvitationCardState extends State<_InvitationCard> {
     final host = room.player(room.hostId);
     final hostName = (host?.name ?? '').isEmpty ? 'Un joueur' : host!.name;
     final g = room.toGame();
+    final resumable =
+        room.myStatus == 'joined'; // déjà entré : reprise de la salle
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -1213,33 +1215,35 @@ class _InvitationCardState extends State<_InvitationCard> {
           const SizedBox(height: 14),
           Row(
             children: [
-              Expanded(
-                flex: 2,
-                child: SizedBox(
-                  height: 46,
-                  child: OutlinedButton(
-                    onPressed: _busy ? null : _decline,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: st.fg,
-                      side: BorderSide(color: st.fg.withValues(alpha: .25)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(YwStyle.rBtn),
+              if (!resumable) ...[
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    height: 46,
+                    child: OutlinedButton(
+                      onPressed: _busy ? null : _decline,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: st.fg,
+                        side: BorderSide(color: st.fg.withValues(alpha: .25)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(YwStyle.rBtn),
+                        ),
                       ),
+                      child: _busy
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text(
+                              'Refuser',
+                              style: TextStyle(fontWeight: FontWeight.w800),
+                            ),
                     ),
-                    child: _busy
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text(
-                            'Refuser',
-                            style: TextStyle(fontWeight: FontWeight.w800),
-                          ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
+                const SizedBox(width: 10),
+              ],
               Expanded(
                 flex: 3,
                 child: SizedBox(
@@ -1255,8 +1259,8 @@ class _InvitationCardState extends State<_InvitationCard> {
                       ),
                     ),
                     icon: const Icon(Icons.login_rounded, size: 18),
-                    label: const Text(
-                      'Rejoindre',
+                    label: Text(
+                      resumable ? 'Reprendre' : 'Rejoindre',
                       style: TextStyle(fontWeight: FontWeight.w800),
                     ),
                   ),

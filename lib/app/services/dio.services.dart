@@ -114,6 +114,11 @@ class RequestService {
     return _dio.get(endpoint, queryParameters: queryParameters);
   }
 
+  /// Téléchargement binaire authentifié (ex. média à vue unique, jamais mis en cache disque).
+  Future<Response<List<int>>> getBytes(String endpoint) {
+    return _dio.get<List<int>>(endpoint, options: Options(responseType: ResponseType.bytes));
+  }
+
   Future<Response> post(
     String endpoint, {
     dynamic data,

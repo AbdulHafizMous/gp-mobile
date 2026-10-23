@@ -350,7 +350,7 @@ class YouwiiinController extends GetxController {
         (raw as List? ?? [])
             .whereType<Map>()
             .map((j) => GzRoom.fromJson(Map<String, dynamic>.from(j)))
-            .where((r) => r.code.isNotEmpty && r.isWaiting),
+            .where((r) => r.code.isNotEmpty && (r.isWaiting || r.isPlaying)),
       );
     } catch (_) {
       // On garde la liste précédente (réseau instable).
@@ -416,8 +416,9 @@ class YouwiiinController extends GetxController {
 
   /// Événements après [after]. [rv] = version de salle déjà connue : le serveur ne renvoie `room` que si elle a changé.
   /// `nextPollMs` = cadence conseillée par le serveur (adaptative selon la charge/le mode).
-  Future<GzResult<({List<Map<String, dynamic>> events, GzRoom? room, String? rv, int nextPollMs})>> fetchRoomEvents(String code, int after, {String? rv}) => _safe(() async {
-    final res = await RequestService().get('/gamez/rooms/$code/events', queryParameters: {'after': after, if (rv != null) 'rv': rv}).timeout(const Duration(seconds: 8));
+  Future<GzResult<({List<Map<String, dynamic>> events, GzRoom? room, String? rv, int nextPollMs})>> fetchRoomEvents(String code, int after, {String? rv, int wait = 0}) => _safe(() async {
+    // wait > 0 : long-polling — le serveur garde la requête ouverte jusqu'à un nouvel événement (latence ~ RTT/2).
+    final res = await RequestService().get('/gamez/rooms/$code/events', queryParameters: {'after': after, if (rv != null) 'rv': rv, if (wait > 0) 'wait': wait}).timeout(Duration(seconds: 8 + wait));
     final m = _unwrap(res) ?? {};
     final events = (m['events'] as List? ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
     final room = m['room'] is Map ? GzRoom.fromJson(Map<String, dynamic>.from(m['room'])) : null;

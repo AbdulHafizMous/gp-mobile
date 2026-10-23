@@ -5,6 +5,10 @@
 <plist version="1.0">
 <dict>
 
+	<key>GIDClientID</key>
+	<string>530288780124-sohtqd98eq5rsdhvdpfcf5cepo81mjqt.apps.googleusercontent.com</string>
+	<key>GIDServerClientID</key>
+	<string>530288780124-v2m5pomu1iih003inicssigo0eqhrlup.apps.googleusercontent.com</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

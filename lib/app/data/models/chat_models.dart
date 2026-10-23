@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // MESSAGE TYPE
 // ─────────────────────────────────────────────────────────────────────────────
-enum MessageType { text, image, audio, video, file }
+enum MessageType { text, image, audio, video, file, poll }
 
 extension MessageTypeX on MessageType {
   static MessageType fromString(String? s) {
@@ -12,6 +12,7 @@ extension MessageTypeX on MessageType {
       case 'audio': return MessageType.audio;
       case 'video': return MessageType.video;
       case 'file':  return MessageType.file;
+      case 'poll':  return MessageType.poll;
       default:      return MessageType.text;
     }
   }
@@ -22,6 +23,7 @@ extension MessageTypeX on MessageType {
       case MessageType.audio: return '🎤 Vocal';
       case MessageType.video: return '🎬 Vidéo';
       case MessageType.file:  return '📎 Fichier';
+      case MessageType.poll:  return '📊 Sondage';
       default:                return '';
     }
   }
@@ -58,6 +60,11 @@ class ChatMessage {
   // alors remplacé par "Supprimé par l'administration" au lieu de faire
   // disparaître le message (traçabilité + transparence pour les membres).
   final bool isRemovedByAdmin;
+  // Vue unique : le média n'est jamais exposé (ouvert une seule fois par le destinataire).
+  final bool viewOnce;
+  final bool viewOnceOpened;
+  // Sondage : {question, multiple, total_voters, options:[{text,count,voted}]}
+  final Map<String, dynamic>? poll;
 
   // Reply
   final int? replyToId;
@@ -85,6 +92,9 @@ class ChatMessage {
     this.status = MessageStatus.sent,
     this.isPending = false,
     this.isRemovedByAdmin = false,
+    this.viewOnce = false,
+    this.viewOnceOpened = false,
+    this.poll,
     this.replyToId,
     this.replyToSenderName,
     this.replyToContent,
@@ -128,6 +138,9 @@ class ChatMessage {
       type:            MessageTypeX.fromString(json['type']?.toString()),
       status:          MessageStatus.sent,
       isRemovedByAdmin:_b(json['is_removed_by_admin']),
+      viewOnce:        _b(json['view_once']),
+      viewOnceOpened:  _b(json['view_once_opened']),
+      poll:            json['poll'] is Map ? Map<String, dynamic>.from(json['poll'] as Map) : null,
       replyToId:       replyTo != null ? _i(replyTo['id']) : null,
       replyToSenderName: replyTo?['sender_name']?.toString(),
       replyToContent:  replyTo?['content']?.toString(),
@@ -140,6 +153,8 @@ class ChatMessage {
     bool? isPending,
     String? mediaUrl,
     bool? isRemovedByAdmin,
+    bool? viewOnceOpened,
+    Map<String, dynamic>? poll,
     int? replyToId,
     String? replyToSenderName,
     String? replyToContent,
@@ -155,6 +170,9 @@ class ChatMessage {
     status: status ?? this.status,
     isPending: isPending ?? this.isPending,
     isRemovedByAdmin: isRemovedByAdmin ?? this.isRemovedByAdmin,
+    viewOnce: viewOnce,
+    viewOnceOpened: viewOnceOpened ?? this.viewOnceOpened,
+    poll: poll ?? this.poll,
     replyToId: replyToId ?? this.replyToId,
     replyToSenderName: replyToSenderName ?? this.replyToSenderName,
     replyToContent: replyToContent ?? this.replyToContent,

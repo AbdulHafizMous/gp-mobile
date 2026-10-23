@@ -15,6 +15,7 @@ import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/services/iap_debug_logger.dart';
 import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
 import 'package:grand_public_v2/app/services/brand_takeover_service.dart';
+import 'package:grand_public_v2/app/services/call_service.dart';
 import 'package:grand_public_v2/app/services/crush_quota_service.dart';
 import 'package:grand_public_v2/app/services/profile_completion_service.dart';
 import 'package:grand_public_v2/firebase_options.dart';
@@ -85,7 +86,13 @@ Future<void> main() async {
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   // 3. Google Sign-In (initialise avec le Web Client ID)
+  // iOS : le clientId iOS (GoogleService-Info.plist > CLIENT_ID) est OBLIGATOIRE avec
+  // google_sign_in 7.x, sinon l'erreur "clientConfigurationError / No active configuration"
+  // survient. Android le déduit de google-services.json.
   await GoogleSignIn.instance.initialize(
+    clientId: Platform.isIOS
+        ? '530288780124-sohtqd98eq5rsdhvdpfcf5cepo81mjqt.apps.googleusercontent.com'
+        : null,
     serverClientId:
         '530288780124-v2m5pomu1iih003inicssigo0eqhrlup.apps.googleusercontent.com',
   );
@@ -100,6 +107,9 @@ Future<void> main() async {
 
   // 4quater. Quota de messages Crush (désactivé par défaut côté backend).
   await Get.putAsync(() => CrushQuotaService().init());
+
+  // 4quinquies. Appels vocaux/vidéo de la messagerie (sonnerie par polling + push).
+  await Get.putAsync(() => CallService().init());
 
   // HomeController est utilisé par des écrans partagés entre TOUS les
   // modules (Profil, Notifications...) : on l'enregistre une fois pour

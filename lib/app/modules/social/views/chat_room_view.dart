@@ -1,6 +1,7 @@
 // lib/app/modules/social/views/chat_room_view.dart
 
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -9,6 +10,8 @@ import 'package:video_player/video_player.dart';
 import 'package:grand_public_v2/app/data/models/chat_models.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/social/controllers/chat_controller.dart';
+import 'package:grand_public_v2/app/services/call_service.dart';
+import 'package:grand_public_v2/app/modules/social/views/chat_extras.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 import 'package:grand_public_v2/app/utils/linkified_text.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
@@ -53,6 +56,7 @@ class _ChatRoomViewState extends State<ChatRoomView> {
   void initState() {
     super.initState();
     _ctrl.onScrollToBottom = _scrollToBottom;
+    _ctrl.loadTheme(widget.privateConv?.id);
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
 
@@ -90,7 +94,10 @@ class _ChatRoomViewState extends State<ChatRoomView> {
     return Scaffold(
       backgroundColor: context.bg,
       appBar: _buildAppBar(context),
-      body: Column(
+      body: Obx(() => Container(
+        // lit aussi myBubbleColor pour reconstruire la liste quand la couleur change
+        decoration: (_ctrl.myBubbleColor.value, chatWallpaperDecoration(_ctrl.wallpaper.value, context.isDark)).$2,
+        child: Column(
         children: [
           if (widget.privateConv?.isCrushMatch == true) const CrushQuotaBanner(),
           Expanded(
@@ -114,14 +121,21 @@ class _ChatRoomViewState extends State<ChatRoomView> {
             _AttachMenu(
               ctrl: _ctrl,
               onDone: () => setState(() => _showAttach = false),
+              onPoll: _isPrivate
+                  ? () {
+                      setState(() => _showAttach = false);
+                      showCreatePollSheet(context, _ctrl, widget.privateConv!.id);
+                    }
+                  : null,
             ),
         ],
       ),
+      )),
     );
   }
 
   AppBar _buildAppBar(BuildContext context) {
-    final isOnline = widget.privateConv?.otherIsOnline ?? false;
+    final c = Get.find<ChatController>();
     return AppBar(
       backgroundColor: context.appBarBg,
       foregroundColor: Colors.white,
@@ -147,19 +161,21 @@ class _ChatRoomViewState extends State<ChatRoomView> {
                         )
                       : null,
                 ),
-                if (isOnline)
+                if (_isPrivate)
                   Positioned(
                     bottom: 0,
                     right: 0,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: Colors.greenAccent.shade400,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: context.appBarBg, width: 2),
-                      ),
-                    ),
+                    child: Obx(() => !c.peerOnline.value
+                        ? const SizedBox.shrink()
+                        : Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: Colors.greenAccent.shade400,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: context.appBarBg, width: 2),
+                            ),
+                          )),
                   ),
               ],
             ),
@@ -234,23 +250,43 @@ class _ChatRoomViewState extends State<ChatRoomView> {
                     ],
                   ],
                 ),
-                Text(
-                  _isPrivate
-                      ? (isOnline ? 'En ligne' : 'Hors ligne')
-                      : '${widget.channel?.membersCount ?? 0} membres',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isOnline
-                        ? Colors.greenAccent.shade400
-                        : Colors.white54,
-                  ),
-                ),
+                Obx(() {
+                  final typing = _isPrivate && c.peerTyping.value.isNotEmpty;
+                  final online = _isPrivate && c.peerOnline.value;
+                  final label = !_isPrivate
+                      ? '${widget.channel?.membersCount ?? 0} membres'
+                      : typing
+                          ? (c.peerTyping.value == 'audio' ? 'enregistre un vocal…' : 'écrit…')
+                          : online
+                              ? 'En ligne'
+                              : c.lastSeenLabel(c.peerLastSeen.value);
+                  return Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontStyle: typing ? FontStyle.italic : FontStyle.normal,
+                      color: (typing || online) ? Colors.greenAccent.shade400 : Colors.white54,
+                    ),
+                  );
+                }),
               ],
             ),
           ),
         ],
       ),
       actions: [
+        if (_isPrivate) ...[
+          IconButton(
+            tooltip: 'Appel vocal',
+            icon: const Icon(Icons.call_rounded, color: Colors.white),
+            onPressed: () => CallService.to.startCall(widget.privateConv!.id, video: false),
+          ),
+          IconButton(
+            tooltip: 'Appel vidéo',
+            icon: const Icon(Icons.videocam_rounded, color: Colors.white),
+            onPressed: () => CallService.to.startCall(widget.privateConv!.id, video: true),
+          ),
+        ],
         // Menu 3 points — actions réellement opérationnelles
         PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert_rounded, color: Colors.white60),
@@ -278,7 +314,15 @@ class _ChatRoomViewState extends State<ChatRoomView> {
                 ),
               ),
             ],
+            PopupMenuItem(
+              value: 'theme',
+              child: _MenuItem(icon: Icons.palette_rounded, label: 'Thème & fond d\'écran'),
+            ),
             if (_isPrivate) ...[
+              PopupMenuItem(
+                value: 'privacy',
+                child: _MenuItem(icon: Icons.privacy_tip_rounded, label: 'Confidentialité'),
+              ),
               PopupMenuItem(
                 value: 'media',
                 child: _MenuItem(
@@ -307,6 +351,12 @@ class _ChatRoomViewState extends State<ChatRoomView> {
 
   void _handleMenuAction(BuildContext context, String action) {
     switch (action) {
+      case 'theme':
+        showChatThemeSheet(context, _ctrl);
+        break;
+      case 'privacy':
+        showChatPrivacySheet(context, _ctrl);
+        break;
       case 'leave':
         if (widget.channel != null) {
           _confirmLeaveChannel(context);
@@ -1045,7 +1095,7 @@ class _MessageBubble extends StatelessWidget {
                         maxWidth: MediaQuery.of(context).size.width * 0.65,
                       ),
                       decoration: BoxDecoration(
-                        color: isMe ? context.bubbleMe : context.bubbleOther,
+                        color: isMe ? (ctrl.myBubbleColor.value ?? context.bubbleMe) : context.bubbleOther,
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(isMe ? 18 : 4),
                           topRight: Radius.circular(isMe ? 4 : 18),
@@ -1439,7 +1489,12 @@ class _BubbleContent extends StatelessWidget {
       );
     }
 
+    if (message.viewOnce && message.type != MessageType.text && message.type != MessageType.poll) {
+      return ViewOnceBubble(message: message, isMe: isMe, ctrl: ctrl);
+    }
     switch (message.type) {
+      case MessageType.poll:
+        return PollBubble(message: message, isMe: isMe, ctrl: ctrl);
       case MessageType.image:
         return _ImageBubble(message: message, isMe: isMe);
       case MessageType.audio:
@@ -1490,11 +1545,12 @@ class _ImageBubble extends StatelessWidget {
         errorBuilder: (_, __, ___) => _broken(),
       );
     } else if (url.isNotEmpty) {
-      img = Image.network(
-        url,
+      // Cache disque : une image n'est téléchargée qu'une fois (économie de data).
+      img = CachedNetworkImage(
+        imageUrl: url,
         fit: BoxFit.cover,
-        loadingBuilder: (_, child, prog) => prog == null ? child : _loading(),
-        errorBuilder: (_, __, ___) => _broken(),
+        placeholder: (_, __) => _loading(),
+        errorWidget: (_, __, ___) => _broken(),
       );
     } else {
       img = _broken();
@@ -2123,6 +2179,19 @@ class _PendingFilePreview extends StatelessWidget {
                 ],
               ),
             ),
+            if (ctrl.pendingFileType.value == MessageType.image || ctrl.pendingFileType.value == MessageType.video)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: FilterChip(
+                  avatar: Icon(Icons.filter_1_rounded, size: 16, color: ctrl.pendingViewOnce.value ? Colors.white : GPTheme.socialColor),
+                  label: const Text('Vue unique'),
+                  selected: ctrl.pendingViewOnce.value,
+                  selectedColor: GPTheme.socialColor,
+                  labelStyle: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: ctrl.pendingViewOnce.value ? Colors.white : null),
+                  showCheckmark: false,
+                  onSelected: (v) => ctrl.pendingViewOnce.value = v,
+                ),
+              ),
             IconButton(
               onPressed: ctrl.clearPendingFile,
               icon: const Icon(Icons.close_rounded, size: 18),
@@ -2414,7 +2483,8 @@ class _InputBarState extends State<_InputBar> {
 class _AttachMenu extends StatelessWidget {
   final ChatController ctrl;
   final VoidCallback onDone;
-  const _AttachMenu({required this.ctrl, required this.onDone});
+  final VoidCallback? onPoll;
+  const _AttachMenu({required this.ctrl, required this.onDone, this.onPoll});
 
   @override
   Widget build(BuildContext context) {
@@ -2451,6 +2521,13 @@ class _AttachMenu extends StatelessWidget {
               onDone();
             },
           ),
+          if (onPoll != null)
+            _AttachItem(
+              icon: Icons.poll_rounded,
+              label: 'Sondage',
+              color: Colors.orange,
+              onTap: () async => onPoll!(),
+            ),
           _AttachItem(
             icon: Icons.insert_drive_file_rounded,
             label: 'Fichier',

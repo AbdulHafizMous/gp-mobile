@@ -42,7 +42,10 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
   void initState() {
     super.initState();
     _refresh();
-    _timer = Timer.periodic(const Duration(seconds: 2), (_) => _refresh());
+    _timer = Timer.periodic(
+      const Duration(milliseconds: 900),
+      (_) => _refresh(),
+    );
   }
 
   @override
