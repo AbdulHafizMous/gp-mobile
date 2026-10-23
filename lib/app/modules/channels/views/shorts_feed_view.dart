@@ -64,6 +64,13 @@ class _ShortsFeedViewState extends State<ShortsFeedView> {
     super.dispose();
   }
 
+  void _next(int i) {
+    if (!mounted || _page == null || !_page!.hasClients) return;
+    if (i < c.items.length - 1) {
+      _page!.nextPage(duration: const Duration(milliseconds: 380), curve: Curves.easeOutCubic);
+    }
+  }
+
   Future<void> _onChanged(int i) async {
     final showAd = c.onPageChanged(i);
     if (showAd && mounted) {
@@ -98,6 +105,8 @@ class _ShortsFeedViewState extends State<ShortsFeedView> {
                   active: c.current.value == i,
                   ctrl: c,
                   channelId: widget.channelId,
+                  onEnded: () => _next(i),
+                  isLast: i >= c.items.length - 1,
                 )),
           ),
           _backButton(),
@@ -109,11 +118,29 @@ class _ShortsFeedViewState extends State<ShortsFeedView> {
   Widget _backButton() => SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(8),
-          child: IconButton(
-            style: IconButton.styleFrom(backgroundColor: Colors.black38),
-            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-            onPressed: Get.back,
-          ),
+          child: Row(children: [
+            IconButton(
+              style: IconButton.styleFrom(backgroundColor: Colors.black38),
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+              onPressed: Get.back,
+            ),
+            const Spacer(),
+            Obx(() => IconButton(
+                  tooltip: c.autoNext.value ? 'Défilement auto : activé' : 'Défilement auto : désactivé',
+                  style: IconButton.styleFrom(backgroundColor: c.autoNext.value ? Colors.white : Colors.black38),
+                  icon: Icon(Icons.swipe_vertical_rounded, color: c.autoNext.value ? Colors.black : Colors.white),
+                  onPressed: () {
+                    c.toggleAuto();
+                    ToastHelper.showToast(c.autoNext.value ? 'Défilement automatique activé' : 'Défilement automatique désactivé');
+                  },
+                )),
+            const SizedBox(width: 6),
+            Obx(() => IconButton(
+                  style: IconButton.styleFrom(backgroundColor: Colors.black38),
+                  icon: Icon(c.muted.value ? Icons.volume_off_rounded : Icons.volume_up_rounded, color: Colors.white),
+                  onPressed: c.toggleMute,
+                )),
+          ]),
         ),
       );
 }
@@ -123,7 +150,9 @@ class _ShortPage extends StatefulWidget {
   final bool active;
   final ShortsFeedController ctrl;
   final int channelId;
-  const _ShortPage({super.key, required this.video, required this.active, required this.ctrl, required this.channelId});
+  final VoidCallback onEnded;
+  final bool isLast;
+  const _ShortPage({super.key, required this.video, required this.active, required this.ctrl, required this.channelId, required this.onEnded, required this.isLast});
 
   @override
   State<_ShortPage> createState() => _ShortPageState();
@@ -134,6 +163,10 @@ class _ShortPageState extends State<_ShortPage> {
   YoutubePlayerController? _yt;
   bool _paused = false;
   bool _busy = false;
+  bool _expanded = false; // description dépliée
+  bool _endFired = false;
+  bool _heart = false; // double-tap : cœur
+  Worker? _muteW;
 
   SpaceVideo get v => widget.video;
   bool get _locked => !v.canRead;
@@ -142,6 +175,7 @@ class _ShortPageState extends State<_ShortPage> {
   @override
   void initState() {
     super.initState();
+    _muteW = ever(widget.ctrl.muted, (_) => _applyMute());
     if (widget.active) _startPlayer();
   }
 
@@ -164,25 +198,72 @@ class _ShortPageState extends State<_ShortPage> {
         _vp!.play();
         return;
       }
-      final vp = VideoPlayerController.networkUrl(Uri.parse(v.videoFileUrl!));
+      final vp = VideoPlayerController.networkUrl(Uri.parse(v.videoFileUrl!), videoPlayerOptions: VideoPlayerOptions(mixWithOthers: false));
       _vp = vp;
       await vp.initialize();
       if (!mounted || _vp != vp) return;
+      _endFired = false;
       vp
-        ..setLooping(true)
+        ..setLooping(false)
+        ..setVolume(widget.ctrl.muted.value ? 0 : 1)
+        ..addListener(_onVp)
         ..play();
       setState(() => _paused = false);
     } else if (v.youtubeId.isNotEmpty) {
       _yt ??= YoutubePlayerController(
         initialVideoId: v.youtubeId,
-        flags: const YoutubePlayerFlags(autoPlay: true, loop: true, hideControls: true, disableDragSeek: true, forceHD: false),
-      );
+        flags: const YoutubePlayerFlags(autoPlay: true, loop: false, hideControls: true, disableDragSeek: true, forceHD: false, mute: false),
+      )..addListener(_onYt);
+      _endFired = false;
+      _applyMute();
       _yt!.play();
       if (mounted) setState(() {});
     }
   }
 
+  /// Fin de lecture : on passe au short suivant (si activé) ; sinon / dernier short : on rejoue en boucle.
+  void _ended() {
+    if (_endFired || !mounted) return;
+    _endFired = true;
+    if (widget.ctrl.autoNext.value && !widget.isLast) {
+      widget.onEnded();
+    } else {
+      _vp?.seekTo(Duration.zero);
+      _vp?.play();
+      _yt?.seekTo(Duration.zero);
+      _yt?.play();
+      _endFired = false;
+    }
+  }
+
+  void _onVp() {
+    final v0 = _vp?.value;
+    if (v0 == null || !v0.isInitialized || v0.duration == Duration.zero) return;
+    if (v0.position >= v0.duration - const Duration(milliseconds: 180) && !v0.isPlaying) _ended();
+    if (v0.position >= v0.duration - const Duration(milliseconds: 60)) _ended();
+  }
+
+  void _onYt() {
+    if (_yt != null && _yt!.value.playerState == PlayerState.ended) _ended();
+  }
+
+  void _applyMute() {
+    final m = widget.ctrl.muted.value;
+    _vp?.setVolume(m ? 0 : 1);
+    if (_yt != null) m ? _yt!.mute() : _yt!.unMute();
+  }
+
+  void _doubleTapLike() {
+    if (_locked) return;
+    if (!v.isLiked) widget.ctrl.toggleLike(v);
+    setState(() => _heart = true);
+    HapticFeedback.lightImpact();
+    Future.delayed(const Duration(milliseconds: 700), () { if (mounted) setState(() => _heart = false); });
+  }
+
   void _stopPlayer() {
+    _vp?.removeListener(_onVp);
+    _yt?.removeListener(_onYt);
     _vp?.pause();
     _yt?.pause();
     _vp?.dispose();
@@ -194,6 +275,9 @@ class _ShortPageState extends State<_ShortPage> {
 
   @override
   void dispose() {
+    _muteW?.dispose();
+    _vp?.removeListener(_onVp);
+    _yt?.removeListener(_onYt);
     _vp?.dispose();
     _yt?.dispose();
     super.dispose();
@@ -252,7 +336,7 @@ class _ShortPageState extends State<_ShortPage> {
       // Fond / miniature
       if (v.thumbnail.isNotEmpty) Image.network(v.thumbnail, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox()),
       if (_locked) BackdropFilterBlur(),
-      if (!_locked) GestureDetector(onTap: _togglePlay, behavior: HitTestBehavior.opaque, child: _player()),
+      if (!_locked) GestureDetector(onTap: _expanded ? () => setState(() => _expanded = false) : _togglePlay, onDoubleTap: _doubleTapLike, behavior: HitTestBehavior.opaque, child: _player()),
       const IgnorePointer(
         child: DecoratedBox(
           decoration: BoxDecoration(
@@ -260,7 +344,19 @@ class _ShortPageState extends State<_ShortPage> {
           ),
         ),
       ),
-      if (_paused && !_locked) const Center(child: Icon(Icons.play_arrow_rounded, color: Colors.white70, size: 90)),
+      if (_expanded) IgnorePointer(child: Container(color: Colors.black.withValues(alpha: 0.55))),
+      if (_paused && !_locked) const IgnorePointer(child: Center(child: Icon(Icons.play_arrow_rounded, color: Colors.white70, size: 90))),
+      Center(
+        child: IgnorePointer(
+          child: AnimatedScale(
+            scale: _heart ? 1.0 : 0.3,
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.elasticOut,
+            child: AnimatedOpacity(opacity: _heart ? 1 : 0, duration: const Duration(milliseconds: 200), child: const Icon(Icons.favorite_rounded, color: Colors.redAccent, size: 110)),
+          ),
+        ),
+      ),
+      if (!_locked) _progressBar(),
       if (_locked) _lockOverlay(),
       _rightRail(),
       _bottomInfo(),
@@ -340,11 +436,30 @@ class _ShortPageState extends State<_ShortPage> {
     );
   }
 
+  /// Fine barre de progression en bas (glissable pour les vidéos hébergées).
+  Widget _progressBar() {
+    final bar = _vp != null && _vp!.value.isInitialized
+        ? VideoProgressIndicator(_vp!, allowScrubbing: true, padding: const EdgeInsets.symmetric(vertical: 10), colors: const VideoProgressColors(playedColor: Colors.white, bufferedColor: Colors.white24, backgroundColor: Colors.white12))
+        : _yt != null
+            ? ValueListenableBuilder<YoutubePlayerValue>(
+                valueListenable: _yt!,
+                builder: (_, val, __) {
+                  final d = _yt!.metadata.duration.inMilliseconds;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: LinearProgressIndicator(value: d > 0 ? (val.position.inMilliseconds / d).clamp(0.0, 1.0) : null, minHeight: 2.5, color: Colors.white, backgroundColor: Colors.white12),
+                  );
+                },
+              )
+            : const SizedBox.shrink();
+    return Positioned(left: 0, right: 0, bottom: 0, child: SafeArea(top: false, child: bar));
+  }
+
   Widget _bottomInfo() {
     return Positioned(
       left: 16,
       right: 84,
-      bottom: 28,
+      bottom: 40,
       child: SafeArea(
         top: false,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
@@ -362,7 +477,30 @@ class _ShortPageState extends State<_ShortPage> {
             ],
           ]),
           const SizedBox(height: 8),
-          Text(v.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w600)),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 220),
+              alignment: Alignment.topLeft,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: _expanded ? MediaQuery.of(context).size.height * 0.42 : 90),
+                child: SingleChildScrollView(
+                  physics: _expanded ? const BouncingScrollPhysics() : const NeverScrollableScrollPhysics(),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                    Text(v.title, maxLines: _expanded ? null : 2, overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w700)),
+                    if ((v.description ?? '').trim().isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(v.description!.trim(), maxLines: _expanded ? null : 1, overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.35)),
+                    ],
+                    if (!_expanded && ((v.description ?? '').trim().isNotEmpty || v.title.length > 60))
+                      const Padding(padding: EdgeInsets.only(top: 2), child: Text('… plus', style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w800))),
+                    if (_expanded) const Padding(padding: EdgeInsets.only(top: 6), child: Text('Réduire', style: TextStyle(color: Colors.white60, fontSize: 12, fontWeight: FontWeight.w700))),
+                  ]),
+                ),
+              ),
+            ),
+          ),
         ]),
       ),
     );

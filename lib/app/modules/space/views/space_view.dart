@@ -42,16 +42,10 @@ class SpaceView extends GetView<SpaceController> {
       bottomNavigationBar: controller.isChannel
           ? Obx(() {
               final ch = controller.channel.value;
-              if (ch == null ||
-                  ch.isSubscribed ||
-                  ch.isOwner ||
-                  ch.plans.isEmpty) {
+              if (ch == null || ch.isSubscribed || ch.isOwner || ch.plans.isEmpty) {
                 return const SizedBox.shrink();
               }
-              final cheapest = ch.plans
-                  .map((p) => p.price)
-                  .reduce((a, b) => a < b ? a : b)
-                  .round();
+              final cheapest = ch.plans.map((p) => p.price).reduce((a, b) => a < b ? a : b).round();
               return SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
@@ -61,22 +55,16 @@ class SpaceView extends GetView<SpaceController> {
                       onPressed: () => ChannelSubscribeSheet.show(
                         context,
                         ch,
-                        () async =>
-                            (controller as dynamic).refreshAfterPayment(),
+                        () async => (controller as dynamic).refreshAfterPayment(),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: GPTheme.primaryColor,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                       ),
                       child: Text(
                         "S'abonner · dès $cheapest F",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 16,
-                        ),
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                       ),
                     ),
                   ),
@@ -231,14 +219,9 @@ class _SpaceBodyState extends State<_SpaceBody> with TickerProviderStateMixin {
                       shape: BoxShape.circle,
                       color: Colors.white.withValues(alpha: 0.2),
                     ),
-                    child: const Icon(
-                      Icons.slow_motion_video_rounded,
-                      color: Colors.white,
-                      size: 18,
-                    ),
+                    child: const Icon(Icons.slow_motion_video_rounded, color: Colors.white, size: 18),
                   ),
-                  onPressed: () =>
-                      Get.to(() => ShortsFeedView(channelId: _ctrl.spaceId)),
+                  onPressed: () => Get.to(() => ShortsFeedView(channelId: _ctrl.spaceId)),
                 ),
                 IconButton(
                   tooltip: 'Paramètres de la chaîne',
@@ -249,11 +232,7 @@ class _SpaceBodyState extends State<_SpaceBody> with TickerProviderStateMixin {
                       shape: BoxShape.circle,
                       color: Colors.white.withValues(alpha: 0.2),
                     ),
-                    child: const Icon(
-                      Icons.settings_rounded,
-                      color: Colors.white,
-                      size: 18,
-                    ),
+                    child: const Icon(Icons.settings_rounded, color: Colors.white, size: 18),
                   ),
                   onPressed: () {
                     final ch = _ctrl.channel.value;
@@ -319,28 +298,24 @@ class _SpaceBodyState extends State<_SpaceBody> with TickerProviderStateMixin {
                   ),
           ),
         ],
-        body: Column(
-          children: [
-            if (_ctrl.isChannel)
-              AdBannerWidget(screen: 'channel', channelId: _ctrl.spaceId),
-            Expanded(
-              child: cats.isEmpty
-                  ? _EmptyCategoryBody()
-                  : TabBarView(
-                      controller: _tabController,
-                      children: updatedSpace.categories
-                          .map(
-                            (cat) => _CategoryContentView(
-                              category: cat,
-                              accentColor: _gradient[0],
-                              ctrl: _ctrl,
-                            ),
-                          )
-                          .toList(),
-                    ),
-            ),
-          ],
-        ),
+        body: Column(children: [
+          if (_ctrl.isChannel)
+            AdBannerWidget(screen: 'channel', channelId: _ctrl.spaceId),
+          Expanded(child: cats.isEmpty
+            ? _EmptyCategoryBody()
+            : TabBarView(
+                controller: _tabController,
+                children: updatedSpace.categories
+                    .map(
+                      (cat) => _CategoryContentView(
+                        category: cat,
+                        accentColor: _gradient[0],
+                        ctrl: _ctrl,
+                      ),
+                    )
+                    .toList(),
+              )),
+        ]),
       );
     });
   }
@@ -551,11 +526,7 @@ class _SpaceHeroHeader extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0x59000000),
-                      Color(0x99000000),
-                      Color(0xE6000000),
-                    ],
+                    colors: [Color(0x59000000), Color(0x99000000), Color(0xE6000000)],
                     stops: [0.0, 0.55, 1.0],
                   ),
                 ),
@@ -604,11 +575,7 @@ class _SpaceHeroHeader extends StatelessWidget {
                               letterSpacing: -0.5,
                               height: 1.1,
                               shadows: [
-                                Shadow(
-                                  color: Color(0xB3000000),
-                                  blurRadius: 8,
-                                  offset: Offset(0, 1),
-                                ),
+                                Shadow(color: Color(0xB3000000), blurRadius: 8, offset: Offset(0, 1)),
                               ],
                             ),
                           ),
@@ -620,11 +587,7 @@ class _SpaceHeroHeader extends StatelessWidget {
                               fontSize: 12.5,
                               height: 1.4,
                               shadows: const [
-                                Shadow(
-                                  color: Color(0xB3000000),
-                                  blurRadius: 6,
-                                  offset: Offset(0, 1),
-                                ),
+                                Shadow(color: Color(0xB3000000), blurRadius: 6, offset: Offset(0, 1)),
                               ],
                             ),
                             maxLines: 2,
@@ -913,7 +876,10 @@ class _CategoryContentView extends StatelessWidget {
                       const SizedBox(height: 12),
                       Text(
                         'Bientôt disponible',
-                        style: TextStyle(color: Colors.white, fontSize: 15),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                        ),
                       ),
                     ],
                   ),

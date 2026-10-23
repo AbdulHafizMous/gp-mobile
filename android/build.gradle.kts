@@ -15,12 +15,11 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
-
 subprojects {
     project.evaluationDependsOn(":app")
 }
 
-// Utilisation de la JVM Toolchain (contourne le verrouillage de sourceCompatibility)
+// Tous les plugins compilent leur Kotlin en JVM 17 (bytecode compatible Android).
 subprojects {
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         compilerOptions {

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:grand_public_v2/app/data/models/space_model.dart';
 import 'package:grand_public_v2/app/services/ad_service.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
@@ -16,6 +17,11 @@ class ShortsFeedController extends GetxController {
   final items = <SpaceVideo>[].obs;
   final isLoading = true.obs;
   final current = 0.obs;
+  // Préférences de lecture (persistées) : défilement automatique à la fin d'un short, son coupé.
+final autoNext = RxBool(GetStorage().read('shorts_autonext') ?? true);
+final muted = RxBool(GetStorage().read('shorts_muted') ?? false);
+  void toggleAuto() { autoNext.value = !autoNext.value; GetStorage().write('shorts_autonext', autoNext.value); }
+  void toggleMute() { muted.value = !muted.value; GetStorage().write('shorts_muted', muted.value); }
 
   int _page = 0;
   bool _hasMore = true;
