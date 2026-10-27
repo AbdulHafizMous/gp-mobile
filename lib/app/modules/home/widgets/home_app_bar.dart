@@ -141,7 +141,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
           onPressed: () => ctrl.navigateTo('/profile'),
         ),
-        const SizedBox(width: 4),
+        // const SizedBox(width: 4),
       ],
     );
   }

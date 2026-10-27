@@ -67,51 +67,51 @@ class ModuleChoiceView extends GetView<ModuleChoiceController> {
               child: Center(
                 child: SingleChildScrollView(
                   child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'Bienvenue !',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Que voulez-vous ouvrir ?',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  ...modules.map(
-                    (m) => Padding(
-                      padding: const EdgeInsets.only(bottom: 18),
-                      child: _ModuleCard(
-                        data: m,
-                        onTap: () => controller.choose(m.mode),
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Bienvenue !',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Choisissez votre kiff !',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      ...modules.map(
+                        (m) => Padding(
+                          padding: const EdgeInsets.only(bottom: 18),
+                          child: _ModuleCard(
+                            data: m,
+                            onTap: () => controller.choose(m.mode),
+                          ),
+                        ),
+                      ),
+                      // ── Chaînes de créateurs : même modèle que les modules ──
+                      const _ChannelsSection(),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Vous pourrez changer de module à tout moment depuis le menu.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
-                  // ── Chaînes de créateurs : même modèle que les modules ──
-                  const _ChannelsSection(),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Vous pourrez changer de module à tout moment depuis le menu.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
                 ),
               ),
             ),
@@ -133,45 +133,66 @@ class _ChannelsSection extends StatelessWidget {
         : Get.put(ChannelsListController());
     return Obx(() {
       if (c.channels.isEmpty) return const SizedBox.shrink();
-      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const SizedBox(height: 4),
-        Row(children: [
-          const Icon(Icons.live_tv_rounded, color: Colors.white70, size: 18),
-          const SizedBox(width: 8),
-          const Text('Chaînes',
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
-          const Spacer(),
-          InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: () => Get.toNamed('/channels'),
-            child: const Padding(
-              padding: EdgeInsets.all(6),
-              child: Icon(Icons.format_list_bulleted_rounded, color: Colors.white, size: 22),
-            ),
-          ),
-        ]),
-        const SizedBox(height: 10),
-        ...c.channels.take(3).map(
-              (ch) => Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: _ModuleCard(
-                  data: _ModuleCardData(
-                    mode: AppMode.grandPublic,
-                    title: ch.name,
-                    subtitle: ch.description.isNotEmpty
-                        ? ch.description
-                        : (ch.plans.isEmpty
-                            ? 'Chaîne de créateur'
-                            : 'Abonnement dès ${ch.plans.map((p) => p.price).reduce((a, b) => a < b ? a : b).round()} F'),
-                    color: GPTheme.primaryColor,
-                    icon: Icons.live_tv_rounded,
-                    logoUrl: ch.logoUrl,
-                  ),
-                  onTap: () => Get.toNamed('/channel/${ch.id}'),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const Icon(
+                Icons.live_tv_rounded,
+                color: Colors.white70,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Chaînes',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-            ),
-      ]);
+              const Spacer(),
+              InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () => Get.toNamed('/channels'),
+                child: const Padding(
+                  padding: EdgeInsets.all(6),
+                  child: Icon(
+                    Icons.format_list_bulleted_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...c.channels
+              .take(3)
+              .map(
+                (ch) => Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: _ModuleCard(
+                    data: _ModuleCardData(
+                      mode: AppMode.grandPublic,
+                      title: ch.name,
+                      subtitle: ch.description.isNotEmpty
+                          ? ch.description
+                          : (ch.plans.isEmpty
+                                ? 'Chaîne de créateur'
+                                : 'Abonnement dès ${ch.plans.map((p) => p.price).reduce((a, b) => a < b ? a : b).round()} F'),
+                      color: GPTheme.primaryColor,
+                      icon: Icons.live_tv_rounded,
+                      logoUrl: ch.logoUrl,
+                    ),
+                    onTap: () => Get.toNamed('/channel/${ch.id}'),
+                  ),
+                ),
+              ),
+        ],
+      );
     });
   }
 }
