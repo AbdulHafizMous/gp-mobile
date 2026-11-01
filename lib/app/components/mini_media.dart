@@ -16,6 +16,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/bm_mini_player.dart'
     show currentRouteName, kOverlayHiddenRoutes;
@@ -53,6 +54,9 @@ class MiniMedia {
   static Duration? _seek;
   static DateTime? _seekAt;
   static const _seekTtl = Duration(seconds: 60);
+
+  /// true quand la vidéo de la mini-fenêtre est en lecture (arme le PiP système).
+  static final ValueNotifier<bool> playing = ValueNotifier<bool>(false);
 
   static bool get isActive => _current.value != null;
 
@@ -125,10 +129,67 @@ class MiniMediaOverlay extends StatefulWidget {
   State<MiniMediaOverlay> createState() => _MiniMediaOverlayState();
 }
 
-class _MiniMediaOverlayState extends State<MiniMediaOverlay> {
+class _MiniMediaOverlayState extends State<MiniMediaOverlay>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   static const double _margin = 12;
-  Offset? _pos; // coin haut-gauche ; null = position par défaut
-  bool _dragging = false;
+
+  // Position dans un ValueNotifier : le déplacement ne reconstruit QUE le
+  // Positioned (et plus toute la fenêtre vidéo) → drag fluide.
+  final ValueNotifier<Offset?> _pos = ValueNotifier<Offset?>(null);
+  late final AnimationController _snap = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 200),
+  );
+  Offset _from = Offset.zero, _to = Offset.zero;
+
+  // Picture-in-Picture système (Android) via un canal natif (voir MainActivity.kt).
+  static const _pip = MethodChannel('gp/pip');
+  bool _inPip = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _snap.addListener(() {
+      _pos.value = Offset.lerp(
+        _from,
+        _to,
+        Curves.easeOutCubic.transform(_snap.value),
+      );
+    });
+    _pip.setMethodCallHandler((call) async {
+      if (call.method == 'pipChanged' && mounted) {
+        setState(() => _inPip = call.arguments == true);
+      }
+    });
+  }
+
+  /// L'app passe en arrière-plan alors qu'une vidéo joue → PiP système.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.inactive) return;
+    if (!MiniMedia.isActive || !MiniMedia.playing.value) return;
+    _enterPip();
+  }
+
+  Future<void> _enterPip() async {
+    try {
+      if (await _pip.invokeMethod<bool>('available') == true) {
+        await _pip.invokeMethod('enter');
+      }
+    } catch (e) {
+      debugPrint('MiniMedia PiP : $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pip.setMethodCallHandler(null);
+    _snap.dispose();
+    _pos.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -144,42 +205,68 @@ class _MiniMediaOverlayState extends State<MiniMediaOverlay> {
       final w = portrait ? 128.0 : 232.0;
       final h = portrait ? w * 16 / 9 : w * 9 / 16;
 
+      // Fenêtre système PiP : la vidéo occupe tout l'écran réduit.
+      if (_inPip) {
+        return Positioned.fill(
+          child: _MiniMediaWindow(
+            key: ValueKey(req.token),
+            request: req,
+            width: MediaQuery.of(context).size.width,
+            pip: true,
+          ),
+        );
+      }
+
       final mq = MediaQuery.of(context);
       final minX = _margin;
       final maxX = math.max(minX, mq.size.width - w - _margin);
       final minY = mq.padding.top + _margin;
       final maxY = math.max(minY, mq.size.height - h - mq.padding.bottom - _margin);
 
+      Offset clamp(Offset p) => Offset(
+        p.dx.clamp(minX, maxX).toDouble(),
+        p.dy.clamp(minY, maxY).toDouble(),
+      );
+
       // Par défaut : en bas à droite, au-dessus de la bottom bar et du
       // mini-lecteur Blowmusic.
-      final p = _pos ?? Offset(maxX, maxY - 150);
-      final dx = p.dx.clamp(minX, maxX).toDouble();
-      final dy = p.dy.clamp(minY, maxY).toDouble();
+      final fallback = Offset(maxX, maxY - 150);
 
-      return AnimatedPositioned(
-        duration: _dragging ? Duration.zero : const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        left: dx,
-        top: dy,
-        width: w,
-        height: h,
-        child: GestureDetector(
-          onPanStart: (_) => setState(() => _dragging = true),
-          onPanUpdate: (d) => setState(
-            () => _pos = Offset(dx + d.delta.dx, dy + d.delta.dy),
-          ),
-          onPanEnd: (_) => setState(() {
-            _dragging = false;
-            // Aimantation au bord le plus proche.
-            final snapX = dx + w / 2 < mq.size.width / 2 ? minX : maxX;
-            _pos = Offset(snapX, dy);
-          }),
-          child: _MiniMediaWindow(
-            key: ValueKey(req.token),
-            request: req,
+      // La fenêtre est construite UNE fois (child) ; seul le Positioned bouge.
+      final window = RepaintBoundary(
+        child: _MiniMediaWindow(key: ValueKey(req.token), request: req, width: w),
+      );
+
+      return ValueListenableBuilder<Offset?>(
+        valueListenable: _pos,
+        child: window,
+        builder: (_, pos, child) {
+          final p = clamp(pos ?? fallback);
+          return Positioned(
+            left: p.dx,
+            top: p.dy,
             width: w,
-          ),
-        ),
+            height: h,
+            child: GestureDetector(
+              onPanStart: (_) => _snap.stop(),
+              onPanUpdate: (d) {
+                final cur = clamp(_pos.value ?? fallback);
+                _pos.value = clamp(cur + d.delta);
+              },
+              onPanEnd: (_) {
+                final cur = clamp(_pos.value ?? fallback);
+                // Aimantation au bord le plus proche.
+                final snapX = cur.dx + w / 2 < mq.size.width / 2 ? minX : maxX;
+                _from = cur;
+                _to = Offset(snapX, cur.dy);
+                _snap
+                  ..reset()
+                  ..forward();
+              },
+              child: child,
+            ),
+          );
+        },
       );
     });
   }
@@ -203,10 +290,11 @@ class _Snap {
 }
 
 class _MiniMediaWindow extends StatefulWidget {
-  const _MiniMediaWindow({super.key, required this.request, required this.width});
+  const _MiniMediaWindow({super.key, required this.request, required this.width, this.pip = false});
 
   final _MiniRequest request;
   final double width;
+  final bool pip; // fenêtre PiP système : plein cadre, sans contrôles
 
   @override
   State<_MiniMediaWindow> createState() => _MiniMediaWindowState();
@@ -325,6 +413,7 @@ class _MiniMediaWindowState extends State<_MiniMediaWindow> {
       return;
     }
     _snap.value = s;
+    MiniMedia.playing.value = s.playing;
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────
@@ -363,6 +452,7 @@ class _MiniMediaWindowState extends State<_MiniMediaWindow> {
   @override
   void dispose() {
     _disposed = true;
+    MiniMedia.playing.value = false;
     _hideTimer?.cancel();
     _native?.removeListener(_onNative);
     _native?.dispose();
@@ -415,7 +505,7 @@ class _MiniMediaWindowState extends State<_MiniMediaWindow> {
       color: Colors.black,
       elevation: 12,
       shadowColor: Colors.black87,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(widget.pip ? 0 : 16),
       clipBehavior: Clip.antiAlias,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -427,7 +517,7 @@ class _MiniMediaWindowState extends State<_MiniMediaWindow> {
             ValueListenableBuilder<_Snap>(
               valueListenable: _snap,
               builder: (_, s, __) {
-                final showControls = _controls || !s.playing;
+                final showControls = !widget.pip && (_controls || !s.playing);
                 final progress = s.duration.inMilliseconds > 0
                     ? (s.position.inMilliseconds / s.duration.inMilliseconds)
                           .clamp(0.0, 1.0)

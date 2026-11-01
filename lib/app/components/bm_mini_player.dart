@@ -9,6 +9,8 @@
 // Tooltip), pas de Material ancestor → on en ajoute un, et on navigue avec
 // Get.* / Get.overlayContext, jamais avec Navigator.of(context).
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/vinyl_disc.dart';
@@ -96,177 +98,196 @@ class _BmMiniBar extends StatelessWidget {
       final loading = ctrl.playbackState.value == BmPlaybackState.loading;
       final playing = ctrl.isPlaying.value;
       final title =
-          track?.title ?? ctrl.liveStream.value?['title']?.toString() ?? 'Direct';
+          track?.title ??
+          ctrl.liveStream.value?['title']?.toString() ??
+          'Direct';
       final cover =
           track?.coverUrl ?? ctrl.liveStream.value?['cover_url']?.toString();
       final hasCover = cover != null && cover.isNotEmpty;
       final hasQueue = !live && ctrl.queue.length > 1;
 
-      return Positioned(
-        left: 12,
-        right: 12,
-        bottom: safeBottom + kBmMiniBottomOffset,
-        child: Material(
-          type: MaterialType.transparency,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _open,
-            child: Container(
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                // Même ambiance que le lecteur plein écran : dégradé sombre
-                // teinté de l'accent.
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    Color.lerp(accent, Colors.black, .6)!,
-                    const Color(0xFF0B0810),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withValues(alpha: .08)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: .4),
-                    blurRadius: 18,
-                    offset: const Offset(0, 6),
-                  ),
+      final band = Material(
+        type: MaterialType.transparency,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _open,
+          child: Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              // Même ambiance que le lecteur plein écran : dégradé sombre
+              // teinté de l'accent.
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Color.lerp(accent, Colors.black, .6)!,
+                  const Color(0xFF0B0810),
                 ],
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
-                    child: Row(
-                      children: [
-                        VinylDisc(
-                          size: 46,
-                          playing: playing,
-                          accent: accent,
-                          coverUrl: cover,
-                          isCoverUrlAvailable: hasCover,
-                          fallbackIcon: live
-                              ? Icons.podcasts_rounded
-                              : Icons.music_note_rounded,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: .08)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: .4),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
+                  child: Row(
+                    children: [
+                      VinylDisc(
+                        size: 46,
+                        playing: playing,
+                        accent: accent,
+                        coverUrl: cover,
+                        isCoverUrlAvailable: hasCover,
+                        fallbackIcon: live
+                            ? Icons.podcasts_rounded
+                            : Icons.music_note_rounded,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            if (live)
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFFB7185),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    'EN DIRECT',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: .7),
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: .6,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            else
                               Text(
-                                title,
+                                track?.artistName ?? 'Blowmusic',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w700,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: .6),
+                                  fontSize: 11.5,
                                 ),
                               ),
-                              const SizedBox(height: 2),
-                              if (live)
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFFFB7185),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 5),
-                                    Text(
-                                      'EN DIRECT',
-                                      style: TextStyle(
-                                        color: Colors.white.withValues(alpha: .7),
-                                        fontSize: 10.5,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: .6,
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              else
-                                Text(
-                                  track?.artistName ?? 'Blowmusic',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: .6),
-                                    fontSize: 11.5,
-                                  ),
-                                ),
+                          ],
+                        ),
+                      ),
+                      // Lecture / pause (spinner pendant le chargement)
+                      GestureDetector(
+                        onTap: loading ? null : ctrl.togglePlayPause,
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: accent,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: accent.withValues(alpha: .45),
+                                blurRadius: 10,
+                              ),
                             ],
                           ),
-                        ),
-                        // Lecture / pause (spinner pendant le chargement)
-                        GestureDetector(
-                          onTap: loading ? null : ctrl.togglePlayPause,
-                          child: Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: accent,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: accent.withValues(alpha: .45),
-                                  blurRadius: 10,
-                                ),
-                              ],
-                            ),
-                            child: loading
-                                ? const Padding(
-                                    padding: EdgeInsets.all(10),
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : Icon(
-                                    playing
-                                        ? Icons.pause_rounded
-                                        : Icons.play_arrow_rounded,
+                          child: loading
+                              ? const Padding(
+                                  padding: EdgeInsets.all(10),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
                                     color: Colors.white,
-                                    size: 24,
                                   ),
-                          ),
+                                )
+                              : Icon(
+                                  playing
+                                      ? Icons.pause_rounded
+                                      : Icons.play_arrow_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
                         ),
-                        if (hasQueue)
-                          IconButton(
-                            visualDensity: VisualDensity.compact,
-                            icon: const Icon(
-                              Icons.skip_next_rounded,
-                              color: Colors.white,
-                              size: 26,
-                            ),
-                            onPressed: () => ctrl.next(),
-                          ),
+                      ),
+                      if (hasQueue)
                         IconButton(
                           visualDensity: VisualDensity.compact,
-                          icon: Icon(
-                            Icons.close_rounded,
-                            color: Colors.white.withValues(alpha: .55),
-                            size: 20,
+                          icon: const Icon(
+                            Icons.skip_next_rounded,
+                            color: Colors.white,
+                            size: 26,
                           ),
-                          // Arrête le son ET retire la notification média.
-                          onPressed: ctrl.closePlayer,
+                          onPressed: () => ctrl.next(),
                         ),
-                      ],
-                    ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: Icon(
+                          Icons.close_fullscreen_rounded,
+                          color: Colors.white.withValues(alpha: .7),
+                          size: 18,
+                        ),
+                        onPressed: () => _bmCompact.value = true,
+                      ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: Icon(
+                          Icons.close_rounded,
+                          color: Colors.white.withValues(alpha: .55),
+                          size: 20,
+                        ),
+                        // Arrête le son ET retire la notification média.
+                        onPressed: ctrl.closePlayer,
+                      ),
+                    ],
                   ),
-                  if (!live) _ProgressLine(ctrl: ctrl),
-                ],
-              ),
+                ),
+                if (!live) _ProgressLine(ctrl: ctrl),
+              ],
             ),
           ),
         ),
       );
+
+      final square = _BmSquare(
+        ctrl: ctrl,
+        title: title,
+        cover: cover,
+        live: live,
+        loading: loading,
+        playing: playing,
+        accent: accent,
+        onOpen: _open,
+      );
+
+      return _BmDraggable(band: band, square: square, safeBottom: safeBottom);
     });
   }
 }
@@ -290,5 +311,311 @@ class _ProgressLine extends StatelessWidget {
         valueColor: AlwaysStoppedAnimation(GPTheme.primaryColor),
       );
     });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DÉPLACEMENT + MODE CARRÉ
+// ─────────────────────────────────────────────────────────────────────────────
+/// true = carré compact ; false = bande pleine largeur.
+final ValueNotifier<bool> _bmCompact = ValueNotifier<bool>(false);
+
+/// Coin haut-gauche (null = position par défaut).
+final ValueNotifier<Offset?> _bmPos = ValueNotifier<Offset?>(null);
+
+const double _kSq = 92; // côté du carré
+const double _kBandH = 72; // hauteur estimée de la bande
+const double _kM = 12; // marge
+
+/// Rend le mini-lecteur déplaçable : la bande se déplace verticalement, le
+/// carré partout (aimanté au bord gauche/droit au relâchement).
+class _BmDraggable extends StatefulWidget {
+  const _BmDraggable({
+    required this.band,
+    required this.square,
+    required this.safeBottom,
+  });
+  final Widget band, square;
+  final double safeBottom;
+
+  @override
+  State<_BmDraggable> createState() => _BmDraggableState();
+}
+
+class _BmDraggableState extends State<_BmDraggable>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _anim = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 220),
+  );
+  Offset _from = Offset.zero, _to = Offset.zero;
+  bool _lastCompact = _bmCompact.value;
+
+  @override
+  void initState() {
+    super.initState();
+    _anim.addListener(() {
+      _bmPos.value = Offset.lerp(
+        _from,
+        _to,
+        Curves.easeOutCubic.transform(_anim.value),
+      );
+    });
+    _bmCompact.addListener(_onModeChange);
+  }
+
+  @override
+  void dispose() {
+    _bmCompact.removeListener(_onModeChange);
+    _anim.dispose();
+    super.dispose();
+  }
+
+  Size get _screen => MediaQuery.of(context).size;
+  EdgeInsets get _pad => MediaQuery.of(context).padding;
+
+  Offset _clamp(Offset p, bool compact) {
+    final w = compact ? _kSq : _screen.width - 2 * _kM;
+    final h = compact ? _kSq : _kBandH;
+    final minY = _pad.top + _kM;
+    final maxY = math.max(minY, _screen.height - h - _pad.bottom - _kM);
+    final minX = _kM;
+    final maxX = math.max(minX, _screen.width - w - _kM);
+    return Offset(
+      compact ? p.dx.clamp(minX, maxX).toDouble() : _kM,
+      p.dy.clamp(minY, maxY).toDouble(),
+    );
+  }
+
+  Offset _default(bool compact) => Offset(
+    compact ? _screen.width - _kSq - _kM : _kM,
+    _screen.height -
+        widget.safeBottom -
+        kBmMiniBottomOffset -
+        (compact ? _kSq : _kBandH),
+  );
+
+  /// Bande ⇄ carré : on garde la hauteur, le carré se range à droite.
+  void _onModeChange() {
+    if (!mounted || _lastCompact == _bmCompact.value) return;
+    _lastCompact = _bmCompact.value;
+    final cur = _bmPos.value ?? _default(!_lastCompact);
+    _anim.stop();
+    _bmPos.value = _clamp(
+      Offset(_lastCompact ? _screen.width - _kSq - _kM : _kM, cur.dy),
+      _lastCompact,
+    );
+  }
+
+  void _onUpdate(DragUpdateDetails d, bool compact) {
+    if (_anim.isAnimating) _anim.stop();
+    final p = _bmPos.value ?? _default(compact);
+    _bmPos.value = _clamp(
+      Offset(p.dx + (compact ? d.delta.dx : 0), p.dy + d.delta.dy),
+      compact,
+    );
+  }
+
+  void _onEnd(bool compact) {
+    if (!compact) return;
+    final p = _bmPos.value ?? _default(true);
+    final snapX = p.dx + _kSq / 2 < _screen.width / 2
+        ? _kM
+        : _screen.width - _kSq - _kM;
+    _from = p;
+    _to = Offset(snapX, p.dy);
+    _anim
+      ..reset()
+      ..forward();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: _bmCompact,
+      builder: (_, compact, __) => ValueListenableBuilder<Offset?>(
+        valueListenable: _bmPos,
+        // Le contenu n'est pas reconstruit à chaque pixel de déplacement.
+        child: RepaintBoundary(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            child: KeyedSubtree(
+              key: ValueKey(compact),
+              child: compact ? widget.square : widget.band,
+            ),
+          ),
+        ),
+        builder: (_, pos, child) {
+          final p = _clamp(pos ?? _default(compact), compact);
+          return Positioned(
+            left: p.dx,
+            top: p.dy,
+            width: compact ? _kSq : _screen.width - 2 * _kM,
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onPanUpdate: (d) => _onUpdate(d, compact),
+              onPanEnd: (_) => _onEnd(compact),
+              child: child,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Mode carré : disque + lecture/pause, toucher = repasser en bande.
+class _BmSquare extends StatelessWidget {
+  const _BmSquare({
+    required this.ctrl,
+    required this.title,
+    required this.cover,
+    required this.live,
+    required this.loading,
+    required this.playing,
+    required this.accent,
+    required this.onOpen,
+  });
+  final BlowMusicController ctrl;
+  final String title;
+  final String? cover;
+  final bool live, loading, playing;
+  final Color accent;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      type: MaterialType.transparency,
+      child: GestureDetector(
+        onTap: () => _bmCompact.value = false,
+        child: Container(
+          height: _kSq,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color.lerp(accent, Colors.black, .55)!,
+                const Color(0xFF0B0810),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.white.withValues(alpha: .1)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: .4),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: VinylDisc(
+                  size: 58,
+                  playing: playing,
+                  accent: accent,
+                  coverUrl: cover,
+                  isCoverUrlAvailable: cover != null && cover!.isNotEmpty,
+                  fallbackIcon: live
+                      ? Icons.podcasts_rounded
+                      : Icons.music_note_rounded,
+                ),
+              ),
+              if (live)
+                Positioned(
+                  left: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFB7185),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'LIVE',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+              Positioned(
+                right: 4,
+                top: 4,
+                child: GestureDetector(
+                  onTap: ctrl.closePlayer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 16,
+                      color: Colors.white.withValues(alpha: .6),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 6,
+                bottom: 6,
+                child: GestureDetector(
+                  onTap: loading ? null : ctrl.togglePlayPause,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: accent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: loading
+                        ? const Padding(
+                            padding: EdgeInsets.all(7),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Icon(
+                            playing
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 6,
+                bottom: 6,
+                child: GestureDetector(
+                  onTap: onOpen,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .14),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.open_in_full_rounded,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

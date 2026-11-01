@@ -162,7 +162,7 @@ class _ChannelGridCard extends StatelessWidget {
                 Text(channel.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
                 const SizedBox(height: 2),
                 Text(
-                  channel.plans.isEmpty ? channel.description : 'Dès ${channel.plans.map((p) => p.price).reduce((a, b) => a < b ? a : b).round()} F',
+                  channel.description,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white60 : Colors.black54),

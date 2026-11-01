@@ -14,6 +14,7 @@ import 'package:grand_public_v2/app/components/drawer_parts.dart';
 import 'package:grand_public_v2/app/data/models/user.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
+import 'package:grand_public_v2/app/components/module_page_shell.dart';
 import 'package:grand_public_v2/app/modules/notifs/controllers/notifs_controller.dart';
 import 'package:grand_public_v2/app/services/app_mode_service.dart';
 
@@ -89,7 +90,10 @@ class ModuleDrawer extends StatelessWidget {
       children: [
         // ── En-tête profil : STRICTEMENT celui de Grandpublic ─────────
         DrawerProfileHeader(
-          onTap: () => Get.toNamed('/profile'),
+          onTap: () {
+            Get.back();
+            ModuleOverlay.open('profile');
+          },
           accentColor: accentColor,
         ),
         const SizedBox(height: 20),
@@ -113,22 +117,18 @@ class ModuleDrawer extends StatelessWidget {
         else
           ...variableItems.map(
             (item) =>
-                _btn(title: item.title, icon: item.icon, onTap: item.onTap),
+                _btn(
+              title: item.title,
+              icon: item.icon,
+              onTap: () {
+                ModuleOverlay.close();
+                item.onTap();
+              },
+            ),
           ),
         const DrawerSep(),
 
         // ── Menu fixe (comme Premium/Liens/À propos de Grandpublic) ───
-        _btn(
-          title: 'Notifications',
-          icon: Icons.notifications_none_rounded,
-          onTap: () => openModuleNotifications(
-            moduleName == 'Blowmusic'
-                ? 'blowmusic'
-                : moduleName == 'Youwiiin'
-                ? 'youwiiin'
-                : 'all',
-          ),
-        ),
         if (moduleName != 'Grandpublic')
           _btn(
             title: 'Grandpublic',

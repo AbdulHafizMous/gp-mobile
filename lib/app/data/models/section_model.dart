@@ -58,7 +58,7 @@ final sections = [
       DrawerItem(
         title: "Toutes les chaînes",
         icon: Icons.grid_view_rounded,
-        route: "/home/spaces",
+        route: "/home/channels",
       ),
       DrawerItem(
         title: "Gérer les chaînes",

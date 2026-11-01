@@ -7,7 +7,8 @@ class FabMenuItem {
   final IconData icon;
   final String label;
   final int badge; // > 0 : pastille de notification
-  const FabMenuItem({required this.icon, required this.label, this.badge = 0});
+  final String? asset; // logo (remplace l'icône)
+  const FabMenuItem({required this.icon, required this.label, this.badge = 0, this.asset});
 }
 
 class ExpandableMenuFab extends StatefulWidget {
@@ -89,7 +90,13 @@ class _ExpandableMenuFabState extends State<ExpandableMenuFab> with TickerProvid
             elevation: 6,
             color: sel ? widget.color : Colors.white,
             shape: const CircleBorder(),
-            child: SizedBox(width: 48, height: 48, child: Icon(it.icon, color: sel ? Colors.white : widget.color, size: 24)),
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: it.asset != null
+                  ? Padding(padding: const EdgeInsets.all(9), child: Image.asset(it.asset!, fit: BoxFit.contain))
+                  : Icon(it.icon, color: sel ? Colors.white : widget.color, size: 24),
+            ),
           ),
           if (it.badge > 0)
             Positioned(

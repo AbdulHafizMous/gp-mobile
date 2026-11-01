@@ -91,17 +91,32 @@ class YouwiiinHomeView extends StatelessWidget {
       ),
       appBar: AppBar(
         backgroundColor: bg,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu_rounded),
-            color: fg,
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
+        leading: Obx(
+          () => ModuleOverlay.current.value != null
+              ? ModuleOverlay.backButton(fg)
+              : Builder(
+                  builder: (context) => IconButton(
+                    icon: const Icon(Icons.menu_rounded),
+                    color: fg,
+                    onPressed: () => Scaffold.of(context).openDrawer(),
+                  ),
+                ),
         ),
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
-          ModuleBellAction(category: 'youwiiin', color: fg),
+          ModuleBellAction(
+            category: 'youwiiin',
+            color: fg,
+            dense: true,
+            overlay: true,
+          ),
+          IconButton(
+            tooltip: 'Profil',
+            visualDensity: VisualDensity.compact,
+            icon: Icon(Icons.person_outline_rounded, color: fg),
+            onPressed: () => ModuleOverlay.open('profile'),
+          ),
           const SizedBox(width: 4),
         ],
         title: Row(
@@ -136,7 +151,7 @@ class YouwiiinHomeView extends StatelessWidget {
           ],
         ),
       ),
-      body: Column(children: [
+      body: ModuleOverlayHost(child: Column(children: [
         const ProfileCompletionBanner(module: 'youwiiin'),
         const AdBannerWidget(screen: 'youwiiin'),
         Expanded(child: Obx(() {
@@ -156,14 +171,17 @@ class YouwiiinHomeView extends StatelessWidget {
             return _CatalogTab(accent: accent, fg: fg);
         }
       })),
-      ]),
+      ])),
       // Même rendu que la barre de Grandpublic (composant partagé).
       bottomNavigationBar: Obx(
         () => ModuleBottomBar(
           backgroundColor: accent,
           accentColor: accent,
           activeIndex: controller.currentTab.value,
-          onTap: controller.changeTab,
+          onTap: (i) {
+            ModuleOverlay.close();
+            controller.changeTab(i);
+          },
           items: const [
             ModuleBottomBarItem(icon: Icons.grid_view_rounded, label: 'Jeux'),
             ModuleBottomBarItem(

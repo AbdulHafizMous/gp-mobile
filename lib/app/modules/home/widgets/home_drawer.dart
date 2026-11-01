@@ -97,7 +97,30 @@ class HomeDrawer extends StatelessWidget {
             ),
           ),
         ),
-        // Chaînes de créateurs : juste sous Youwiiin, même modèle.
+        // Accès rapide aux autres modules, au-dessus du Top 10 Chaînes.
+        if (isBlowMusicActivated)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: DrawerBtn(
+              title: 'Blowmusic',
+              icon: LOGO_BLOWMUSIC,
+              keepIconColors: true,
+              callback: () => ctrl.navigateTo('/blowmusic/home'),
+              accentColor: linkColor,
+            ),
+          ),
+        if (isYouwiiinActivated)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: DrawerBtn(
+              title: 'Youwiiin',
+              icon: LOGO_YOUWIIIN,
+              keepIconColors: true,
+              callback: () => ctrl.navigateTo('/youwiiin/home'),
+              accentColor: linkColor,
+            ),
+          ),
+        // Top 10 des chaînes classées par l'admin.
         ChannelsDrawerTile(accentColor: linkColor),
         const DrawerSep(),
         Padding(

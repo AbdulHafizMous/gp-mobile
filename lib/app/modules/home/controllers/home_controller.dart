@@ -268,6 +268,12 @@ class HomeController extends GetxController {
       return;
     }
 
+    // « Toutes les chaînes » : retour à l'onglet Chaînes (top 10 + liste A-Z).
+    if (route == '/home/channels') {
+      goToSection(0, showToast: false);
+      return;
+    }
+
     // Soumission App Store sans médias : on bloque tout accès direct
     // (deep link, notif...) aux Espaces et au Premium tant que c'est masqué.
     if (shouldSkipMedia &&

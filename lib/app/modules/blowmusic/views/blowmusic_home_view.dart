@@ -86,23 +86,32 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
       ),
       appBar: AppBar(
         backgroundColor: bg,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu_rounded),
-            color: fg,
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
+        leading: Obx(
+          () => ModuleOverlay.current.value != null
+              ? ModuleOverlay.backButton(fg)
+              : Builder(
+                  builder: (context) => IconButton(
+                    icon: const Icon(Icons.menu_rounded),
+                    color: fg,
+                    onPressed: () => Scaffold.of(context).openDrawer(),
+                  ),
+                ),
         ),
         centerTitle: true,
         elevation: 0,
         actions: [
           // Cloche rapprochée de l'icône profil (même duo que Grandpublic).
-          ModuleBellAction(category: 'blowmusic', color: fg, dense: true),
+          ModuleBellAction(
+            category: 'blowmusic',
+            color: fg,
+            dense: true,
+            overlay: true,
+          ),
           IconButton(
             tooltip: 'Profil',
             visualDensity: VisualDensity.compact,
             icon: Icon(Icons.person_outline_rounded, color: fg),
-            onPressed: () => Get.toNamed('/profile'),
+            onPressed: () => ModuleOverlay.open('profile'),
           ),
           const SizedBox(width: 4),
         ],
@@ -115,7 +124,7 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
           ),
         ),
       ),
-      body: Column(children: [
+      body: ModuleOverlayHost(child: Column(children: [
         const ProfileCompletionBanner(module: 'blowmusic'),
         const AdBannerWidget(screen: 'blowmusic'),
         Expanded(child: Obx(() {
@@ -134,7 +143,7 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
             return _HomeTab(accent: accent, fg: fg);
         }
       })),
-      ]),
+      ])),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -145,7 +154,10 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
               backgroundColor: accent,
               accentColor: accent,
               activeIndex: controller.currentTab.value,
-              onTap: controller.changeTab,
+              onTap: (i) {
+                ModuleOverlay.close();
+                controller.changeTab(i);
+              },
               items: kBlowMusicTabs
                   .map(
                     (t) => ModuleBottomBarItem(

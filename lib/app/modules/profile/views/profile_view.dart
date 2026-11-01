@@ -18,7 +18,9 @@ import 'package:grand_public_v2/app/utils/section_helper.dart';
 // PROFILE VIEW — StatefulWidget pour gérer le back interceptor
 // ─────────────────────────────────────────────────────────────────────────────
 class ProfileView extends StatefulWidget {
-  const ProfileView({super.key});
+  /// true : affiché sous le header d'un module (pas de Scaffold/AppBar propre).
+  final bool embedded;
+  const ProfileView({super.key, this.embedded = false});
 
   @override
   State<ProfileView> createState() => _ProfileViewState();
@@ -61,7 +63,7 @@ class _ProfileViewState extends State<ProfileView> {
   @override
   Widget build(BuildContext context) {
     final body = _buildBody(context);
-    if (!isInModuleShell) return body;
+    if (widget.embedded || !isInModuleShell) return body;
     // Ouvert depuis Blowmusic / Youwiiin : Scaffold + AppBar, et le retour
     // système remonte d'abord les sous-pages du profil.
     return Obx(

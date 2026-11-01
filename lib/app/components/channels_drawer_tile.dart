@@ -1,6 +1,6 @@
-// Tuile « Chaînes » des drawers (Grandpublic, Blowmusic, Youwiiin) : un
+// Tuile « Top 10 Chaînes » des drawers (Grandpublic, Blowmusic, Youwiiin) : un
 // ExpansionTile au même format que les boutons du menu fixe, placé juste
-// sous « Youwiiin ». Déplié, il liste les chaînes disponibles.
+// sous « Youwiiin ». Déplié, il liste uniquement le top 10 classé par l'admin.
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
@@ -23,7 +23,9 @@ class ChannelsDrawerTile extends StatelessWidget {
     return Obx(() {
       // Rien à afficher tant qu'aucune chaîne n'existe.
       final isPartner = activeUser.value.role == 'Partner';
-      if (!c.isLoading.value && c.channels.isEmpty && !isPartner) return const SizedBox.shrink();
+      final top = c.channels.where((x) => x.featuredRank != null && x.featuredRank! >= 1 && x.featuredRank! <= 10).toList()
+        ..sort((a, b) => a.featuredRank!.compareTo(b.featuredRank!));
+      if (!c.isLoading.value && top.isEmpty && !isPartner) return const SizedBox.shrink();
 
       return Padding(
         padding: const EdgeInsets.only(bottom: 10),
@@ -48,14 +50,14 @@ class ChannelsDrawerTile extends StatelessWidget {
               shape: const Border(),
               collapsedShape: const Border(),
               leading: Icon(Icons.live_tv_rounded, color: fg, size: 20),
-              title: Text('Chaînes', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: fg)),
+              title: Text('Top 10 Chaînes', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: fg)),
               children: [
                 if (c.isLoading.value)
                   const Padding(
                     padding: EdgeInsets.all(14),
                     child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                   ),
-                for (final ch in c.channels)
+                for (final ch in top)
                   InkWell(
                     borderRadius: BorderRadius.circular(20),
                     onTap: () {
@@ -100,29 +102,6 @@ class ChannelsDrawerTile extends StatelessWidget {
                       ]),
                     ),
                   ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Material(
-                    color: GPTheme.primaryColor,
-                    borderRadius: BorderRadius.circular(20),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: () {
-                        Get.back();
-                        Get.toNamed('/channels');
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 9, horizontal: 14),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.format_list_bulleted_rounded, color: Colors.white, size: 16),
-                          SizedBox(width: 8),
-                          Text('Voir toutes les chaînes',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12.5)),
-                        ]),
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),

@@ -8,7 +8,73 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/modules/notifs/controllers/notifs_controller.dart';
+import 'package:grand_public_v2/app/modules/pages/notification_page.dart';
+import 'package:grand_public_v2/app/modules/profile/controllers/profile_controller.dart';
+import 'package:grand_public_v2/app/modules/profile/views/profile_view.dart';
 import 'package:grand_public_v2/app/services/app_mode_service.dart';
+
+/// Page (Notifications / Profil) affichée SOUS le header du module, comme dans
+/// Grandpublic : le header (menu, logo, cloche, profil) reste visible.
+class ModuleOverlay {
+  static final RxnString current = RxnString();
+
+  static void open(String page, {String? notifCategory}) {
+    if (page == 'notifs') {
+      final ctrl = Get.isRegistered<NotifsPageController>()
+          ? Get.find<NotifsPageController>()
+          : Get.put(NotifsPageController());
+      if (notifCategory != null) ctrl.selectedCategory.value = notifCategory;
+      ctrl.fetchNotifications(refresh: true);
+    }
+    current.value = page;
+  }
+
+  static void close() => current.value = null;
+
+  /// Retour : remonte d'abord les sous-pages du profil, puis ferme.
+  static void back() {
+    if (current.value == 'profile' && Get.isRegistered<ProfileController>()) {
+      final c = Get.find<ProfileController>();
+      if (c.subPage.value != ProfileSubPage.main) {
+        c.goBack();
+        return;
+      }
+    }
+    close();
+  }
+
+  /// Contenu à afficher sous le header, ou null.
+  static Widget? get page => switch (current.value) {
+    'notifs' => const NotificationPage(),
+    'profile' => const ProfileView(embedded: true),
+    _ => null,
+  };
+
+  /// Flèche retour à placer en `leading` quand une page est ouverte.
+  static Widget backButton(Color color) => IconButton(
+    icon: Icon(Icons.arrow_back_rounded, color: color),
+    onPressed: back,
+  );
+}
+
+/// Enrobe le body d'un module : affiche l'overlay s'il est ouvert et gère le
+/// retour système.
+class ModuleOverlayHost extends StatelessWidget {
+  final Widget child;
+  const ModuleOverlayHost({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) => Obx(() {
+    final p = ModuleOverlay.page;
+    return PopScope(
+      canPop: p == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) ModuleOverlay.back();
+      },
+      child: p ?? child,
+    );
+  });
+}
 
 /// Vrai quand la page est ouverte depuis Blowmusic ou Youwiiin.
 bool get isInModuleShell => AppModeService.current != AppMode.grandPublic;
@@ -54,11 +120,15 @@ class ModuleBellAction extends StatelessWidget {
 
   /// Rapproche la cloche de l'icône voisine (ex. profil) : moins de marge.
   final bool dense;
+
+  /// true : ouvre sous le header du module (Blowmusic / Youwiiin).
+  final bool overlay;
   const ModuleBellAction({
     super.key,
     required this.category,
     required this.color,
     this.dense = false,
+    this.overlay = false,
   });
 
   @override
@@ -75,6 +145,10 @@ class ModuleBellAction extends StatelessWidget {
         constraints: dense ? const BoxConstraints(minWidth: 36, minHeight: 40) : null,
         tooltip: 'Notifications',
         onPressed: () {
+          if (overlay) {
+            ModuleOverlay.open('notifs', notifCategory: category);
+            return;
+          }
           ctrl.selectedCategory.value = category;
           ctrl.fetchNotifications(refresh: true);
           Get.toNamed('/notifs');

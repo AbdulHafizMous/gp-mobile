@@ -2,7 +2,6 @@
 
 import 'package:grand_public_v2/app/components/expandable_menu_fab.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
-import 'package:grand_public_v2/app/modules/social/views/social_games_hub_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/modules/shop/controllers/shop_controller.dart';
@@ -35,12 +34,13 @@ class SocialView extends StatelessWidget {
         ? Get.find<ShopController>()
         : Get.put(ShopController());
 
-    const titles = ['Tchat', 'Crush', 'Bizz', 'Jeux'];
+    const titles = ['Tchat', 'Crush', 'Bizz', 'Youwiiin'];
     const subtitles = ['Vos conversations', 'Rencontres & matchs', 'Boutique & bons plans', 'Youwiiin : défis & classements'];
     const icons = [Icons.forum_rounded, Icons.local_fire_department_rounded, Icons.handshake_rounded, Icons.sports_esports_rounded];
 
     return Obx(() {
-      final tab = chatCtrl.socialTab.value.clamp(0, 3);
+      // Youwiiin s'ouvre directement : plus de page intermédiaire.
+      final tab = chatCtrl.socialTab.value.clamp(0, 2);
       final unread = chatCtrl.privateConversations.fold<int>(0, (a, c) => a + c.unreadCount);
       return Stack(children: [
         Column(children: [
@@ -66,9 +66,7 @@ class SocialView extends StatelessWidget {
                   ? const ChatListView(key: ValueKey('chat'))
                   : tab == 1
                       ? const DatingView(key: ValueKey('dating'))
-                      : tab == 2
-                          ? const ShopView(key: ValueKey('shop'))
-                          : const SocialGamesHubView(key: ValueKey('games')),
+                      : const ShopView(key: ValueKey('shop')),
             ),
           ),
         ]),
@@ -76,12 +74,18 @@ class SocialView extends StatelessWidget {
           child: ExpandableMenuFab(
             color: GPTheme.socialColor,
             selected: tab,
-            onSelect: (i) => chatCtrl.socialTab.value = i,
+            onSelect: (i) {
+              if (i == 3) {
+                Get.toNamed('/youwiiin/home');
+              } else {
+                chatCtrl.socialTab.value = i;
+              }
+            },
             items: [
               FabMenuItem(icon: icons[0], label: titles[0], badge: unread),
               FabMenuItem(icon: icons[1], label: titles[1]),
               FabMenuItem(icon: icons[2], label: titles[2]),
-              if (isYouwiiinActivated) FabMenuItem(icon: icons[3], label: titles[3]),
+              if (isYouwiiinActivated) FabMenuItem(icon: icons[3], label: titles[3], asset: LOGO_YOUWIIIN),
             ],
           ),
         ),
