@@ -61,7 +61,15 @@ class _BmPlayerPageState extends State<BmPlayerPage>
   double? _drag;
 
   @override
+  void initState() {
+    super.initState();
+    // Masque le mini-lecteur flottant (hors build : on modifie un Rx observé ailleurs).
+    Future.microtask(() => ctrl.playerOpen.value = true);
+  }
+
+  @override
   void dispose() {
+    Future.microtask(() => ctrl.playerOpen.value = false);
     _eq.dispose();
     super.dispose();
   }

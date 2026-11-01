@@ -172,10 +172,12 @@ class ModuleDrawer extends StatelessWidget {
         // ── Logo du module en bas (même conteneur que Grandpublic) ────
         DrawerLogo(
           asset: moduleLogo,
-          onTap: () {
-            Get.back();
-            Get.offAllNamed('/module-choice');
-          },
+          onTap: !isWallStartModeEnabled
+              ? null
+              : () {
+                  Get.back();
+                  Get.offAllNamed('/module-choice');
+                },
         ),
         const SizedBox(height: 20),
       ],

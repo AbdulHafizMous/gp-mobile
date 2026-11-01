@@ -83,6 +83,8 @@ class AppModeService {
   static String get postAuthRoute {
     // Plus d'écran bloquant : la complétion du profil passe par la bannière
     // et le bottom sheet (voir ProfileCompletionService).
+    // Wall start désactivé : toujours Grandpublic (Blowmusic / Youwiiin s'ouvrent depuis Chaînes / Social).
+    if (!isWallStartModeEnabled) return '/home';
     return hasMultipleModules ? '/module-choice' : homeRoute;
   }
 

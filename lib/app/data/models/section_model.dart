@@ -1,10 +1,11 @@
 // lib/app/data/models/section_model.dart
 
+import 'package:grand_public_v2/app/modules/channels/views/channels_hub_view.dart';
 import 'package:flutter/material.dart';
-import 'package:grand_public_v2/app/constants/index.dart';
-import 'package:grand_public_v2/app/globals/index.dart';
+// import 'package:grand_public_v2/app/constants/index.dart';
+// import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/modules/club/views/club_view.dart';
-import 'package:grand_public_v2/app/modules/space/views/spaces_list_view.dart';
+// import 'package:grand_public_v2/app/modules/space/views/spaces_list_view.dart';
 import 'package:grand_public_v2/app/modules/social/views/social_view.dart';
 // import 'package:grand_public_v2/app/modules/shop/views/shop_view.dart';
 
@@ -46,21 +47,21 @@ class SectionModel {
 
 final sections = [
   SectionModel(
-    title: "Espaces",
+    title: "Chaînes",
     description:
-        "Explorez des univers riches avec des contenus variés : médias, lives et expériences immersives.",
+        "Toutes les chaînes : médias, lives, musique et créateurs à suivre.",
     icon: Icons.dashboard_customize_outlined,
     hasSub: true,
     isLive: true,
-    page: SpacesListView(),
+    page: ChannelsHubView(),
     drawerItems: [
       DrawerItem(
-        title: "Tous les espaces",
+        title: "Toutes les chaînes",
         icon: Icons.grid_view_rounded,
         route: "/home/spaces",
       ),
       DrawerItem(
-        title: "Gérer les espaces",
+        title: "Gérer les chaînes",
         icon: Icons.settings_outlined,
         route: "/home/spaces/manage",
         requiredRoles: ["Admin", "Super Admin"],
@@ -182,31 +183,25 @@ final sections = [
   // ),
 ];
 
-var fixedDrawerItems = [
-  if (!activeUser.value.role.contains("Super Admin") &&
-      !shouldSkipMedia &&
-      !shouldSkipPayments)
-    DrawerItem(
-      title: "Premium",
-      icon: Icons.workspace_premium_outlined,
-      route: "/social-premium",
-    ),
-  DrawerItem(title: "Liens", icon: Icons.link_rounded, route: "/social-link"),
-  DrawerItem(
-    title: "À propos",
-    icon: Icons.info_outline_rounded,
-    route: "/social-about",
-  ),
-  if (isBlowMusicActivated)
-    DrawerItem(
-      title: "Blowmusic",
-      icon: Icons.graphic_eq_rounded,
-      route: "/blowmusic/home",
-    ),
-  if (isYouwiiinActivated)
-    DrawerItem(
-      title: "Youwiiin",
-      icon: Icons.sports_esports_rounded,
-      route: "/youwiiin/home",
-    ),
+// Menus fixes : Premium / Liens / À propos mis en commentaire (les abonnements sont désormais par chaîne).
+// Blowmusic est dans la liste des chaînes ; Youwiiin est dans Social.
+var fixedDrawerItems = <DrawerItem>[
+  // if (!activeUser.value.role.contains("Super Admin") &&
+  //     !shouldSkipMedia &&
+  //     !shouldSkipPayments)
+  //   DrawerItem(
+  //     title: "Premium",
+  //     icon: Icons.workspace_premium_outlined,
+  //     route: "/social-premium",
+  //   ),
+  // DrawerItem(title: "Liens", icon: Icons.link_rounded, route: "/social-link"),
+  // DrawerItem(
+  //   title: "À propos",
+  //   icon: Icons.info_outline_rounded,
+  //   route: "/social-about",
+  // ),
+  // if (isBlowMusicActivated)
+  //   DrawerItem(title: "Blowmusic", icon: Icons.graphic_eq_rounded, route: "/blowmusic/home"),
+  // if (isYouwiiinActivated)
+  //   DrawerItem(title: "Youwiiin", icon: Icons.sports_esports_rounded, route: "/youwiiin/home"),
 ];

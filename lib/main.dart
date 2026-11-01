@@ -15,7 +15,10 @@ import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/services/iap_debug_logger.dart';
 import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
 import 'package:grand_public_v2/app/services/brand_takeover_service.dart';
+import 'package:grand_public_v2/app/components/bm_mini_player.dart';
+import 'package:grand_public_v2/app/components/mini_media.dart';
 import 'package:grand_public_v2/app/services/call_service.dart';
+import 'package:grand_public_v2/app/services/deep_link_service.dart';
 import 'package:grand_public_v2/app/services/crush_quota_service.dart';
 import 'package:grand_public_v2/app/services/profile_completion_service.dart';
 import 'package:grand_public_v2/firebase_options.dart';
@@ -90,9 +93,8 @@ Future<void> main() async {
   // google_sign_in 7.x, sinon l'erreur "clientConfigurationError / No active configuration"
   // survient. Android le déduit de google-services.json.
   await GoogleSignIn.instance.initialize(
-    clientId: Platform.isIOS
-        ? '530288780124-sohtqd98eq5rsdhvdpfcf5cepo81mjqt.apps.googleusercontent.com'
-        : null,
+    // Source unique : même valeur que GoogleService-Info.plist (CLIENT_ID).
+    clientId: Platform.isIOS ? DefaultFirebaseOptions.ios.iosClientId : null,
     serverClientId:
         '530288780124-v2m5pomu1iih003inicssigo0eqhrlup.apps.googleusercontent.com',
   );
@@ -110,6 +112,9 @@ Future<void> main() async {
 
   // 4quinquies. Appels vocaux/vidéo de la messagerie (sonnerie par polling + push).
   await Get.putAsync(() => CallService().init());
+
+  // 4sexies. Liens de partage (chaînes, médias) : ouverture directe dans l'app.
+  await DeepLinkService.init();
 
   // HomeController est utilisé par des écrans partagés entre TOUS les
   // modules (Profil, Notifications...) : on l'enregistre une fois pour
@@ -172,6 +177,7 @@ class _MainAppState extends State<MainApp> {
     return Obx(
       () => GetMaterialApp(
         title: "Grandpublic",
+        routingCallback: (r) => currentRouteName.value = r?.current ?? '',
         theme: controller.isDark.value ? darktheme : theme,
         // darkTheme: darktheme,
         initialRoute: AppPages.INITIAL,
@@ -182,10 +188,12 @@ class _MainAppState extends State<MainApp> {
         // prise de contrôle de marque est active) derrière TOUTE l'app,
         // sans avoir à toucher chaque écran individuellement.
         builder: (context, child) {
+          // Mini-lecteur Blowmusic flottant au-dessus de toute l'app.
+          final appChild = Stack(fit: StackFit.expand, children: [child ?? const SizedBox.shrink(), const BmMiniPlayerOverlay(), const MiniMediaOverlay()]);
           return Obx(() {
             final takeover = BrandTakeoverService.to.current.value;
             if (takeover?.backgroundUrl == null) {
-              return child ?? const SizedBox.shrink();
+              return appChild;
             }
             return Stack(
               fit: StackFit.expand,
@@ -196,7 +204,7 @@ class _MainAppState extends State<MainApp> {
                   opacity: const AlwaysStoppedAnimation(0.18),
                   errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
-                child ?? const SizedBox.shrink(),
+                appChild,
               ],
             );
           });

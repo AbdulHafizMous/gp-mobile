@@ -34,6 +34,12 @@ class SpaceVideo {
   final String? videoFileUrl; // URL du fichier vidéo si sourceType == 'upload'
   final String orientation; // 'landscape' (défaut) | 'portrait' (short)
   final int? channelId; // non-null = média d'une chaîne
+  final int? spaceId;
+  // Média « article » : carrousel d'images + texte Markdown (likes / commentaires comme une vidéo).
+  final List<String> gallery;
+  final String? body; // Markdown
+  final String? bodyHtml;
+  final int readingMinutes;
 
   const SpaceVideo({
     required this.id,
@@ -64,9 +70,15 @@ class SpaceVideo {
     this.videoFileUrl,
     this.orientation = 'landscape',
     this.channelId,
+    this.spaceId,
+    this.gallery = const [],
+    this.body,
+    this.bodyHtml,
+    this.readingMinutes = 0,
   });
 
   bool get isPortrait => orientation == 'portrait';
+  bool get isArticle => sourceType == 'article';
 
   /// Le live est-il actif en ce moment ?
   bool get isLiveNow {
@@ -129,6 +141,11 @@ class SpaceVideo {
       videoFileUrl: json['video_file_url']?.toString(),
       orientation: json['orientation']?.toString() ?? 'landscape',
       channelId: json['channel_id'] == null ? null : _parseInt(json['channel_id']),
+      spaceId: json['space_id'] == null ? null : _parseInt(json['space_id']),
+      gallery: ((json['gallery'] as List?) ?? const []).map((e) => e.toString()).toList(),
+      body: json['body']?.toString(),
+      bodyHtml: json['body_html']?.toString(),
+      readingMinutes: _parseInt(json['reading_minutes']),
     );
   }
 
@@ -171,6 +188,11 @@ class SpaceVideo {
       categoryName: categoryName,
       orientation: orientation,
       channelId: channelId,
+      spaceId: spaceId,
+      gallery: gallery,
+      body: body,
+      bodyHtml: bodyHtml,
+      readingMinutes: readingMinutes,
     );
   }
 

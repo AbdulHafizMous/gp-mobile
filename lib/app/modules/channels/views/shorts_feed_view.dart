@@ -1,5 +1,8 @@
 // Lecteur de SHORTS plein écran en portrait : défilement vertical d'un short
 // à l'autre (swipe haut/bas) au sein de la même chaîne, comme TikTok / Reels.
+import 'package:grand_public_v2/app/modules/videos/controllers/videos_controller.dart';
+import 'package:grand_public_v2/app/modules/pages/vid_detail.dart';
+import 'package:grand_public_v2/app/components/article_carousel.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,6 +26,11 @@ Future<void> openVideoSmart(SpaceVideo video, {List<SpaceVideo> siblings = const
     Get.to(() => ShortsFeedView(channelId: video.channelId!, initialVideoId: video.id, seed: siblings));
     return;
   }
+  // Espace Grandpublic (hors chaîne) : shorts et articles « carrousel » dans le même fil vertical.
+  if (video.isPortrait && video.spaceId != null) {
+    Get.to(() => ShortsFeedView(channelId: video.spaceId!, initialVideoId: video.id, seed: siblings, spaceMode: true));
+    return;
+  }
   // Pré-roll (si une pub `preroll` cible ce module / cette chaîne) avant une
   // vidéo lisible ; jamais avant un contenu verrouillé.
   final ctx = Get.context;
@@ -36,7 +44,8 @@ class ShortsFeedView extends StatefulWidget {
   final int channelId;
   final int? initialVideoId;
   final List<SpaceVideo> seed;
-  const ShortsFeedView({super.key, required this.channelId, this.initialVideoId, this.seed = const []});
+  final bool spaceMode;
+  const ShortsFeedView({super.key, required this.channelId, this.initialVideoId, this.seed = const [], this.spaceMode = false});
 
   @override
   State<ShortsFeedView> createState() => _ShortsFeedViewState();
@@ -52,7 +61,7 @@ class _ShortsFeedViewState extends State<ShortsFeedView> {
     super.initState();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
     c = Get.put(
-      ShortsFeedController(channelId: widget.channelId, initialVideoId: widget.initialVideoId, seed: widget.seed),
+      ShortsFeedController(channelId: widget.channelId, initialVideoId: widget.initialVideoId, seed: widget.seed, spaceMode: widget.spaceMode),
       tag: _tag,
     );
   }
@@ -192,7 +201,7 @@ class _ShortPageState extends State<_ShortPage> {
   }
 
   Future<void> _startPlayer() async {
-    if (_locked) return;
+    if (_locked || v.isArticle) return; // un article n'a pas de lecteur : carrousel d'images
     if (_isUpload) {
       if (_vp != null) {
         _vp!.play();
@@ -364,6 +373,19 @@ class _ShortPageState extends State<_ShortPage> {
   }
 
   Widget _player() {
+    if (v.isArticle) {
+      // Photos façon TikTok : défilement automatique, tap gauche/droite pour naviguer ; fin -> short suivant.
+      return ArticleCarousel(
+        images: v.gallery.isNotEmpty ? v.gallery : [v.thumbnail],
+        active: widget.active && !_expanded,
+        autoplay: widget.ctrl.autoNext.value,
+        storyTaps: true,
+        segments: true,
+        onFinished: () {
+          if (widget.ctrl.autoNext.value && !widget.isLast) widget.onEnded();
+        },
+      );
+    }
     if (_vp != null && _vp!.value.isInitialized) {
       return FittedBox(
         fit: BoxFit.cover,
@@ -477,6 +499,19 @@ class _ShortPageState extends State<_ShortPage> {
             ],
           ]),
           const SizedBox(height: 8),
+          if (v.isArticle)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, visualDensity: VisualDensity.compact, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+                onPressed: () {
+                  if (!Get.isRegistered<VideosController>()) Get.put(VideosController());
+                  Get.to(() => VidDetail(video: v));
+                },
+                icon: const Icon(Icons.article_rounded, size: 18),
+                label: Text('Lire l\'article${v.readingMinutes > 0 ? ' · ${v.readingMinutes} min' : ''}', style: const TextStyle(fontWeight: FontWeight.w800)),
+              ),
+            ),
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () => setState(() => _expanded = !_expanded),

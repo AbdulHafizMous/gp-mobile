@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 // import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/utils/auth_diagnostics.dart';
 import 'package:grand_public_v2/app/utils/auth_flow.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -101,6 +102,7 @@ class LoginController extends GetxController {
   // ══════════════════════════════════════════════════════════════════════════
   Future<void> loginWithGoogle() async {
     isSocialLoading.value = true;
+    String step = 'init'; // dit OÙ ça casse (affiché dans le détail d'erreur)
     try {
       if (useMock) {
         //
@@ -117,6 +119,7 @@ class LoginController extends GetxController {
         return;
       }
 
+      step = 'google.signOut';
       // 0. Nettoie toute session Google résiduelle/corrompue avant de relancer
       //    le flux (évite les échecs silencieux au 2e essai sur iPad/iPhone).
       try {
@@ -125,6 +128,7 @@ class LoginController extends GetxController {
         // Ignoré : pas de session à nettoyer.
       }
 
+      step = 'google.authenticate';
       // 1. Obtient le Google ID Token
       final GoogleSignInAccount googleUser = await GoogleSignIn.instance
           .authenticate();
@@ -137,6 +141,7 @@ class LoginController extends GetxController {
       }
 
       // 2. Échange contre un Firebase ID Token
+      step = 'firebase.signInWithCredential';
       final OAuthCredential credential = GoogleAuthProvider.credential(
         idToken: googleIdToken,
       );
@@ -154,6 +159,7 @@ class LoginController extends GetxController {
       debugPrint('Firebase ID Token: $firebaseToken');
       debugPrint('Firebase ID Token length: ${firebaseToken.length}');
 
+      step = 'backend./auth/social';
       // 3. Envoie le Firebase Token au backend
       final response = await RequestService().post(
         '/auth/social',
@@ -169,31 +175,22 @@ class LoginController extends GetxController {
         response.data['data'],
         provider: 'Google',
       );
-    } on GoogleSignInException catch (e) {
-      debugPrint('GoogleSignInException: ${e.code} - ${e.description}');
-      switch (e.code) {
-        case GoogleSignInExceptionCode.canceled:
-          break;
-        case GoogleSignInExceptionCode.clientConfigurationError:
-          _showError('Erreur de configuration Google. Contactez le support.');
-          break;
-        default:
-          _showError('La connexion avec Google a échoué. Réessayez.');
+    } on GoogleSignInException catch (e, st) {
+      if (e.code != GoogleSignInExceptionCode.canceled) {
+        AuthDiagnostics.report(provider: 'Google', step: step, error: e, stack: st);
+        _showError('La connexion avec Google a échoué (${e.code.name}).');
       }
-    } on FirebaseAuthException catch (e) {
-      debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
-      _showError(
-        'Erreur Firebase (${e.code}) : ${e.message ?? 'Réessayez.'}',
-      );
-    } on PlatformException catch (e) {
-      // Erreurs natives iOS/Android non couvertes par GoogleSignInException
-      // (ex : présentation de l'écran de connexion impossible sur iPad).
-      debugPrint('PlatformException (Google): ${e.code} - ${e.message}');
-      _showError('La connexion avec Google a échoué (${e.code}). Réessayez.');
+    } on FirebaseAuthException catch (e, st) {
+      AuthDiagnostics.report(provider: 'Google', step: step, error: e, stack: st);
+      _showError('Erreur Firebase (${e.code}) : ${e.message ?? 'Réessayez.'}');
+    } on PlatformException catch (e, st) {
+      // Erreurs natives iOS/Android non couvertes par GoogleSignInException.
+      AuthDiagnostics.report(provider: 'Google', step: step, error: e, stack: st);
+      _showError('La connexion avec Google a échoué (${e.code}).');
     } on DioException catch (e) {
       _handleDioError(e, isSocial: true);
-    } catch (e) {
-      debugPrint('Google login error: $e');
+    } catch (e, st) {
+      AuthDiagnostics.report(provider: 'Google', step: step, error: e, stack: st);
       _showError('La connexion avec Google a échoué ($e).');
     } finally {
       isSocialLoading.value = false;

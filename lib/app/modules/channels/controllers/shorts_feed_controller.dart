@@ -12,14 +12,15 @@ class ShortsFeedController extends GetxController {
   final int? initialVideoId;
   final List<SpaceVideo> seed;
 
-  ShortsFeedController({required this.channelId, this.initialVideoId, this.seed = const []});
+  final bool spaceMode; // true = espace Grandpublic (pas une chaîne)
+  ShortsFeedController({required this.channelId, this.initialVideoId, this.seed = const [], this.spaceMode = false});
 
   final items = <SpaceVideo>[].obs;
   final isLoading = true.obs;
   final current = 0.obs;
   // Préférences de lecture (persistées) : défilement automatique à la fin d'un short, son coupé.
-final autoNext = RxBool(GetStorage().read('shorts_autonext') ?? true);
-final muted = RxBool(GetStorage().read('shorts_muted') ?? false);
+  final autoNext = RxBool(GetStorage().read('shorts_autonext') ?? true);
+  final muted = RxBool(GetStorage().read('shorts_muted') ?? false);
   void toggleAuto() { autoNext.value = !autoNext.value; GetStorage().write('shorts_autonext', autoNext.value); }
   void toggleMute() { muted.value = !muted.value; GetStorage().write('shorts_muted', muted.value); }
 
@@ -58,7 +59,7 @@ final muted = RxBool(GetStorage().read('shorts_muted') ?? false);
         _page = 0;
         _hasMore = true;
       }
-      final r = await RequestService().get('/channels/$channelId/shorts', queryParameters: {'page': _page + 1, 'per_page': 12});
+      final r = await RequestService().get(spaceMode ? '/spaces/$channelId/shorts' : '/channels/$channelId/shorts', queryParameters: {'page': _page + 1, 'per_page': 12});
       final data = r.data['data'] as Map<String, dynamic>;
       final fresh = (data['medias'] as List<dynamic>? ?? [])
           .map((m) => SpaceVideo.fromJson(Map<String, dynamic>.from(m as Map)))

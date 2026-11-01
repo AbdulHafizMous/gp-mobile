@@ -115,32 +115,26 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
           ),
         ),
       ),
-      body: Column(
-        children: [
-          const ProfileCompletionBanner(module: 'blowmusic'),
-          const AdBannerWidget(screen: 'blowmusic'),
-          Expanded(
-            child: Obx(() {
-              if (controller.isLoading.value)
-                return const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                );
-              switch (controller.currentTab.value) {
-                case 1:
-                  return _LiveTab(accent: accent, fg: fg);
-                case 2:
-                  return _LibraryTab(accent: accent, fg: fg);
-                case 3:
-                  return _PlaylistsTab(fg: fg);
-                case 4:
-                  return _FavoritesTab(accent: accent, fg: fg);
-                default:
-                  return _HomeTab(accent: accent, fg: fg);
-              }
-            }),
-          ),
-        ],
-      ),
+      body: Column(children: [
+        const ProfileCompletionBanner(module: 'blowmusic'),
+        const AdBannerWidget(screen: 'blowmusic'),
+        Expanded(child: Obx(() {
+        if (controller.isLoading.value)
+          return const Center(child: CircularProgressIndicator());
+        switch (controller.currentTab.value) {
+          case 1:
+            return _LiveTab(accent: accent, fg: fg);
+          case 2:
+            return _LibraryTab(accent: accent, fg: fg);
+          case 3:
+            return _PlaylistsTab(fg: fg);
+          case 4:
+            return _FavoritesTab(accent: accent, fg: fg);
+          default:
+            return _HomeTab(accent: accent, fg: fg);
+        }
+      })),
+      ]),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -645,13 +639,7 @@ class _HomeTab extends StatelessWidget {
                   accent: accent,
                   children: [
                     for (final t in list)
-                      _TrackTile(
-                        track: t,
-                        accent: accent,
-                        fg: fg,
-                        queue: list,
-                        label: 'Vidéos',
-                      ),
+                      _TrackTile(track: t, accent: accent, fg: fg, queue: list, label: 'Vidéos'),
                   ],
                 ),
                 const SizedBox(height: 22),
@@ -958,6 +946,19 @@ class _LiveTab extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
+              if (live['is_paid'] == true)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: Colors.amber.shade700, borderRadius: BorderRadius.circular(12)),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(live['has_access'] == true ? Icons.lock_open_rounded : Icons.confirmation_number_rounded, size: 14, color: Colors.white),
+                      const SizedBox(width: 5),
+                      Text(live['has_access'] == true ? 'Ticket actif' : 'Direct payant · ${live['price']} F', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
+                    ]),
+                  ),
+                ),
               Text(
                 live['title']?.toString() ?? 'Direct',
                 maxLines: 2,
@@ -1005,7 +1006,7 @@ class _LiveTab extends StatelessWidget {
                 ),
               const SizedBox(height: 22),
               if (isThis && state == BmPlaybackState.loading)
-                const CircularProgressIndicator(color: Colors.white)
+                const CircularProgressIndicator()
               else if (isThis && state == BmPlaybackState.error)
                 Column(
                   children: [
@@ -1428,9 +1429,7 @@ class _LibraryTabState extends State<_LibraryTab> {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-          child: Obx(
-            () => Row(
-              children: [
+          child: Obx(() => Row(children: [
                 for (final e in const [
                   ('all', 'Tout', Icons.library_music_rounded),
                   ('audio', 'Audio', Icons.music_note_rounded),
@@ -1439,30 +1438,20 @@ class _LibraryTabState extends State<_LibraryTab> {
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
-                      avatar: Icon(
-                        e.$3,
-                        size: 16,
-                        color: ctrl.libType.value == e.$1
-                            ? Colors.white
-                            : fg.withOpacity(.6),
-                      ),
+                      avatar: Icon(e.$3, size: 16, color: ctrl.libType.value == e.$1 ? Colors.white : fg.withOpacity(.6)),
                       label: Text(e.$2),
                       selected: ctrl.libType.value == e.$1,
                       showCheckmark: false,
                       selectedColor: accent,
                       labelStyle: TextStyle(
-                        color: ctrl.libType.value == e.$1
-                            ? Colors.white
-                            : fg.withOpacity(.75),
+                        color: ctrl.libType.value == e.$1 ? Colors.white : fg.withOpacity(.75),
                         fontWeight: FontWeight.w700,
                         fontSize: 12.5,
                       ),
                       onSelected: (_) => ctrl.setLibType(e.$1),
                     ),
                   ),
-              ],
-            ),
-          ),
+              ])),
         ),
         Expanded(
           child: Obx(() {
@@ -1471,9 +1460,7 @@ class _LibraryTabState extends State<_LibraryTab> {
 
             if (list.isEmpty) {
               return loading
-                  ? const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    )
+                  ? const Center(child: CircularProgressIndicator())
                   : const EmptyStateWidget(
                       icon: Icons.library_music_outlined,
                       message: 'Aucun titre trouvé.',
@@ -1736,11 +1723,7 @@ class _PlaylistsTab extends StatelessWidget {
                 fg: fg,
               ),
               const SizedBox(height: 10),
-              _PlaylistsRow(
-                playlists: ctrl.suggestedPlaylists.toList(),
-                accent: accent,
-                fg: fg,
-              ),
+              _PlaylistsRow(playlists: ctrl.suggestedPlaylists.toList(), accent: accent, fg: fg),
               const SizedBox(height: 18),
             ],
             if (ctrl.favoritePlaylists.isNotEmpty) ...[
@@ -1752,11 +1735,7 @@ class _PlaylistsTab extends StatelessWidget {
                 fg: fg,
               ),
               const SizedBox(height: 10),
-              _PlaylistsRow(
-                playlists: ctrl.favoritePlaylists.toList(),
-                accent: accent,
-                fg: fg,
-              ),
+              _PlaylistsRow(playlists: ctrl.favoritePlaylists.toList(), accent: accent, fg: fg),
               const SizedBox(height: 18),
             ],
             _SectionHeader(
@@ -1770,9 +1749,7 @@ class _PlaylistsTab extends StatelessWidget {
             if (ctrl.playlistsLoading.value && list.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(30),
-                child: Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                ),
+                child: Center(child: CircularProgressIndicator()),
               )
             else if (list.isEmpty)
               const Padding(
@@ -1865,9 +1842,7 @@ class _FavoritesTab extends StatelessWidget {
     return Obx(() {
       final list = ctrl.favoriteTracks.toList();
       if (ctrl.favoritesLoading.value && list.isEmpty) {
-        return const Center(
-          child: CircularProgressIndicator(color: Colors.white),
-        );
+        return const Center(child: CircularProgressIndicator());
       }
       return RefreshIndicator(
         onRefresh: () => ctrl.loadFavorites(),
@@ -2061,17 +2036,10 @@ class _TrackTile extends StatelessWidget {
                             left: 3,
                             bottom: 3,
                             child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                shape: BoxShape.circle,
-                              ),
+                              decoration: BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
                               child: Padding(
                                 padding: EdgeInsets.all(3),
-                                child: Icon(
-                                  Icons.play_arrow_rounded,
-                                  color: Colors.white,
-                                  size: 13,
-                                ),
+                                child: Icon(Icons.play_arrow_rounded, color: Colors.white, size: 13),
                               ),
                             ),
                           ),
@@ -2303,17 +2271,14 @@ class _MiniPlayer extends StatelessWidget {
   }
 }
 
+
 // -----------------------------------------------------------------------------
 // PLAYLISTS : carrousel horizontal de cartes (pochette + cœur favori).
 // -----------------------------------------------------------------------------
 class _PlaylistsRow extends StatelessWidget {
   final List<BmPlaylistInfo> playlists;
   final Color accent, fg;
-  const _PlaylistsRow({
-    required this.playlists,
-    required this.accent,
-    required this.fg,
-  });
+  const _PlaylistsRow({required this.playlists, required this.accent, required this.fg});
 
   @override
   Widget build(BuildContext context) {
@@ -2332,74 +2297,47 @@ class _PlaylistsRow extends StatelessWidget {
             ),
             child: SizedBox(
               width: 140,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
-                        child: SizedBox(
-                          width: 140,
-                          height: 140,
-                          child: (p.coverUrl != null && p.coverUrl!.isNotEmpty)
-                              ? Image.network(
-                                  p.coverUrl!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) =>
-                                      _plFallback(accent),
-                                )
-                              : _plFallback(accent),
-                        ),
-                      ),
-                      Positioned(
-                        right: 6,
-                        top: 6,
-                        child: Obx(() {
-                          ctrl
-                              .favoritePlaylists
-                              .length; // se redessine quand les favoris changent
-                          ctrl.suggestedPlaylists.length;
-                          return InkWell(
-                            onTap: () => ctrl.toggleFavoritePlaylist(p),
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(
-                                color: Colors.black45,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                p.isFavorite
-                                    ? Icons.favorite_rounded
-                                    : Icons.favorite_border_rounded,
-                                size: 18,
-                                color: p.isFavorite
-                                    ? const Color(0xFFFB7185)
-                                    : Colors.white,
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    p.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: fg,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13.5,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Stack(children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: SizedBox(
+                      width: 140,
+                      height: 140,
+                      child: (p.coverUrl != null && p.coverUrl!.isNotEmpty)
+                          ? Image.network(
+                              p.coverUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _plFallback(accent),
+                            )
+                          : _plFallback(accent),
                     ),
                   ),
-                  Text(
-                    '${p.count} titre${p.count > 1 ? 's' : ''}',
-                    style: TextStyle(color: fg.withOpacity(.5), fontSize: 11.5),
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: Obx(() {
+                      ctrl.favoritePlaylists.length; // se redessine quand les favoris changent
+                      ctrl.suggestedPlaylists.length;
+                      return InkWell(
+                        onTap: () => ctrl.toggleFavoritePlaylist(p),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
+                          child: Icon(
+                            p.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                            size: 18,
+                            color: p.isFavorite ? const Color(0xFFFB7185) : Colors.white,
+                          ),
+                        ),
+                      );
+                    }),
                   ),
-                ],
-              ),
+                ]),
+                const SizedBox(height: 6),
+                Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 13.5)),
+                Text('${p.count} titre${p.count > 1 ? 's' : ''}', style: TextStyle(color: fg.withOpacity(.5), fontSize: 11.5)),
+              ]),
             ),
           );
         },
@@ -2409,8 +2347,8 @@ class _PlaylistsRow extends StatelessWidget {
 }
 
 Widget _plFallback(Color accent) => Container(
-  decoration: BoxDecoration(
-    gradient: LinearGradient(colors: [accent, const Color(0xFF7C3AED)]),
-  ),
-  child: const Icon(Icons.queue_music_rounded, color: Colors.white70, size: 44),
-);
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [accent, const Color(0xFF7C3AED)]),
+      ),
+      child: const Icon(Icons.queue_music_rounded, color: Colors.white70, size: 44),
+    );

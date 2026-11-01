@@ -54,6 +54,8 @@ class ChannelModel {
   final String? videoUrl;
   final bool isSubscribed;
   final bool isOwner;
+  final int? featuredRank; // 1..10 = dans le TOP 10 (classé par l'admin)
+  final String? shareUrl;
   final List<ChannelPlanModel> plans;
   final ChannelSubscriptionModel? subscription;
 
@@ -66,6 +68,8 @@ class ChannelModel {
     this.videoUrl,
     this.isSubscribed = false,
     this.isOwner = false,
+    this.featuredRank,
+    this.shareUrl,
     this.plans = const [],
     this.subscription,
   });
@@ -79,6 +83,8 @@ class ChannelModel {
     videoUrl: j['video_url']?.toString(),
     isSubscribed: j['is_subscribed'] == true,
     isOwner: j['is_owner'] == true,
+    featuredRank: j['featured_rank'] == null ? null : _i(j['featured_rank']),
+    shareUrl: j['share_url']?.toString(),
     plans: (j['plans'] as List<dynamic>? ?? [])
         .map((p) => ChannelPlanModel.fromJson(Map<String, dynamic>.from(p as Map)))
         .toList(),

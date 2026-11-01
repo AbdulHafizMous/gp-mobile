@@ -1,5 +1,6 @@
 // lib/app/modules/space/views/space_view.dart
 
+import 'package:grand_public_v2/app/utils/share_helper.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -210,6 +211,21 @@ class _SpaceBodyState extends State<_SpaceBody> with TickerProviderStateMixin {
             ),
             actions: [
               if (_ctrl.isChannel) ...[
+                // Partager la chaîne : le lien ouvre directement la chaîne dans l'app (liens https://…/m/channel/ID).
+                Obx(() {
+                  final ch = _ctrl.channel.value;
+                  if (ch == null) return const SizedBox.shrink();
+                  return IconButton(
+                    tooltip: 'Partager la chaîne',
+                    icon: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.2)),
+                      child: const Icon(Icons.ios_share_rounded, color: Colors.white, size: 18),
+                    ),
+                    onPressed: () => ShareHelper.showShareSheet(context, title: ch.name, subtitle: ch.description, type: 'channel', id: '${ch.id}'),
+                  );
+                }),
                 IconButton(
                   tooltip: 'Shorts',
                   icon: Container(
@@ -445,9 +461,7 @@ class _PreviewVideoDialogState extends State<_PreviewVideoDialog> {
                     )
                   : const AspectRatio(
                       aspectRatio: 16 / 9,
-                      child: Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      ),
+                      child: Center(child: CircularProgressIndicator()),
                     ),
             ),
           ),
@@ -795,9 +809,7 @@ class _CategoryContentView extends StatelessWidget {
           category;
 
       if (isLoading && updatedCat.videos.isEmpty) {
-        return const Center(
-          child: CircularProgressIndicator(color: Colors.white),
-        );
+        return const Center(child: CircularProgressIndicator());
       }
 
       final hasDescription = updatedCat.description.trim().isNotEmpty;
@@ -1923,6 +1935,7 @@ class _ThumbnailInteractiveState extends State<_ThumbnailInteractive>
 
   bool get _canPreview =>
       widget.video.canRead &&
+      !widget.video.isArticle &&
       ((widget.video.sourceType == 'upload' &&
               (widget.video.videoFileUrl?.isNotEmpty ?? false)) ||
           (widget.video.sourceType != 'upload' &&
@@ -2119,8 +2132,8 @@ class _ThumbnailInteractiveState extends State<_ThumbnailInteractive>
                     shape: BoxShape.circle,
                     color: Colors.black.withValues(alpha: 0.55),
                   ),
-                  child: const Icon(
-                    Icons.play_arrow_rounded,
+                  child: Icon(
+                    widget.video.isArticle ? Icons.article_rounded : Icons.play_arrow_rounded,
                     color: Colors.white,
                     size: 20,
                   ),

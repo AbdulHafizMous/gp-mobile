@@ -691,14 +691,14 @@ class _MainProfilePage extends GetView<ProfileController> {
                       controller.goTo(ProfileSubPage.interests);
                     },
                   ),
-                  if (!isPlatformiOS) const _TileDivider(),
-                  if (!isPlatformiOS)
-                    _ActionTile(
-                      title: 'Mes abonnements',
-                      icon: Icons.subscriptions_outlined,
-                      onTap: () =>
-                          controller.goTo(ProfileSubPage.manageSubscriptions),
-                    ),
+                  // « Mes abonnements » : retiré (les abonnements sont désormais gérés par chaîne).
+                  // if (!isPlatformiOS) const _TileDivider(),
+                  // if (!isPlatformiOS)
+                  //   _ActionTile(
+                  //     title: 'Mes abonnements',
+                  //     icon: Icons.subscriptions_outlined,
+                  //     onTap: () => controller.goTo(ProfileSubPage.manageSubscriptions),
+                  //   ),
                   const _TileDivider(),
                   _ActionTile(
                     title: 'Mes favoris',

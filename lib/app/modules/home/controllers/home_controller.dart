@@ -1,5 +1,6 @@
 // lib/app/modules/home/controllers/home_controller.dart
 
+import 'package:grand_public_v2/app/services/deep_link_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -230,6 +231,12 @@ class HomeController extends GetxController {
   // ─────────────────────────────────────────────────────────────────────────
   // SECTION (bottom bar)
   // ─────────────────────────────────────────────────────────────────────────
+  @override
+  void onReady() {
+    super.onReady();
+    DeepLinkService.consumePending(); // lien de chaîne reçu avant l'ouverture de l'accueil
+  }
+
   void goToSection(int index, {bool showToast = true}) {
     if (shouldSkipMedia && index == 0) return; // Espaces masqué
     if (index == activeSectionIndex && !canPop) return;

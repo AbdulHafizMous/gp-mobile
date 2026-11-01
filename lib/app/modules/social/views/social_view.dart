@@ -1,5 +1,8 @@
 // lib/app/modules/social/views/social_view.dart
 
+import 'package:grand_public_v2/app/components/expandable_menu_fab.dart';
+import 'package:grand_public_v2/app/constants/index.dart';
+import 'package:grand_public_v2/app/modules/social/views/social_games_hub_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/modules/shop/controllers/shop_controller.dart';
@@ -32,40 +35,69 @@ class SocialView extends StatelessWidget {
         ? Get.find<ShopController>()
         : Get.put(ShopController());
 
-    return Obx(
-      () => Column(
-        children: [
-          _SocialTopTabBar(
-            activeTab: chatCtrl.socialTab.value,
-            onTap: (i) => chatCtrl.socialTab.value = i,
+    const titles = ['Tchat', 'Crush', 'Bizz', 'Jeux'];
+    const subtitles = ['Vos conversations', 'Rencontres & matchs', 'Boutique & bons plans', 'Youwiiin : défis & classements'];
+    const icons = [Icons.forum_rounded, Icons.local_fire_department_rounded, Icons.handshake_rounded, Icons.sports_esports_rounded];
+
+    return Obx(() {
+      final tab = chatCtrl.socialTab.value.clamp(0, 3);
+      final unread = chatCtrl.privateConversations.fold<int>(0, (a, c) => a + c.unreadCount);
+      return Stack(children: [
+        Column(children: [
+          // En-tête compact : où je suis dans Social (le changement de sous-section se fait avec le menu flottant).
+          Container(
+            width: double.infinity,
+            color: !context.isDark ? GPTheme.socialColor : Colors.transparent,
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+            child: Row(children: [
+              Icon(icons[tab], color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Flexible(child: Text(titles[tab], maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17))),
+              const SizedBox(width: 8),
+              Flexible(child: Text(subtitles[tab], maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70, fontSize: 12))),
+            ]),
           ),
           Expanded(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 250),
               switchInCurve: Curves.easeOut,
-              transitionBuilder: (child, anim) =>
-                  FadeTransition(opacity: anim, child: child),
-              child: chatCtrl.socialTab.value == 0
+              transitionBuilder: (child, anim) => FadeTransition(opacity: anim, child: child),
+              child: tab == 0
                   ? const ChatListView(key: ValueKey('chat'))
-                  : chatCtrl.socialTab.value == 1
-                  ? const DatingView(key: ValueKey('dating'))
-                  : const ShopView(key: ValueKey('shop')),
+                  : tab == 1
+                      ? const DatingView(key: ValueKey('dating'))
+                      : tab == 2
+                          ? const ShopView(key: ValueKey('shop'))
+                          : const SocialGamesHubView(key: ValueKey('games')),
             ),
           ),
-        ],
-      ),
-    );
+        ]),
+        Positioned.fill(
+          child: ExpandableMenuFab(
+            color: GPTheme.socialColor,
+            selected: tab,
+            onSelect: (i) => chatCtrl.socialTab.value = i,
+            items: [
+              FabMenuItem(icon: icons[0], label: titles[0], badge: unread),
+              FabMenuItem(icon: icons[1], label: titles[1]),
+              FabMenuItem(icon: icons[2], label: titles[2]),
+              if (isYouwiiinActivated) FabMenuItem(icon: icons[3], label: titles[3]),
+            ],
+          ),
+        ),
+      ]);
+    });
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TOP TAB BAR
 // ─────────────────────────────────────────────────────────────────────────────
-class _SocialTopTabBar extends StatelessWidget {
+class SocialTopTabBar extends StatelessWidget {
   final int activeTab;
   final void Function(int) onTap;
 
-  const _SocialTopTabBar({required this.activeTab, required this.onTap});
+  const SocialTopTabBar({super.key, required this.activeTab, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

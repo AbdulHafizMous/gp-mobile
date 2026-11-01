@@ -106,6 +106,16 @@ const bool isDebuggingIap = true;
 //          mène directement au login Grandpublic (aucun écran de choix).
 // ══════════════════════════════════════════════════════════════════════════
 const bool isBlowMusicActivated = true;
+
+// ══════════════════════════════════════════════════════════════════════════
+// WALL START (écran « Que voulez-vous ouvrir ? »)
+// ──────────────────────────────────────────────────────────────────────────
+// false (défaut) -> écran désactivé : l'app s'ouvre directement sur Grandpublic ; les logos des
+//                   menus ne naviguent plus nulle part. Blowmusic est dans la liste des chaînes,
+//                   Youwiiin dans Social.
+// true           -> ancien comportement (choix du module à chaque ouverture).
+// ══════════════════════════════════════════════════════════════════════════
+const bool isWallStartModeEnabled = false;
 // Logos / identité visuelle dédiés à Blowmusic (à remplacer par les vrais
 // assets une fois livrés par le design : assets/images/blowmusic_*.png).
 const String LOGO_BLOWMUSIC = 'assets/images/Icone_B_blanc.png';

@@ -1,6 +1,7 @@
 // Bottom sheet de la chaîne : choisir un plan et s'abonner (Moneroo), ou
 // gérer son abonnement (état, expiration, renouvellement, résiliation).
 // Ouvert par le bouton ⚙ en haut à droite de la page d'une chaîne.
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:io' show Platform;
 
 import 'package:dio/dio.dart';
@@ -61,7 +62,7 @@ class _ChannelSubscribeSheetState extends State<ChannelSubscribeSheet> {
       await RequestService().post('/channels/plans/${plan.id}/confirm', data: {'payment_id': paymentId});
       await widget.onChanged();
       if (mounted) Navigator.of(context).pop();
-      ToastHelper.showToast('Abonnement activé ✅', backgroundColor: Colors.green, textColor: Colors.white);
+      ToastHelper.showToast('Abonnement activé', backgroundColor: Colors.green, textColor: Colors.white);
     } on DioException catch (e) {
       final msg = e.response?.data is Map ? e.response?.data['message']?.toString() : null;
       ToastHelper.showToast(msg ?? 'Le paiement a échoué. Réessayez.', backgroundColor: Colors.red, textColor: Colors.white);
@@ -183,7 +184,22 @@ class _ChannelSubscribeSheetState extends State<ChannelSubscribeSheet> {
               child: const Text('Résilier mon abonnement', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
             ),
           const SizedBox(height: 4),
-          Text('Paiement sécurisé par Moneroo. Aucun renouvellement automatique.', textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 11.5)),
+          Text('Paiement sécurisé (Mobile Money, carte). Aucun renouvellement automatique.', textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 11.5)),
+          const SizedBox(height: 8),
+          // Conditions d'utilisation — comme sous les offres Premium
+          Wrap(alignment: WrapAlignment.center, crossAxisAlignment: WrapCrossAlignment.center, children: [
+            Text('En vous abonnant, vous acceptez les ', style: TextStyle(color: muted, fontSize: 11)),
+            GestureDetector(
+              onTap: () => launchUrl(Uri.parse('https://grandpublic.bj/cgu'), mode: LaunchMode.externalApplication),
+              child: Text("Conditions d'utilisation", style: TextStyle(color: muted, fontSize: 11, decoration: TextDecoration.underline)),
+            ),
+            Text(' et la ', style: TextStyle(color: muted, fontSize: 11)),
+            GestureDetector(
+              onTap: () => launchUrl(Uri.parse('https://grandpublic.bj/politique-de-confidentialite'), mode: LaunchMode.externalApplication),
+              child: Text('Politique de confidentialité', style: TextStyle(color: muted, fontSize: 11, decoration: TextDecoration.underline)),
+            ),
+            Text('. Les contenus de la chaîne sont publiés sous la seule responsabilité de son créateur.', style: TextStyle(color: muted, fontSize: 11)),
+          ]),
         ]),
       ),
     );

@@ -1,6 +1,11 @@
 // lib/app/modules/pages/vid_detail.dart
 
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:grand_public_v2/app/components/article_carousel.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/components/mini_media.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:get/get.dart';
@@ -83,6 +88,7 @@ class _VidDetailState extends State<VidDetail> {
   void initState() {
     super.initState();
     ctrl = Get.find<VideosController>();
+    MiniMedia.close(); // un seul lecteur à la fois : la fenêtre réduite se ferme à l'ouverture de l'écran complet
     ctrl.fetchComments(widget.video.id);
     _maybeInitPlayer(ctrl.currentVideo.value ?? widget.video);
   }
@@ -95,6 +101,11 @@ class _VidDetailState extends State<VidDetail> {
   }
 
   void _maybeInitPlayer(SpaceVideo video) {
+    // Média « article » : pas de lecteur (carrousel d'images + texte).
+    if (video.isArticle) {
+      setState(() => _isPreparing = false);
+      return;
+    }
     if (!video.canRead) {
       setState(() => _isPreparing = false);
       return;
@@ -148,6 +159,11 @@ class _VidDetailState extends State<VidDetail> {
 
       await controller.initialize();
       if (requestId != _initRequestId || !mounted) return;
+      final resume = MiniMedia.takeSeek(); // reprise après « Réduire »
+      if (resume != null) {
+        await controller.seekTo(resume);
+        controller.play();
+      }
 
       ctrl.totalDuration.value = controller.value.duration;
       setState(() {
@@ -211,8 +227,9 @@ class _VidDetailState extends State<VidDetail> {
     _ytCtrl?.dispose();
     _ytCtrl = YoutubePlayerController(
       initialVideoId: ytId,
-      flags: const YoutubePlayerFlags(
-        autoPlay: false,
+      flags: YoutubePlayerFlags(
+        autoPlay: MiniMedia.hasSeek,
+        startAt: MiniMedia.takeSeek()?.inSeconds ?? 0,
         hideControls: true,
         enableCaption: false,
         forceHD: false,
@@ -238,6 +255,14 @@ class _VidDetailState extends State<VidDetail> {
     if (buffering != _isBuffering) {
       setState(() => _isBuffering = buffering);
     }
+  }
+
+  void _minimize() {
+    final v = ctrl.currentVideo.value ?? widget.video;
+    final pos = _nativeCtrl?.value.position ?? _ytCtrl?.value.position ?? Duration.zero;
+    final playing = _nativeCtrl?.value.isPlaying ?? _ytCtrl?.value.isPlaying ?? false;
+    MiniMedia.minimize(v, pos, playing);
+    Get.back();
   }
 
   void _retryLoad() {
@@ -364,6 +389,7 @@ class _VidDetailState extends State<VidDetail> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _videoInfo(context),
+                      if ((ctrl.currentVideo.value ?? widget.video).isArticle) _articleBody(context, ctrl.currentVideo.value ?? widget.video),
                       _actionBar(context),
                       Divider(height: 1, color: context.separator),
                       _commentsSection(context),
@@ -385,6 +411,7 @@ class _VidDetailState extends State<VidDetail> {
 
   Widget _playerArea(BuildContext context, {required bool fullscreen}) {
     final video = ctrl.currentVideo.value ?? widget.video;
+    if (video.isArticle) return _articleHeader(context, video);
     final double h = fullscreen
         ? MediaQuery.of(context).size.height
         : MediaQuery.of(context).size.width * 9 / 16;
@@ -515,6 +542,14 @@ class _VidDetailState extends State<VidDetail> {
               onTap: fullscreen ? _toggleFullscreen : Get.back,
             ),
           ),
+
+          // Réduire en fenêtre flottante (la vidéo continue au-dessus du reste de l'app)
+          if (!fullscreen && video.canRead && !video.isArticle)
+            Positioned(
+              top: 8,
+              left: 56,
+              child: _CircleBtn(icon: Icons.picture_in_picture_alt_rounded, onTap: _minimize),
+            ),
 
           // Bouton partage — permet d'envoyer ce média à un ami
           if (!fullscreen)
@@ -805,6 +840,74 @@ class _VidDetailState extends State<VidDetail> {
   // ─────────────────────────────────────────────────────────────────────────
   //  VIDEO INFO
   // ─────────────────────────────────────────────────────────────────────────
+
+  /// En-tête d'un article : carrousel d'images (tap = visionneuse zoomable), retour et partage.
+  Widget _articleHeader(BuildContext context, SpaceVideo v) {
+    final size = MediaQuery.of(context).size;
+    final h = (size.width * 1.2).clamp(260.0, size.height * 0.58).toDouble();
+    return SizedBox(
+      width: double.infinity,
+      height: h,
+      child: Stack(fit: StackFit.expand, children: [
+        Container(color: Colors.black),
+        if (!v.canRead)
+          _lockedLayer(v)
+        else
+          ArticleCarousel(images: v.gallery.isNotEmpty ? v.gallery : [v.thumbnail], fit: BoxFit.contain, autoplay: false),
+        Positioned(top: 8, left: 8, child: _CircleBtn(icon: Icons.arrow_back_rounded, onTap: Get.back)),
+        Positioned(
+          top: 8,
+          right: 8,
+          child: _CircleBtn(icon: Icons.ios_share_rounded, onTap: () => Share.share('${v.title}\n${v.videoUrl}'.trim())),
+        ),
+      ]),
+    );
+  }
+
+  /// Texte de l'article (Markdown) : titres, listes, citations et LIENS cliquables.
+  Widget _articleBody(BuildContext context, SpaceVideo v) {
+    final base = TextStyle(color: context.primaryLabel, fontSize: 16.5, height: 1.7);
+    final text = (v.body ?? '').trim();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(Icons.article_rounded, size: 16, color: GPTheme.primaryColor),
+          const SizedBox(width: 6),
+          Text('Article${v.readingMinutes > 0 ? ' · ${v.readingMinutes} min de lecture' : ''}', style: TextStyle(color: GPTheme.primaryColor, fontWeight: FontWeight.w800, fontSize: 12.5)),
+        ]),
+        const SizedBox(height: 10),
+        MarkdownBody(
+          data: text,
+          selectable: true,
+          onTapLink: (t, href, _) async {
+            if (href == null) return;
+            final u = Uri.tryParse(href);
+            if (u != null) await launchUrl(u, mode: LaunchMode.externalApplication);
+          },
+          styleSheet: MarkdownStyleSheet(
+            p: base,
+            a: base.copyWith(color: GPTheme.primaryColor, decoration: TextDecoration.underline, fontWeight: FontWeight.w600),
+            h1: base.copyWith(fontSize: 24, fontWeight: FontWeight.w800, height: 1.3),
+            h2: base.copyWith(fontSize: 21, fontWeight: FontWeight.w800, height: 1.3),
+            h3: base.copyWith(fontSize: 18, fontWeight: FontWeight.w800, height: 1.3),
+            strong: base.copyWith(fontWeight: FontWeight.w800),
+            blockquote: base.copyWith(fontStyle: FontStyle.italic, color: context.primaryLabel.withValues(alpha: .75)),
+            blockquoteDecoration: BoxDecoration(border: Border(left: BorderSide(color: GPTheme.primaryColor, width: 3))),
+            blockquotePadding: const EdgeInsets.only(left: 12),
+            listBullet: base.copyWith(color: GPTheme.primaryColor),
+            pPadding: const EdgeInsets.only(bottom: 6),
+            h2Padding: const EdgeInsets.only(top: 12),
+            h3Padding: const EdgeInsets.only(top: 8),
+          ),
+        ),
+        if (!v.canRead) ...[
+          const SizedBox(height: 10),
+          Text('La suite de cet article est réservée aux abonnés.', style: TextStyle(color: context.primaryLabel.withValues(alpha: .7), fontStyle: FontStyle.italic)),
+        ],
+      ]),
+    );
+  }
 
   Widget _videoInfo(BuildContext context) {
     return Obx(() {

@@ -94,6 +94,16 @@
 				<string>com.googleusercontent.apps.530288780124-sohtqd98eq5rsdhvdpfcf5cepo81mjqt</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string>grandpublic</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>grandpublic</string>
+			</array>
+		</dict>
 	</array>
 
 	<!-- ===================== -->

@@ -47,6 +47,7 @@ dependencies:
   flutter_local_notifications: ^21.0.0
   googleapis_auth: ^2.0.0
   firebase_auth: ^6.2.0
+  firebase_database: ^12.0.0     # relais temps réel du multijoueur (voir docs/MULTIJOUEUR_FIREBASE.md)
   image_picker: ^1.2.1
   video_player: ^2.11.1
   qr_flutter: ^4.1.0
@@ -55,7 +56,9 @@ dependencies:
   file_picker: ^8.3.7          # Sélection fichiers génériques (PDF, doc…)
   record: ^5.2.0               # Enregistrement audio
   screen_protector: ^1.4.2+1     # blocage captures/enregistrement d'écran (médias à vue unique)
-  # jitsi_meet_flutter_sdk: ^10.3.0 # appels vocaux / vidéo (messagerie)
+  # flutter_webrtc: ^0.12.0         # appels vocaux / vidéo (messagerie, WebRTC pair-à-pair)
+  app_links: ^6.3.2               # liens de partage -> ouverture directe de la chaîne
+  flutter_markdown: ^0.7.7        # rendu des articles (Markdown, liens cliquables)
   cached_network_image: ^3.4.1   # cache disque des images du chat (économie de data)
   audio_service: ^0.18.17      # Lecture Blowmusic en arrière-plan + contrôles notif/écran verrouillé
   audioplayers: ^6.4.0         # Lecture audio messages vocaux

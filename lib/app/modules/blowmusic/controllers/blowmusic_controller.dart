@@ -1,3 +1,6 @@
+import 'package:grand_public_v2/app/utils/toast_helper.dart';
+import 'package:grand_public_v2/app/components/moneroo_webview_payment_page.dart';
+import 'package:grand_public_v2/app/constants/index.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -92,7 +95,8 @@ const List<BlowMusicTab> kBlowMusicTabs = [
 enum BmPlaybackState { idle, loading, playing, paused, error }
 
 class BlowMusicController extends GetxController {
-  final currentTab = 0.obs;
+  final currentTab = 1.obs; // Blowmusic s'ouvre directement sur le LIVE
+  final playerOpen = false.obs; // plein écran du lecteur ouvert (masque le mini-lecteur)
   final isLoading = true.obs;
   final hasError = false.obs;
 
@@ -161,12 +165,15 @@ class BlowMusicController extends GetxController {
     loadSuggestedPlaylists();
     loadFavoritePlaylists();
     loadLibrary(reset: true);
-    // Ouverture depuis une notification : onglet demandé (live / library…).
+    // Blowmusic s'ouvre TOUJOURS sur le LIVE ; sauf ouverture depuis une notification qui demande un autre onglet.
+    final liveIdx = kBlowMusicTabs.indexWhere((t) => t.icon == 'live');
+    currentTab.value = liveIdx >= 0 ? liveIdx : 0;
     final args = Get.arguments;
     if (args is Map && args['tab'] != null) {
       final i = kBlowMusicTabs.indexWhere((t) => t.icon == args['tab']);
       if (i >= 0) currentTab.value = i;
     }
+    refreshLive();
     // Réactivité du direct : l'admin peut activer/couper un flux à tout moment.
     _livePoll = Timer.periodic(const Duration(seconds: 15), (_) => refreshLive());
     WidgetsBinding.instance.addPostFrameCallback(
@@ -325,7 +332,7 @@ class BlowMusicController extends GetxController {
     try {
       final ctl = VideoPlayerController.networkUrl(
         Uri.parse(resolvedUrl),
-        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: false, allowBackgroundPlayback: true),
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true, allowBackgroundPlayback: true),
       );
       videoPlayerController = ctl;
 
@@ -346,13 +353,7 @@ class BlowMusicController extends GetxController {
         isPlaying.value = v.isPlaying;
         position.value = v.position;
         duration.value = v.duration;
-        BmAudioService.setState(
-          playing: v.isPlaying,
-          loading: v.isBuffering,
-          position: v.position,
-          live: isPlayingLive.value,
-          hasQueue: !isPlayingLive.value && queue.length > 1,
-        );
+        _publishSystemState(v);
 
         if (!isPlayingLive.value &&
             !_endHandled &&
@@ -377,6 +378,42 @@ class BlowMusicController extends GetxController {
     } catch (e) {
       playbackState.value = BmPlaybackState.error;
     }
+  }
+
+  // Publie l'état vers la notification média SEULEMENT quand il change (évite les rafales qui faisaient
+  // clignoter lecture/pause) ; la position est rafraîchie au plus 1 fois par seconde.
+  bool? _pubPlaying, _pubBuffering;
+  int _pubPosMs = -5000;
+  void _publishSystemState(dynamic v) {
+    final playing = v.isPlaying as bool, buf = v.isBuffering as bool, posMs = (v.position as Duration).inMilliseconds;
+    if (playing == _pubPlaying && buf == _pubBuffering && (posMs - _pubPosMs).abs() < 1000) return;
+    _pubPlaying = playing;
+    _pubBuffering = buf;
+    _pubPosMs = posMs;
+    BmAudioService.setState(
+      playing: playing,
+      loading: buf && !playing,
+      position: v.position as Duration,
+      live: isPlayingLive.value,
+      hasQueue: !isPlayingLive.value && queue.length > 1,
+    );
+  }
+
+  /// Ferme complètement le lecteur (bouton ✕ du mini-lecteur) : arrête le son et retire la notification média.
+  Future<void> closePlayer() async {
+    BmAudioService.clear();
+    await _releasePlayer();
+    isPlayingLive.value = false;
+    isPlaying.value = false;
+    currentTrack.value = null;
+    playbackState.value = BmPlaybackState.idle;
+  }
+
+  /// Appelé à chaque entrée dans le module (le contrôleur est permanent : la lecture survit à la sortie).
+  void onEnterModule() {
+    final args = Get.arguments;
+    final i = args is Map && args['tab'] != null ? kBlowMusicTabs.indexWhere((t) => t.icon == args['tab']) : 1;
+    currentTab.value = i >= 0 ? i : 1;
   }
 
   /// Branche le lecteur sur le système (notification / écran verrouillé).
@@ -735,7 +772,41 @@ class BlowMusicController extends GetxController {
   }
 
   /// Lancer la lecture du Live
+  /// Direct payant : paiement du ticket (Mobile Money / carte), puis lecture.
+  bool get liveNeedsTicket => liveStream.value?['is_paid'] == true && liveStream.value?['has_access'] != true;
+  int get livePrice => int.tryParse('${liveStream.value?['price']}') ?? 0;
+
+  Future<bool> payForLive() async {
+    final lv = liveStream.value;
+    if (lv == null) return false;
+    if (shouldSkipPayments) {
+      ToastHelper.showToast(paymentsUnavailableMessage, backgroundColor: Colors.orange, textColor: Colors.white);
+      return false;
+    }
+    try {
+      final r = await RequestService().post('/blowmusic/live/${lv['id']}/pay');
+      final d = r.data?['data'];
+      if (d?['already'] == true) {
+        await refreshLive();
+        return true;
+      }
+      final checkout = d?['checkout_url']?.toString(), prefix = d?['return_url_prefix']?.toString();
+      final ctx = Get.context;
+      if (checkout == null || prefix == null || ctx == null) return false;
+      final pid = await openMonerooWebviewPayment(ctx, checkoutUrl: checkout, returnUrlPrefix: prefix);
+      if (pid == null) return false;
+      await RequestService().post('/blowmusic/live/${lv['id']}/confirm', data: {'payment_id': pid});
+      await refreshLive();
+      ToastHelper.showToast('Accès au direct activé', backgroundColor: Colors.green, textColor: Colors.white);
+      return true;
+    } catch (e) {
+      ToastHelper.showToast('Le paiement a échoué. Réessayez.', backgroundColor: Colors.red, textColor: Colors.white);
+      return false;
+    }
+  }
+
   Future<void> playLive() async {
+    if (liveNeedsTicket && !await payForLive()) return;
     final rawUrl = liveStream.value?['stream_url']?.toString();
     if (rawUrl == null || rawUrl.isEmpty) {
       playbackState.value = BmPlaybackState.error;

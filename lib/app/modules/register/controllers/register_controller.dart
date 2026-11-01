@@ -16,6 +16,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:grand_public_v2/app/globals/index.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
+import 'package:grand_public_v2/app/utils/auth_diagnostics.dart';
 import 'package:grand_public_v2/app/utils/auth_flow.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -243,6 +244,7 @@ class RegisterController extends GetxController {
   // ══════════════════════════════════════════════════════════════════════════
   Future<void> loginWithGoogle() async {
     isSocialLoading.value = true;
+    String step = 'init';
     try {
       // ── Mock ───────────────────────────────────────────────────────────
       if (useMock) {
@@ -259,6 +261,7 @@ class RegisterController extends GetxController {
         return;
       }
 
+      step = 'google.signOut';
       // Nettoie toute session Google résiduelle/corrompue avant de relancer
       // le flux (évite les échecs silencieux au 2e essai sur iPad/iPhone).
       try {
@@ -267,6 +270,7 @@ class RegisterController extends GetxController {
         // Ignoré : pas de session à nettoyer.
       }
 
+      step = 'google.authenticate';
       final GoogleSignInAccount googleUser = await GoogleSignIn.instance
           .authenticate();
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
@@ -278,6 +282,7 @@ class RegisterController extends GetxController {
       }
 
       // Échange contre un Firebase ID Token (le backend n'accepte que ça)
+      step = 'firebase.signInWithCredential';
       final OAuthCredential credential = GoogleAuthProvider.credential(
         idToken: googleIdToken,
       );
@@ -292,6 +297,7 @@ class RegisterController extends GetxController {
         return;
       }
 
+      step = 'backend./auth/social';
       final response = await RequestService().post(
         '/auth/social',
         data: {
@@ -305,28 +311,22 @@ class RegisterController extends GetxController {
         response.data['data'],
         provider: 'Google',
       );
-    } on GoogleSignInException catch (e) {
-      switch (e.code) {
-        case GoogleSignInExceptionCode.canceled:
-          break;
-        case GoogleSignInExceptionCode.clientConfigurationError:
-          _showError('Erreur de configuration Google. Contactez le support.');
-          break;
-        default:
-          _showError('La connexion avec Google a échoué. Réessayez.');
+    } on GoogleSignInException catch (e, st) {
+      if (e.code != GoogleSignInExceptionCode.canceled) {
+        AuthDiagnostics.report(provider: 'Google', step: step, error: e, stack: st);
+        _showError('La connexion avec Google a échoué (${e.code.name}).');
       }
-    } on FirebaseAuthException catch (e) {
-      debugPrint('FirebaseAuthException (Google): ${e.code} - ${e.message}');
-      _showError(
-        'Erreur Firebase (${e.code}) : ${e.message ?? 'Réessayez.'}',
-      );
-    } on PlatformException catch (e) {
-      debugPrint('PlatformException (Google): ${e.code} - ${e.message}');
-      _showError('La connexion avec Google a échoué (${e.code}). Réessayez.');
+    } on FirebaseAuthException catch (e, st) {
+      AuthDiagnostics.report(provider: 'Google', step: step, error: e, stack: st);
+      _showError('Erreur Firebase (${e.code}) : ${e.message ?? 'Réessayez.'}');
+    } on PlatformException catch (e, st) {
+      // Erreurs natives iOS/Android non couvertes par GoogleSignInException.
+      AuthDiagnostics.report(provider: 'Google', step: step, error: e, stack: st);
+      _showError('La connexion avec Google a échoué (${e.code}).');
     } on DioException catch (e) {
       _handleDioError(e);
-    } catch (e) {
-      debugPrint('Google login error: $e');
+    } catch (e, st) {
+      AuthDiagnostics.report(provider: 'Google', step: step, error: e, stack: st);
       _showError('La connexion avec Google a échoué ($e).');
     } finally {
       isSocialLoading.value = false;
