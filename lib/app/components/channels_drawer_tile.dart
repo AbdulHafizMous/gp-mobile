@@ -23,9 +23,18 @@ class ChannelsDrawerTile extends StatelessWidget {
     return Obx(() {
       // Rien à afficher tant qu'aucune chaîne n'existe.
       final isPartner = activeUser.value.role == 'Partner';
-      final top = c.channels.where((x) => x.featuredRank != null && x.featuredRank! >= 1 && x.featuredRank! <= 10).toList()
-        ..sort((a, b) => a.featuredRank!.compareTo(b.featuredRank!));
-      if (!c.isLoading.value && top.isEmpty && !isPartner) return const SizedBox.shrink();
+      final top =
+          c.channels
+              .where(
+                (x) =>
+                    x.featuredRank != null &&
+                    x.featuredRank! >= 1 &&
+                    x.featuredRank! <= 10,
+              )
+              .toList()
+            ..sort((a, b) => a.featuredRank!.compareTo(b.featuredRank!));
+      if (!c.isLoading.value && top.isEmpty && !isPartner)
+        return const SizedBox.shrink();
 
       return Padding(
         padding: const EdgeInsets.only(bottom: 10),
@@ -43,19 +52,33 @@ class ChannelsDrawerTile extends StatelessWidget {
               splashColor: Colors.transparent,
             ),
             child: ExpansionTile(
-              tilePadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+              tilePadding: const EdgeInsets.symmetric(
+                horizontal: 5,
+                vertical: 0,
+              ),
               childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
               iconColor: fg,
               collapsedIconColor: fg,
               shape: const Border(),
               collapsedShape: const Border(),
               leading: Icon(Icons.live_tv_rounded, color: fg, size: 20),
-              title: Text('Top 10 Chaînes', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: fg)),
+              title: Text(
+                'Top 10 Chaînes',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: fg,
+                ),
+              ),
               children: [
                 if (c.isLoading.value)
                   const Padding(
                     padding: EdgeInsets.all(14),
-                    child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   ),
                 for (final ch in top)
                   InkWell(
@@ -65,26 +88,52 @@ class ChannelsDrawerTile extends StatelessWidget {
                       Get.toNamed('/channel/${ch.id}');
                     },
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
-                      child: Row(children: [
-                        CircleAvatar(
-                          radius: 15,
-                          backgroundColor: color,
-                          backgroundImage: ch.logoUrl != null ? NetworkImage(ch.logoUrl!) : null,
-                          child: ch.logoUrl == null
-                              ? Text(ch.name.isEmpty ? '?' : ch.name[0].toUpperCase(),
-                                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800))
-                              : null,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(ch.name,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 7,
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 15,
+                            backgroundColor: color,
+                            backgroundImage: ch.logoUrl != null
+                                ? NetworkImage(ch.logoUrl!)
+                                : null,
+                            child: ch.logoUrl == null
+                                ? Text(
+                                    ch.name.isEmpty
+                                        ? '?'
+                                        : ch.name[0].toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              ch.name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 14)),
-                        ),
-                        if (ch.isSubscribed) const Icon(Icons.verified_rounded, color: Colors.green, size: 16),
-                      ]),
+                              style: TextStyle(
+                                color: fg,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          if (ch.isSubscribed)
+                            const Icon(
+                              Icons.verified_rounded,
+                              color: Colors.green,
+                              size: 16,
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 if (activeUser.value.role == 'Partner')
@@ -95,11 +144,20 @@ class ChannelsDrawerTile extends StatelessWidget {
                     },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Row(children: [
-                        Icon(Icons.settings_outlined, size: 18, color: fg),
-                        const SizedBox(width: 8),
-                        Text('Gérer mes chaînes', style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 13.5)),
-                      ]),
+                      child: Row(
+                        children: [
+                          Icon(Icons.settings_outlined, size: 18, color: fg),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Gérer mes chaînes',
+                            style: TextStyle(
+                              color: fg,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13.5,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
               ],
