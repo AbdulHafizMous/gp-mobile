@@ -76,6 +76,11 @@ class GPTheme {
 
   static ThemeData light() {
     return ThemeData(
+      // Loader par défaut : plus la couleur Flutter bleu-violet (seed Material).
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: primaryColor,
+        circularTrackColor: Colors.transparent,
+      ),
       fontFamily: 'gotham_book',
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: <TargetPlatform, PageTransitionsBuilder>{
@@ -140,6 +145,11 @@ class GPTheme {
         },
       ),
       scaffoldBackgroundColor: Colors.black,
+      // Loader par défaut : plus la couleur Flutter bleu-violet (seed Material).
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: Colors.white,
+        circularTrackColor: Colors.transparent,
+      ),
       fontFamily: 'gotham_book',
       primaryColor: Colors.white,
       brightness: Brightness.dark, // Crucial

@@ -47,21 +47,21 @@ class SectionModel {
 
 final sections = [
   SectionModel(
-    title: "Chaînes",
+    title: "Média",
     description:
-        "Toutes les chaînes : médias, lives, musique et créateurs à suivre.",
-    icon: Icons.dashboard_customize_outlined,
+        "Tous les médias : presses en ligne, web TV, web radio, lives et créateurs à suivre.",
+    icon: Icons.tv_rounded,
     hasSub: true,
     isLive: true,
     page: ChannelsHubView(),
     drawerItems: [
       DrawerItem(
-        title: "Toutes les chaînes",
+        title: "Tous les médias",
         icon: Icons.grid_view_rounded,
         route: "/home/channels",
       ),
       DrawerItem(
-        title: "Gérer les chaînes",
+        title: "Gérer les médias",
         icon: Icons.settings_outlined,
         route: "/home/spaces/manage",
         requiredRoles: ["Admin", "Super Admin"],

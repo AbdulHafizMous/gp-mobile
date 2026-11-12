@@ -347,14 +347,34 @@ class _ChatListViewState extends State<ChatListView>
 // ─────────────────────────────────────────────────────────────────────────────
 // SEARCH BAR
 // ─────────────────────────────────────────────────────────────────────────────
-class _SearchBar extends StatelessWidget {
+class _SearchBar extends StatefulWidget {
   final ChatController ctrl;
   const _SearchBar({required this.ctrl});
 
   @override
+  State<_SearchBar> createState() => _SearchBarState();
+}
+
+class _SearchBarState extends State<_SearchBar> {
+  // Contrôleur propre au widget : le ChatController peut être supprimé (GetX)
+  // pendant que le champ est encore à l'écran → plus de « used after being disposed ».
+  late final TextEditingController _tc = TextEditingController(
+    text: widget.ctrl.searchQuery.value,
+  );
+
+  ChatController get ctrl => widget.ctrl;
+
+  @override
+  void dispose() {
+    _tc.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return TextField(
-      controller: ctrl.searchCtrl,
+      controller: _tc,
+      onChanged: (v) => ctrl.searchQuery.value = v,
       style: const TextStyle(color: Colors.white, fontSize: 13),
       decoration: InputDecoration(
         hintText: 'Rechercher: #Tech  #Musique  #Politique…',
@@ -367,7 +387,10 @@ class _SearchBar extends StatelessWidget {
         suffixIcon: Obx(
           () => ctrl.searchQuery.value.isNotEmpty
               ? IconButton(
-                  onPressed: ctrl.searchCtrl.clear,
+                  onPressed: () {
+                    _tc.clear();
+                    ctrl.searchQuery.value = '';
+                  },
                   icon: const Icon(
                     Icons.close_rounded,
                     color: Colors.white38,
@@ -838,7 +861,7 @@ class _ChannelTile extends StatelessWidget {
                           context,
                           title: 'Rejoins le canal "${channel.name}"',
                           subtitle: channel.description,
-                          type: 'channel',
+                          type: 'canal',
                           id: '${channel.id}',
                         ),
                         child: Icon(Icons.share_outlined, size: 16, color: context.subtle),

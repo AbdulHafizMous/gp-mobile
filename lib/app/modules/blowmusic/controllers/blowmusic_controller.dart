@@ -1,3 +1,4 @@
+import 'package:grand_public_v2/app/services/ad_service.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 import 'package:grand_public_v2/app/components/moneroo_webview_payment_page.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
@@ -87,10 +88,43 @@ class BlowMusicTab {
 const List<BlowMusicTab> kBlowMusicTabs = [
   BlowMusicTab('Accueil', 'home'),
   BlowMusicTab('Live', 'live'),
+  BlowMusicTab('Émissions', 'shows'),
   BlowMusicTab('Biblio', 'library'),
   BlowMusicTab('Playlists', 'playlist'),
-  BlowMusicTab('Favoris', 'favorite'),
 ];
+
+/// Écran « Favoris » : accessible depuis le menu latéral uniquement (hors barre du bas).
+const int kBmFavoritesTab = 5;
+
+/// Émission (groupe d'épisodes, ex. « Le Matinal »).
+class BmShow {
+  final int id, episodes;
+  final String title, schedule, description;
+  final String? coverUrl;
+  BmShow.fromJson(Map<String, dynamic> j)
+      : id = _bmInt(j['id']),
+        episodes = _bmInt(j['episodes_count']),
+        title = j['title']?.toString() ?? '',
+        schedule = j['schedule']?.toString() ?? '',
+        description = j['description']?.toString() ?? '',
+        coverUrl = j['cover_url']?.toString();
+}
+
+/// Épisode d'une émission : lecture vidéo/audio, sans likes ni commentaires.
+class BmEpisode {
+  final int id;
+  final String title, description, mediaType;
+  final String? playUrl, thumbnailUrl, publishedAt;
+  BmEpisode.fromJson(Map<String, dynamic> j)
+      : id = _bmInt(j['id']),
+        title = j['title']?.toString() ?? '',
+        description = j['description']?.toString() ?? '',
+        mediaType = j['media_type']?.toString() ?? 'video',
+        playUrl = j['play_url']?.toString(),
+        thumbnailUrl = j['thumbnail_url']?.toString(),
+        publishedAt = j['published_at']?.toString();
+  bool get isAudio => mediaType == 'audio';
+}
 
 enum BmPlaybackState { idle, loading, playing, paused, error }
 
@@ -172,10 +206,14 @@ class BlowMusicController extends GetxController {
     if (args is Map && args['tab'] != null) {
       final i = kBlowMusicTabs.indexWhere((t) => t.icon == args['tab']);
       if (i >= 0) currentTab.value = i;
+      if (args['tab'] == 'favorite') currentTab.value = kBmFavoritesTab;
     }
     refreshLive();
     // Réactivité du direct : l'admin peut activer/couper un flux à tout moment.
-    _livePoll = Timer.periodic(const Duration(seconds: 15), (_) => refreshLive());
+    _livePoll = Timer.periodic(const Duration(seconds: 15), (_) {
+      refreshLive();
+      _heartbeat();
+    });
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => maybeShowFullscreenAd(),
     );
@@ -185,8 +223,55 @@ class BlowMusicController extends GetxController {
 
   void changeTab(int i) {
     currentTab.value = i;
-    // Onglet Favoris : rafraîchit la liste à chaque ouverture.
-    if (i == 4) loadFavorites();
+    if (i == kBmFavoritesTab) loadFavorites();
+    if (i == 2) loadShows();
+  }
+
+  // ── Émissions ───────────────────────────────────────────────────────────
+  final shows = <BmShow>[].obs;
+  final showsLoading = false.obs;
+  final episodes = <BmEpisode>[].obs;
+  final episodesLoading = false.obs;
+
+  Future<void> loadShows() async {
+    showsLoading.value = true;
+    try {
+      final res = await RequestService().get('/blowmusic/shows');
+      final list = res.data?['data'];
+      final items = list is Map ? list['shows'] : list;
+      shows.assignAll((items as List? ?? []).map((e) => BmShow.fromJson(Map<String, dynamic>.from(e))));
+    } catch (_) {
+    } finally {
+      showsLoading.value = false;
+    }
+  }
+
+  Future<void> loadEpisodes(int showId) async {
+    episodesLoading.value = true;
+    episodes.clear();
+    try {
+      final res = await RequestService().get('/blowmusic/shows/$showId/episodes');
+      final d = res.data?['data'];
+      final items = d is Map ? d['episodes'] : d;
+      episodes.assignAll((items as List? ?? []).map((e) => BmEpisode.fromJson(Map<String, dynamic>.from(e))));
+    } catch (_) {
+    } finally {
+      episodesLoading.value = false;
+    }
+  }
+
+  /// Compte une vue (visible uniquement par l'admin : aucun compteur côté utilisateur).
+  void trackEpisodeView(BmEpisode e) {
+    RequestService().post('/blowmusic/episodes/${e.id}/view');
+  }
+
+  // ── Direct : spectateurs + bascule payant/gratuit en cours de diffusion ──
+  Future<void> _heartbeat() async {
+    final id = liveStream.value?['id'];
+    if (id == null || (!isPlayingLive.value && currentTab.value != 1)) return;
+    try {
+      await RequestService().post('/blowmusic/live/$id/heartbeat');
+    } catch (_) {}
   }
 
   /// Interroge l'API (léger). Si le direct change (nouveau flux, ou coupé) :
@@ -200,7 +285,17 @@ class BlowMusicController extends GetxController {
       final next = raw is Map ? Map<String, dynamic>.from(raw) : null;
       final oldId = liveStream.value?['id'];
       final newId = next?['id'];
-      if (oldId == newId) return;
+      if (oldId == newId) {
+        // Même flux : l'admin a pu le passer en payant / gratuit en plein direct.
+        final wasLocked = liveNeedsTicket;
+        if (next != null) {
+          liveStream.value = next;
+          if (!wasLocked && liveNeedsTicket && isPlayingLive.value) {
+            await stopLive(); // coupe le son : le spectateur doit payer son ticket pour continuer
+          }
+        }
+        return;
+      }
 
       liveStream.value = next;
       if (isPlayingLive.value) {
@@ -412,6 +507,10 @@ class BlowMusicController extends GetxController {
   /// Appelé à chaque entrée dans le module (le contrôleur est permanent : la lecture survit à la sortie).
   void onEnterModule() {
     final args = Get.arguments;
+    if (args is Map && args['tab'] == 'favorite') {
+      currentTab.value = kBmFavoritesTab;
+      return;
+    }
     final i = args is Map && args['tab'] != null ? kBlowMusicTabs.indexWhere((t) => t.icon == args['tab']) : 1;
     currentTab.value = i >= 0 ? i : 1;
   }
@@ -441,6 +540,8 @@ class BlowMusicController extends GetxController {
 
   /// Lancer la lecture d'un morceau
   Future<void> playTrack(BmTrack track, {List<BmTrack>? queue, String? label}) async {
+    // Interstitiel : tous les 5 titres lancés (au plus 1 pub / 90 s), jamais pendant un direct.
+    AdService.maybeInterstitial('bm_track', every: 5, screen: 'blowmusic_track');
     if (queue != null) {
       this.queue.assignAll(queue);
       queueLabel = label;

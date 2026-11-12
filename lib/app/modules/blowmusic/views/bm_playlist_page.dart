@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'package:grand_public_v2/app/components/module_page_shell.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 
 import '../controllers/blowmusic_controller.dart';
@@ -229,9 +230,18 @@ Future<void> bmAddToPlaylistSheet(BuildContext context, BmTrack track) async {
 
 /// Détail d'une playlist : lecture, aléatoire, glisser pour réordonner,
 /// balayer pour retirer, ajout de titres depuis la bibliothèque.
+/// Ouvre une playlist SOUS l'entête Blowmusic (menu, logo, cloche, profil conservés).
+void bmOpenPlaylist(BmPlaylistInfo p) =>
+    ModuleOverlay.openWidget(BmPlaylistPage(playlist: p, embedded: true));
+
 class BmPlaylistPage extends StatefulWidget {
   final BmPlaylistInfo playlist;
-  const BmPlaylistPage({super.key, required this.playlist});
+  final bool embedded; // ouverte dans l'overlay du module (pas de route)
+  const BmPlaylistPage({
+    super.key,
+    required this.playlist,
+    this.embedded = false,
+  });
 
   @override
   State<BmPlaylistPage> createState() => _BmPlaylistPageState();
@@ -378,37 +388,14 @@ class _BmPlaylistPageState extends State<BmPlaylistPage> {
         'Supprimer la playlist ?',
         '« ${p.name} » sera définitivement supprimée.',
       )) {
-        if (await ctrl.deletePlaylist(p) && mounted) Navigator.pop(context);
+        if (await ctrl.deletePlaylist(p) && mounted) {
+          widget.embedded ? ModuleOverlay.close() : Navigator.pop(context);
+        }
       }
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final dark = _dark(context);
-    final accent = GPTheme.primaryColor;
-    final bg = dark ? const Color(0xFF0E0B12) : const Color(0xFFF7F5F8);
-    final fg = dark ? Colors.white : Colors.black87;
-
-    return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: bg,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.arrow_back_rounded),
-            color: fg,
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ),
-        elevation: 0,
-        title: Text(
-          p.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(color: fg, fontWeight: FontWeight.w800),
-        ),
-        actions: [
+  List<Widget> _actions(Color fg) => [
           // Playlist suggérée / publique : on peut la mettre en favoris.
           if (_readOnly)
             IconButton(
@@ -441,12 +428,52 @@ class _BmPlaylistPageState extends State<BmPlaylistPage> {
                 PopupMenuItem(value: 'delete', child: Text('Supprimer')),
               ],
             ),
-        ],
+      ];
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = _dark(context);
+    final accent = GPTheme.primaryColor;
+    final bg = dark ? const Color(0xFF0E0B12) : const Color(0xFFF7F5F8);
+    final fg = dark ? Colors.white : Colors.black87;
+
+    return Scaffold(
+      backgroundColor: bg,
+      // Embarquée dans l'overlay Blowmusic : l'en-tête (et son retour) est déjà celui du module.
+      appBar: widget.embedded ? null : AppBar(
+        backgroundColor: bg,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            color: fg,
+            onPressed: () => widget.embedded
+                ? ModuleOverlay.back()
+                : Navigator.of(context).pop(),
+          ),
+        ),
+        elevation: 0,
+        title: Text(
+          p.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: fg, fontWeight: FontWeight.w800),
+        ),
+        actions: _actions(fg),
       ),
       body: loading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+          ? Center(child: CircularProgressIndicator(color: accent))
           : Column(
               children: [
+                if (widget.embedded)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 4, 0),
+                    child: Row(children: [
+                      Expanded(
+                        child: Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontWeight: FontWeight.w900, fontSize: 20)),
+                      ),
+                      ..._actions(fg),
+                    ]),
+                  ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                   child: Row(

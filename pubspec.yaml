@@ -22,6 +22,7 @@ dependencies:
   url_launcher: ^6.3.2
   feexpay_flutter: ^1.0.12
   uuid: ^4.5.2
+  path_provider: ^2.1.5
   # Passé de KKiaPay à Moneroo (paiement Mobile Money / carte) — voir
   # social_premium_controller.dart et videos_controller.dart.
   # webview_flutter (ci-dessous) remplace moneroo_flutter_sdk, retiré : son
@@ -50,6 +51,7 @@ dependencies:
   firebase_database: ^12.0.0     # relais temps réel du multijoueur (voir docs/MULTIJOUEUR_FIREBASE.md)
   image_picker: ^1.2.1
   video_player: ^2.11.1
+  # floating: ^2.0.0              # Picture-in-Picture Android (mini-lecteur média visible quand l'app est réduite)
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.2.0
   # ── Social additions ──────────────────────────────────────────────────────
@@ -69,6 +71,12 @@ dependencies:
   flutter_cache_manager: ^3.4.2
   chewie: ^1.13.1
   flutter_webrtc: ^1.6.3
+  # ── Club : carte, position, alertes de proximité ─────────────────────────
+  google_maps_flutter: ^2.12.1
+  geolocator: ^14.0.2
+  flutter_map: ^8.2.1          # carte de secours OpenStreetMap (Club)
+  latlong2: ^0.9.1
+  permission_handler: ^12.0.1
 
 dev_dependencies:
   flutter_test:

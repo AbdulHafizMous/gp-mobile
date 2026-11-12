@@ -14,6 +14,7 @@ import 'package:grand_public_v2/app/services/call_service.dart';
 import 'package:grand_public_v2/app/modules/social/views/chat_extras.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 import 'package:grand_public_v2/app/utils/linkified_text.dart';
+import 'package:grand_public_v2/app/components/link_preview_card.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -251,15 +252,20 @@ class _ChatRoomViewState extends State<ChatRoomView> {
                   ],
                 ),
                 Obx(() {
-                  final typing = _isPrivate && c.peerTyping.value.isNotEmpty;
-                  final online = _isPrivate && c.peerOnline.value;
+                  // IMPORTANT : lire les Rx inconditionnellement, sinon un canal de groupe
+                  // (_isPrivate == false) ne lit aucun observable -> erreur GetX « improper use ».
+                  final peerTypingV = c.peerTyping.value;
+                  final peerOnlineV = c.peerOnline.value;
+                  final peerSeenV = c.peerLastSeen.value;
+                  final typing = _isPrivate && peerTypingV.isNotEmpty;
+                  final online = _isPrivate && peerOnlineV;
                   final label = !_isPrivate
                       ? '${widget.channel?.membersCount ?? 0} membres'
                       : typing
-                          ? (c.peerTyping.value == 'audio' ? 'enregistre un vocal…' : 'écrit…')
+                          ? (peerTypingV == 'audio' ? 'enregistre un vocal…' : 'écrit…')
                           : online
                               ? 'En ligne'
-                              : c.lastSeenLabel(c.peerLastSeen.value);
+                              : c.lastSeenLabel(peerSeenV);
                   return Text(
                     label,
                     style: TextStyle(
@@ -1504,7 +1510,7 @@ class _BubbleContent extends StatelessWidget {
       case MessageType.file:
         return _FileBubble(message: message, isMe: isMe, ctrl: ctrl);
       default:
-        return Padding(
+        final textW = Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: LinkifiedText(
             text: message.content,
@@ -1515,6 +1521,12 @@ class _BubbleContent extends StatelessWidget {
             ),
             linkColor: isMe ? Colors.white : GPTheme.socialColor,
           ),
+        );
+        if (!LinkPreviewCard.hasLink(message.content)) return textW;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [LinkPreviewCard(text: message.content, isMe: isMe), textW],
         );
     }
   }

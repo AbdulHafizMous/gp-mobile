@@ -1,5 +1,6 @@
 // lib/app/modules/home/controllers/home_controller.dart
 
+import 'package:grand_public_v2/app/services/club_proximity_service.dart';
 import 'package:grand_public_v2/app/services/deep_link_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -41,7 +42,9 @@ class HomeDestination {
 // HOME CONTROLLER
 // ─────────────────────────────────────────────────────────────────────────────
 class HomeController extends GetxController {
-  final scaffoldKey = GlobalKey<ScaffoldState>();
+  // Non-final : chaque HomeView enregistre sa propre clé (évite « Duplicate GlobalKey »
+  // quand deux instances de /home coexistent pendant une transition offAllNamed).
+  GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
   final _stack = <HomeDestination>[].obs;
   final _box = GetStorage();
 
@@ -234,6 +237,7 @@ class HomeController extends GetxController {
   @override
   void onReady() {
     super.onReady();
+    ClubProximityService.init(); // alertes de proximité Club (si activées)
     DeepLinkService.consumePending(); // lien de chaîne reçu avant l'ouverture de l'accueil
   }
 

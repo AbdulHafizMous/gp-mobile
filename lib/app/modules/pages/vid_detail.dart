@@ -2,7 +2,6 @@
 
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:grand_public_v2/app/components/article_carousel.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:grand_public_v2/app/components/mini_media.dart';
@@ -564,7 +563,7 @@ class _VidDetailState extends State<VidDetail> {
                 onTap: () => ShareHelper.showShareSheet(
                   context,
                   title: video.title,
-                  type: 'media',
+                  type: video.isArticle ? 'article' : 'media',
                   id: '${video.id}',
                 ),
               ),
@@ -861,7 +860,7 @@ class _VidDetailState extends State<VidDetail> {
         Positioned(
           top: 8,
           right: 8,
-          child: _CircleBtn(icon: Icons.ios_share_rounded, onTap: () => Share.share('${v.title}\n${v.videoUrl}'.trim())),
+          child: _CircleBtn(icon: Icons.ios_share_rounded, onTap: () => ShareHelper.showShareSheet(context, title: v.title, type: v.isArticle ? 'article' : 'media', id: '${v.id}')),
         ),
       ]),
     );

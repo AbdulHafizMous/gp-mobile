@@ -83,7 +83,7 @@ class HomeDrawer extends StatelessWidget {
             ),
           ),
         const DrawerSep(),
-        ...fixedDrawerItems.map(
+        ...fixedDrawerItems.where((i) => i.route != '/blowmusic/home').map(
           (item) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: DrawerBtn(
@@ -97,18 +97,7 @@ class HomeDrawer extends StatelessWidget {
             ),
           ),
         ),
-        // Accès rapide aux autres modules, au-dessus du Top 10 Chaînes.
-        if (isBlowMusicActivated)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: DrawerBtn(
-              title: 'Blowmusic',
-              icon: LOGO_BLOWMUSIC,
-              keepIconColors: true,
-              callback: () => ctrl.navigateTo('/blowmusic/home'),
-              accentColor: linkColor,
-            ),
-          ),
+        // Blowmusic n'est plus dans le menu latéral : il s'ouvre uniquement depuis la liste des Médias.
         if (isYouwiiinActivated)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),

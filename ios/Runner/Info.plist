@@ -122,8 +122,14 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Grandpublic utilise le microphone pour enregistrer et envoyer des messages vocaux.</string>
 
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Grandpublic utilise votre position pour afficher les partenaires Club et les offres proches de vous.</string>
+
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Grandpublic peut utiliser votre position pour améliorer certains services proposés dans l'application.</string>
+	<string>Grandpublic utilise votre position pour afficher les partenaires Club et les offres proches de vous.</string>
 
 	<!-- ===================== -->
 	<!-- Firebase -->
@@ -140,6 +146,11 @@
 	<array>
 		<string>https</string>
 		<string>http</string>
+		<string>tel</string>
+		<string>mailto</string>
+		<string>sms</string>
+		<string>comgooglemaps</string>
+		<string>whatsapp</string>
 	</array>
 
 </dict>

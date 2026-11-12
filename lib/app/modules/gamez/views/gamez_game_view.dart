@@ -1,3 +1,4 @@
+import 'package:grand_public_v2/app/services/ad_service.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,7 +26,7 @@ class _GameZGameViewState extends State<GameZGameView> {
   void initState() {
     super.initState();
     // Pas de zone grise autour du jeu : plein écran immersif, portrait.
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _setupController();
     _initSession();
   }
@@ -40,6 +41,10 @@ class _GameZGameViewState extends State<GameZGameView> {
         onMessageReceived: (message) async {
           try {
             final p = jsonDecode(message.message) as Map<String, dynamic>;
+            if (p['type'] == 'quit') {
+              _leave();
+              return;
+            }
             if (p['type'] != 'score' || _sessionToken == null) return;
             final score = (p['score'] as num?)?.toInt() ?? 0;
             final r = await ctrl.submitScore(
@@ -132,6 +137,7 @@ class _GameZGameViewState extends State<GameZGameView> {
   @override
   void dispose() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    Future.delayed(const Duration(milliseconds: 500), () => AdService.maybeInterstitial('game_end', every: 2, screen: 'game_end'));
     super.dispose();
   }
 
@@ -146,47 +152,29 @@ class _GameZGameViewState extends State<GameZGameView> {
         backgroundColor: const Color(0xFF0F0E13),
         body: SafeArea(
           bottom: false,
-          child: Column(
+          child: Stack(
             children: [
-              SizedBox(
-                height: 36,
-                child: Row(
-                  children: [
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 40,
-                        minHeight: 36,
-                      ),
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white70,
-                        size: 18,
-                      ),
-                      onPressed: _leave,
-                    ),
-                    Expanded(
-                      child: Text(
-                        widget.game.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  ],
+              if (_ready) WebViewWidget(controller: _webCtrl),
+              if (_loading)
+                const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
                 ),
-              ),
-              Expanded(
-                child: Stack(
-                  children: [
-                    if (_ready) WebViewWidget(controller: _webCtrl),
-                    if (_loading)
-                      const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      ),
-                  ],
+              // Jeu plein écran : seul un retour discret flotte par-dessus.
+              Positioned(
+                left: 6,
+                top: 6,
+                child: Material(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: _leave,
+                    child: const SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 16),
+                    ),
+                  ),
                 ),
               ),
             ],

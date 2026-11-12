@@ -146,7 +146,7 @@ class _ChannelsSection extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               const Text(
-                'Chaînes',
+                'Médias',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,

@@ -318,7 +318,7 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
               child: _infoTile(
                 Icons.toll_rounded,
                 'Pot',
-                '${room.pot > 0 ? room.pot : room.stake * room.joinedCount} GCoin',
+                '${room.pot > 0 ? room.pot : room.stake * room.joinedCount} ${room.unit}',
                 const Color(0xFFFFC600),
                 fg,
                 card,
@@ -329,7 +329,7 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
               child: _infoTile(
                 Icons.sell_rounded,
                 'Mise',
-                room.stake == 0 ? 'Gratuit' : '${room.stake} GCoin',
+                room.stake == 0 ? 'Gratuit' : '${room.stake} ${room.unit}',
                 accent,
                 fg,
                 card,
@@ -469,7 +469,7 @@ class _YouwiiinRoomViewState extends State<YouwiiinRoomView> {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                'Accepter engage une mise de ${room.stake} GCoin au lancement.',
+                'Accepter engage une mise de ${room.stake} ${room.unit} au lancement.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: fg.withValues(alpha: .5), fontSize: 12),
               ),

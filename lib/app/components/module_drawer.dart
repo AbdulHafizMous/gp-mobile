@@ -136,13 +136,6 @@ class ModuleDrawer extends StatelessWidget {
             keepColors: true,
             onTap: () => _switchTo(AppMode.grandPublic, '/home'),
           ),
-        if (isBlowMusicActivated && moduleName != 'Blowmusic')
-          _btn(
-            title: 'Blowmusic',
-            asset: LOGO_BLOWMUSIC,
-            keepColors: true,
-            onTap: () => _switchTo(AppMode.blowMusic, '/blowmusic/home'),
-          ),
         if (isYouwiiinActivated && moduleName != 'Youwiiin')
           _btn(
             title: 'Youwiiin',
@@ -151,7 +144,7 @@ class ModuleDrawer extends StatelessWidget {
             keepColors: true,
             onTap: () => _switchTo(AppMode.youwiiin, '/youwiiin/home'),
           ),
-        // Chaînes de créateurs : juste sous Youwiiin, même modèle.
+        // Médias : juste sous Youwiiin, même modèle.
         ChannelsDrawerTile(accentColor: accentColor),
         const DrawerSep(),
         Padding(

@@ -65,6 +65,9 @@ class _ExpandableMenuFabState extends State<ExpandableMenuFab>
     }
   }
 
+  /// Couleur lisible posée SUR widget.color (noir sur le jaune du Club, blanc sinon).
+  Color get _on => widget.color.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+
   @override
   Widget build(BuildContext context) {
     final total = widget.items.fold<int>(0, (a, e) => a + e.badge);
@@ -143,7 +146,7 @@ class _ExpandableMenuFabState extends State<ExpandableMenuFab>
                         )
                       : Icon(
                           it.icon,
-                          color: sel ? Colors.white : widget.color,
+                          color: sel ? _on : widget.color,
                           size: 24,
                         ),
                 ),
@@ -191,7 +194,7 @@ class _ExpandableMenuFabState extends State<ExpandableMenuFab>
             child: Text(
               it.label,
               style: TextStyle(
-                color: sel ? Colors.white : Colors.black87,
+                color: sel ? _on : Colors.black87,
                 fontWeight: FontWeight.w800,
                 fontSize: 14,
               ),
@@ -246,7 +249,7 @@ class _ExpandableMenuFabState extends State<ExpandableMenuFab>
                   angle: _open.value * 0.785,
                   child: Icon(
                     _open.value > 0.5 ? Icons.add_rounded : cur.icon,
-                    color: Colors.white,
+                    color: _on,
                     size: 28,
                   ),
                 ),

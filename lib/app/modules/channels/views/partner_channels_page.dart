@@ -121,7 +121,7 @@ class _PartnerChannelsPageState extends State<PartnerChannelsPage> {
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white), onPressed: Get.back),
-        title: const Text('Mes chaînes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+        title: const Text('Mes médias', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
       ),
       body: _loading
           ? Center(child: CircularProgressIndicator(color: GPTheme.primaryColor))

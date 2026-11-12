@@ -19,11 +19,13 @@ class HomeView extends GetView<HomeController> {
   HomeView({super.key});
 
   final notifsController = Get.put(NotifsPageController());
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
+    controller.scaffoldKey = _scaffoldKey;
     return Scaffold(
-      key: controller.scaffoldKey,
+      key: _scaffoldKey,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: Obx(
@@ -46,8 +48,9 @@ class HomeView extends GetView<HomeController> {
             // (section 0, pas de sous-page ouverte), pour ne jamais gêner
             // la navigation dans les sous-écrans.
             const ProfileCompletionBanner(module: 'grandpublic'),
-            if (controller.activeSectionIndex == 0 && !controller.canPop)
-              const AdBannerWidget(screen: 'home'),
+            // Racine de Média (« home ») et de Social ; Club affiche sa propre bannière.
+            if (!controller.canPop && controller.activeSectionIndex <= 1)
+              AdBannerWidget(screen: controller.activeSectionIndex == 0 ? 'home' : 'social'),
             Expanded(
               child: AnimatedBody(
                 routeKey: controller.currentRoute,

@@ -61,6 +61,7 @@ String gzModeHint(String? mode) => mode == 'score_duel'
     : 'Vous jouez ensemble sur le même plateau.';
 
 class GzGame {
+  bool get isLandscape => orientation == 'landscape';
   final int id;
   final String name;
   final String slug;
@@ -69,6 +70,9 @@ class GzGame {
   final String? category;
   final String? description;
   final String icon; // nom Lucide, converti en FontAwesome par l'UI
+  final String? iconUrl; // icône image du jeu (PNG carré) si fournie
+  final String? bannerUrl; // bannière 16:9
+  final String orientation; // portrait | landscape
   final Color accent;
   final bool isActive;
   final int myBest;
@@ -89,6 +93,15 @@ class GzGame {
   /// Réglages de partie choisis par l'hôte (schéma du catalogue).
   final List<GzSetting> mpSettings;
 
+  // Jeux premium (achat unique + démo)
+  final bool isPremium;
+  final int price; // F CFA
+  final int? gcoinPrice;
+  bool owned;
+  int demoLeft;
+  final int demoTotal;
+  final String? developerName;
+
   GzGame.fromJson(Map<String, dynamic> j)
     : id = gzInt(j['id']),
       name = j['name']?.toString() ?? '',
@@ -98,6 +111,9 @@ class GzGame {
       category = j['category']?.toString(),
       description = j['description']?.toString(),
       icon = j['icon']?.toString() ?? 'gamepad-2',
+      iconUrl = j['icon_url']?.toString(),
+      bannerUrl = j['banner_url']?.toString(),
+      orientation = j['orientation']?.toString() == 'landscape' ? 'landscape' : 'portrait',
       accent = _hex(j['accent']?.toString()),
       isActive = j['is_active'] == null ? true : _b(j['is_active']),
       myBest = gzInt(j['my_best_score']),
@@ -108,6 +124,13 @@ class GzGame {
       maxPlayers = j['max_players'] == null ? 2 : gzInt(j['max_players']),
       mpMode = j['mp_mode']?.toString(),
       mpModes = _modes(j['mp_modes'], j['mp_mode']?.toString()),
+      isPremium = _b(j['is_premium']),
+      price = gzInt(j['price']),
+      gcoinPrice = j['gcoin_price'] == null ? null : gzInt(j['gcoin_price']),
+      owned = j['owned'] == null ? !_b(j['is_premium']) : _b(j['owned']),
+      demoLeft = gzInt(j['demo_left']),
+      demoTotal = gzInt(j['demo_total']),
+      developerName = j['developer_name']?.toString(),
       mpSettings = j['mp_settings'] is List
           ? (j['mp_settings'] as List).map(GzSetting.tryParse).whereType<GzSetting>().toList()
           : const <GzSetting>[];
@@ -171,6 +194,7 @@ class GzRoom {
   final String status;
   final String? mode; // realtime | score_duel
   final int stake;
+  final String currency; // gcoin | cash
   final int pot;
   final int minPlayers;
   final int maxPlayers;
@@ -179,6 +203,8 @@ class GzRoom {
   final Map<String, dynamic> gameJson;
   final List<GzRoomPlayer> players;
   final List<int> winnerIds;
+  bool get isCash => currency == 'cash';
+  String get unit => isCash ? 'F' : 'GCoin';
   final String myStatus;
   final String playUrl;
 
@@ -195,6 +221,7 @@ class GzRoom {
       status = j['status']?.toString() ?? 'waiting',
       mode = j['mode']?.toString(),
       stake = gzInt(j['stake']),
+      currency = j['currency']?.toString() ?? 'gcoin',
       pot = gzInt(j['pot']),
       minPlayers = j['min_players'] == null ? 2 : gzInt(j['min_players']),
       maxPlayers = j['max_players'] == null ? 2 : gzInt(j['max_players']),

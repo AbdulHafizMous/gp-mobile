@@ -56,6 +56,10 @@ class ChannelModel {
   final bool isOwner;
   final int? featuredRank; // 1..10 = dans le TOP 10 (classé par l'admin)
   final String? shareUrl;
+  final String mediaKind; // creator | press | web_tv | web_radio | other
+  final bool liveOnly; // média « direct uniquement » (web radio / web TV sans catalogue)
+  final bool audioOnly;
+  final String? streamUrl;
   final List<ChannelPlanModel> plans;
   final ChannelSubscriptionModel? subscription;
 
@@ -70,6 +74,10 @@ class ChannelModel {
     this.isOwner = false,
     this.featuredRank,
     this.shareUrl,
+    this.mediaKind = 'creator',
+    this.liveOnly = false,
+    this.audioOnly = false,
+    this.streamUrl,
     this.plans = const [],
     this.subscription,
   });
@@ -85,6 +93,10 @@ class ChannelModel {
     isOwner: j['is_owner'] == true,
     featuredRank: j['featured_rank'] == null ? null : _i(j['featured_rank']),
     shareUrl: j['share_url']?.toString(),
+    mediaKind: j['media_kind']?.toString() ?? 'creator',
+    liveOnly: j['live_only'] == true || j['live_only'] == 1,
+    audioOnly: j['audio_only'] == true || j['audio_only'] == 1,
+    streamUrl: j['stream_url']?.toString(),
     plans: (j['plans'] as List<dynamic>? ?? [])
         .map((p) => ChannelPlanModel.fromJson(Map<String, dynamic>.from(p as Map)))
         .toList(),
@@ -92,4 +104,12 @@ class ChannelModel {
         ? ChannelSubscriptionModel.fromJson(Map<String, dynamic>.from(j['subscription']))
         : null,
   );
+
+  String get kindLabel => switch (mediaKind) {
+        'press' => 'Presse en ligne',
+        'web_tv' => 'Web TV',
+        'web_radio' => 'Web radio',
+        'creator' => 'Créateur',
+        _ => 'Média',
+      };
 }

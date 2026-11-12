@@ -36,6 +36,8 @@ class _CreateRoomBody extends StatefulWidget {
 
 class _CreateRoomBodyState extends State<_CreateRoomBody> {
   static const _stakes = [0, 10, 25, 50, 100];
+  static const _cashStakes = [100, 200, 500, 1000, 2000, 5000];
+  String _currency = 'gcoin'; // gcoin | cash (argent réel : jamais contre l'IA, uniquement entre joueurs)
   final _c = gzController;
   int _stake = 0;
   late int _max = widget.game.maxPlayers.clamp(widget.game.minPlayers, 99);
@@ -63,6 +65,7 @@ class _CreateRoomBodyState extends State<_CreateRoomBody> {
     final r = await _c.createRoom(
       widget.game,
       stake: _stake,
+      currency: _currency,
       maxPlayers: _max,
       inviteUserIds: _invited.map((u) => u.id).toList(),
       mode: _mode,
@@ -196,24 +199,39 @@ class _CreateRoomBodyState extends State<_CreateRoomBody> {
             ]),
           ),
           const SizedBox(height: 8),
+          Row(children: [
+            YwChoiceChip(label: 'GCoin', selected: _currency == 'gcoin', onTap: () => setState(() { _currency = 'gcoin'; _stake = 0; })),
+            const SizedBox(width: 8),
+            YwChoiceChip(label: 'Argent réel', selected: _currency == 'cash', onTap: () => setState(() { _currency = 'cash'; _stake = _cashStakes.first; })),
+          ]),
+          const SizedBox(height: 10),
           Obx(
             () => Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final s in _stakes)
-                  YwChoiceChip(
-                    label: s == 0 ? 'Gratuit' : '$s',
-                    selected: _stake == s,
-                    // Mise > solde : désactivée.
-                    onTap: s > _c.gcoinBalance.value ? null : () => setState(() => _stake = s),
-                  ),
+                if (_currency == 'gcoin')
+                  for (final s in _stakes)
+                    YwChoiceChip(
+                      label: s == 0 ? 'Gratuit' : '$s',
+                      selected: _stake == s,
+                      onTap: s > _c.gcoinBalance.value ? null : () => setState(() => _stake = s),
+                    )
+                else
+                  for (final s in _cashStakes)
+                    YwChoiceChip(
+                      label: '$s F',
+                      selected: _stake == s,
+                      onTap: s > _c.cashBalance.value ? null : () => setState(() => _stake = s),
+                    ),
               ],
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            _stake == 0 ? 'Sans mise : le gagnant reçoit un bonus maison.' : 'Le gagnant remporte le pot (mises cumulées).',
+            _currency == 'cash'
+                ? 'Argent réel : chaque joueur mise ${_stake} F, le gagnant remporte la totalité. Solde : ${_c.cashBalance.value} F.'
+                : (_stake == 0 ? 'Sans mise : le gagnant reçoit un bonus maison.' : 'Le gagnant remporte le pot (mises cumulées).'),
             style: TextStyle(color: st.sub, fontSize: 12),
           ),
           const SizedBox(height: 18),

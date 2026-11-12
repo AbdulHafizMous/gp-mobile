@@ -20,6 +20,8 @@ class BrandTakeoverService extends GetxService {
 
   final Rxn<BrandTakeover> current = Rxn<BrandTakeover>();
 
+  final Set<int> _tracked = {};
+
   bool get isActive => current.value != null;
 
   Future<BrandTakeoverService> init() async {
@@ -37,8 +39,22 @@ class BrandTakeoverService extends GetxService {
       );
       final data = res.data?['data'];
       current.value = data != null ? BrandTakeover.fromJson(data) : null;
+      // Une impression par session et par takeover (pour les stats partenaire).
+      final id = data is Map ? data['id'] : null;
+      if (id is int && _tracked.add(id)) {
+        _trackView(id);
+      }
     } catch (_) {
       // On ne casse jamais l'app pour une histoire de pub.
     }
+  }
+
+  Future<void> _trackView(int id) async {
+    try {
+      await RequestService().post(
+        '/ads/$id/impression',
+        data: {'event': 'view', 'module': AdService.module(), 'screen': 'app'},
+      );
+    } catch (_) {}
   }
 }

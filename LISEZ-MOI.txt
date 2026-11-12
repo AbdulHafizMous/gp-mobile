@@ -1,0 +1,7 @@
+GRAND PUBLIC - zip complet (front + jeux)
+
+1) Dézipper à la racine du projet Flutter en écrasant : lib/, pubspec.yaml, android/app/src/main/AndroidManifest.xml, ios/Runner/Info.plist, ios/Runner/AppDelegate.swift.
+2) be/public/games/ : à copier dans le backend Laravel (tous les jeux mis à jour).
+3) Puis : flutter clean && flutter pub get
+4) A REMPLACER : VOTRE_CLE_GOOGLE_MAPS_ANDROID (AndroidManifest.xml) et VOTRE_CLE_GOOGLE_MAPS_IOS (AppDelegate.swift). Sans clé, la carte Club passe en OpenStreetMap (bouton de la carte).
+5) iOS : si permission_handler est utilisé pour la localisation, ajouter dans ios/Podfile (post_install) : config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', 'PERMISSION_LOCATION=1', 'PERMISSION_LOCATION_WHENINUSE=1']

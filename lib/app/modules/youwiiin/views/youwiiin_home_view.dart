@@ -8,6 +8,10 @@
 //  - "Tous les jeux" : groupés par lettre + index alphabétique vertical animé
 //    à droite (tap / glisser, bulle de lettre, effet vague, haptique).
 
+import 'package:grand_public_v2/app/components/ad_native_card.dart';
+import '../widgets/youwiiin_premium_sheet.dart';
+import 'youwiiin_tournaments_view.dart';
+import 'youwiiin_wallet_view.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -78,14 +82,19 @@ class YouwiiinHomeView extends StatelessWidget {
             },
           ),
           ModuleDrawerNavItem(
-            title: 'GCoin',
-            icon: Icons.monetization_on_outlined,
+            title: 'Wallet',
+            icon: Icons.account_balance_wallet_rounded,
             onTap: () => controller.changeTab(1),
           ),
           ModuleDrawerNavItem(
             title: 'Classement',
             icon: Icons.leaderboard_rounded,
             onTap: () => controller.changeTab(2),
+          ),
+          ModuleDrawerNavItem(
+            title: 'Tournois',
+            icon: Icons.emoji_events_rounded,
+            onTap: () => ModuleOverlay.openWidget(const YouwiiinTournamentsView(embedded: true)),
           ),
         ],
       ),
@@ -164,7 +173,7 @@ class YouwiiinHomeView extends StatelessWidget {
         }
         switch (controller.currentTab.value) {
           case 1:
-            return _ProfileTab(accent: accent, fg: fg);
+            return _WalletHubTab(accent: accent, fg: fg);
           case 2:
             return _LeaderboardTab(accent: accent, fg: fg);
           default:
@@ -185,8 +194,8 @@ class YouwiiinHomeView extends StatelessWidget {
           items: const [
             ModuleBottomBarItem(icon: Icons.grid_view_rounded, label: 'Jeux'),
             ModuleBottomBarItem(
-              icon: Icons.monetization_on_outlined,
-              label: 'GCoin',
+              icon: Icons.account_balance_wallet_rounded,
+              label: 'Wallet',
             ),
             ModuleBottomBarItem(
               icon: Icons.leaderboard_rounded,
@@ -242,31 +251,53 @@ String ago(dynamic iso) {
   return d == null ? '' : timeago.format(d.toLocal(), locale: 'fr');
 }
 
-Widget _gameBadge(GzGame g, {double size = 48}) => Container(
-  width: size,
-  height: size,
-  decoration: BoxDecoration(
-    gradient: LinearGradient(
-      colors: [g.accent, Color.lerp(g.accent, Colors.black, .35)!],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    ),
-    borderRadius: BorderRadius.circular(size * .3),
-    boxShadow: [
-      BoxShadow(
-        color: g.accent.withOpacity(.35),
-        blurRadius: 12,
-        offset: const Offset(0, 5),
-      ),
-    ],
-  ),
-  child: Center(
+Widget _gameBadge(GzGame g, {double size = 48}) {
+  final radius = BorderRadius.circular(size * .3);
+  final fallback = Center(
     child: FaIcon(gzIcon(g.icon), color: Colors.white, size: size * .42),
-  ),
-);
+  );
+  return Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [g.accent, Color.lerp(g.accent, Colors.black, .35)!],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderRadius: radius,
+      boxShadow: [
+        BoxShadow(
+          color: g.accent.withOpacity(.35),
+          blurRadius: 12,
+          offset: const Offset(0, 5),
+        ),
+      ],
+    ),
+    child: ClipRRect(
+      borderRadius: radius,
+      child: g.iconUrl == null
+          ? fallback
+          : Image.network(
+              g.iconUrl!,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => fallback,
+              loadingBuilder: (_, child, p) => p == null ? child : fallback,
+            ),
+    ),
+  );
+}
 
-void playGame(GzGame g) =>
-    Get.to(() => YouwiiinGameView(game: g), transition: Transition.downToUp);
+void playGame(GzGame g) {
+  // Jeu premium non débloqué et plus de démo : proposer l'achat.
+  if (g.isPremium && !g.owned && g.demoLeft <= 0) {
+    gzShowPremiumSheet(g);
+    return;
+  }
+  Get.to(() => YouwiiinGameView(game: g), transition: Transition.downToUp);
+}
 
 /// Lettre d'index d'un nom (accents retirés). '#' si ce n'est pas A-Z.
 String _letterOf(String name) {
@@ -568,6 +599,7 @@ class _CatalogTabState extends State<_CatalogTab> with WidgetsBindingObserver {
               ),
               const SizedBox(height: 22),
             ],
+            const AdNativeCard(screen: 'youwiiin_games', margin: EdgeInsets.only(bottom: 14)),
             KeyedSubtree(
               key: _allTitleKey,
               child: _title(
@@ -1210,7 +1242,7 @@ class _InvitationCardState extends State<_InvitationCard> {
             children: [
               _chip(
                 Icons.toll_rounded,
-                room.stake == 0 ? 'Gratuit' : '${room.stake} GCoin',
+                room.stake == 0 ? 'Gratuit' : '${room.stake} ${room.unit}',
               ),
               _chip(
                 Icons.group_rounded,
@@ -1901,6 +1933,37 @@ Widget _stat(String l, String v, IconData i, Color a, Color fg, bool dark) =>
 // ─────────────────────────────────────────────────────────────────────────────
 // ONGLET GCOIN : solde + gains par jeu + historique détaillé
 // ─────────────────────────────────────────────────────────────────────────────
+/// Onglet Wallet : les deux soldes (GCoin + argent réel), dépôt, retrait et historique au même endroit,
+/// avec un second volet « Mes stats » (ancien profil GCoin).
+class _WalletHubTab extends StatefulWidget {
+  final Color accent, fg;
+  const _WalletHubTab({required this.accent, required this.fg});
+  @override
+  State<_WalletHubTab> createState() => _WalletHubTabState();
+}
+
+class _WalletHubTabState extends State<_WalletHubTab> {
+  int _seg = 0;
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
+        child: Row(children: [
+          YwChoiceChip(label: 'Wallet', selected: _seg == 0, onTap: () => setState(() => _seg = 0)),
+          const SizedBox(width: 8),
+          YwChoiceChip(label: 'Mes stats GCoin', selected: _seg == 1, onTap: () => setState(() => _seg = 1)),
+        ]),
+      ),
+      Expanded(
+        child: _seg == 0
+            ? const YouwiiinWalletView(embedded: true)
+            : _ProfileTab(accent: widget.accent, fg: widget.fg),
+      ),
+    ]);
+  }
+}
+
 class _ProfileTab extends StatelessWidget {
   final Color accent;
   final Color fg;

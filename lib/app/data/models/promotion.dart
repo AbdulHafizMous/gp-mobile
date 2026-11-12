@@ -13,6 +13,7 @@ class Promotion {
   final bool isExpired;
   final bool isAvailable;
   final String? imageUrl;
+  final int? gcoinPrice; // prix en GCoin (null = gratuit)
   final PromotionPartner? partner;
   // Offre mise en avant par un sponsor (ex: MTN pendant sa semaine de
   // takeover) dans la section "Offres sponsorisées" du Club.
@@ -40,6 +41,7 @@ class Promotion {
     required this.isExpired,
     required this.isAvailable,
     this.imageUrl,
+    this.gcoinPrice,
     this.partner,
     this.isFeatured = false,
     this.sponsorName,
@@ -65,6 +67,7 @@ class Promotion {
       isExpired:       json['is_expired'] == true,
       isAvailable:     json['is_available'] == true,
       imageUrl:        json['image_url']?.toString(),
+      gcoinPrice:      (json['gcoin_price'] as num?)?.toInt(),
       partner:         json['partner'] != null
                          ? PromotionPartner.fromJson(json['partner'])
                          : null,
@@ -90,7 +93,7 @@ class Promotion {
       target: target, maxUsesPerUser: maxUsesPerUser,
       totalMaxUses: totalMaxUses, usedCount: usedCount,
       startsAt: startsAt, endsAt: endsAt, isActive: isActive,
-      isExpired: isExpired, isAvailable: isAvailable, imageUrl: imageUrl,
+      isExpired: isExpired, isAvailable: isAvailable, imageUrl: imageUrl, gcoinPrice: gcoinPrice,
       partner: partner, isFeatured: isFeatured, sponsorName: sponsorName,
       userUsageCount:  userUsageCount  ?? this.userUsageCount,
       userCanClaim:    userCanClaim    ?? this.userCanClaim,
@@ -109,6 +112,8 @@ class PromotionPartner {
   final String? bannerUrl;
   final String? address;
   final String? googleMapsLink;
+  final double? latitude;
+  final double? longitude;
 
   const PromotionPartner({
     required this.id,
@@ -119,6 +124,8 @@ class PromotionPartner {
     this.bannerUrl,
     this.address,
     this.googleMapsLink,
+    this.latitude,
+    this.longitude,
   });
 
   factory PromotionPartner.fromJson(Map<String, dynamic> json) {
@@ -131,6 +138,8 @@ class PromotionPartner {
       bannerUrl: json['banner_url']?.toString(),
       address:   json['address']?.toString(),
       googleMapsLink: json['google_maps_link']?.toString(),
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
     );
   }
 }
@@ -147,6 +156,12 @@ class PartnerFiche {
   final String? logoUrl;
   final String? bannerUrl;
   final int? activeOffersCount;
+  final double? latitude;
+  final double? longitude;
+  final double? distanceKm;
+  final List<NearbyOffer> offers;
+
+  bool get hasPosition => latitude != null && longitude != null;
 
   const PartnerFiche({
     required this.id,
@@ -159,6 +174,10 @@ class PartnerFiche {
     this.logoUrl,
     this.bannerUrl,
     this.activeOffersCount,
+    this.latitude,
+    this.longitude,
+    this.distanceKm,
+    this.offers = const [],
   });
 
   factory PartnerFiche.fromJson(Map<String, dynamic> json) {
@@ -173,8 +192,33 @@ class PartnerFiche {
       logoUrl: json['logo_url']?.toString(),
       bannerUrl: json['banner_url']?.toString(),
       activeOffersCount: (json['active_promotions_count'] as num?)?.toInt(),
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+      distanceKm: (json['distance_km'] as num?)?.toDouble(),
+      offers: ((json['promotions'] as List?) ?? const [])
+          .map((e) => NearbyOffer.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
     );
   }
+}
+
+/// Offre résumée renvoyée par /partners/nearby.
+class NearbyOffer {
+  final int id;
+  final String title;
+  final String? description;
+  final String? imageUrl;
+  final String? endsAt;
+  final int? gcoinPrice;
+  const NearbyOffer({required this.id, required this.title, this.description, this.imageUrl, this.endsAt, this.gcoinPrice});
+  factory NearbyOffer.fromJson(Map<String, dynamic> j) => NearbyOffer(
+    id: (j['id'] as num).toInt(),
+    title: j['title']?.toString() ?? '',
+    description: j['description']?.toString(),
+    imageUrl: j['image_url']?.toString(),
+    endsAt: j['ends_at']?.toString(),
+    gcoinPrice: (j['gcoin_price'] as num?)?.toInt(),
+  );
 }
 
 class PromotionUsage {

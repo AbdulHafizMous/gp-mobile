@@ -16,7 +16,7 @@ import 'package:grand_public_v2/app/modules/videos/views/videos_view.dart';
 import 'package:grand_public_v2/app/services/ad_service.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
 import 'package:grand_public_v2/app/utils/toast_helper.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:grand_public_v2/app/utils/share_helper.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -453,7 +453,7 @@ class _ShortPageState extends State<_ShortPage> {
       child: Column(children: [
         btn(v.isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded, '${v.likesCount}', () => widget.ctrl.toggleLike(v), color: v.isLiked ? Colors.redAccent : Colors.white),
         btn(Icons.chat_bubble_outline_rounded, '${v.commentsCount}', () => Get.to(() => VideosView(videoId: v.id))),
-        btn(Icons.share_rounded, 'Partager', () => SharePlus.instance.share(ShareParams(text: v.title))),
+        btn(Icons.share_rounded, 'Partager', () => ShareHelper.showShareSheet(Get.context!, title: v.title, subtitle: v.description, type: 'short', id: '${v.id}', imageUrl: v.thumbnail)),
       ]),
     );
   }

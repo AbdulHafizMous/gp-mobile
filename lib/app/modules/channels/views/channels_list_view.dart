@@ -241,7 +241,7 @@ class ChannelsPage extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
           onPressed: Get.back,
         ),
-        title: const Text('Chaînes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+        title: const Text('Médias', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
       ),
       body: const SafeArea(top: false, child: ChannelsListBody()),
     );

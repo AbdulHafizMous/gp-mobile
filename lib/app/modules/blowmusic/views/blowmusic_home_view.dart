@@ -21,6 +21,7 @@ import 'package:grand_public_v2/app/themes/app_theme.dart';
 import '../controllers/blowmusic_controller.dart';
 import 'bm_player_page.dart';
 import 'bm_playlist_page.dart';
+import 'bm_shows_tab.dart';
 
 class BlowMusicHomeView extends GetView<BlowMusicController> {
   const BlowMusicHomeView({super.key});
@@ -31,6 +32,8 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
         return Icons.home_rounded;
       case 'live':
         return Icons.podcasts_rounded;
+      case 'shows':
+        return Icons.live_tv_rounded;
       case 'library':
         return Icons.library_music_rounded;
       case 'playlist':
@@ -68,19 +71,24 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
             onTap: () => controller.changeTab(1),
           ),
           ModuleDrawerNavItem(
+            title: 'Émissions',
+            icon: Icons.live_tv_rounded,
+            onTap: () => controller.changeTab(2),
+          ),
+          ModuleDrawerNavItem(
             title: 'Biblio',
             icon: Icons.library_music_rounded,
-            onTap: () => controller.changeTab(2),
+            onTap: () => controller.changeTab(3),
           ),
           ModuleDrawerNavItem(
             title: 'Playlists',
             icon: Icons.playlist_play_rounded,
-            onTap: () => controller.changeTab(3),
+            onTap: () => controller.changeTab(4),
           ),
           ModuleDrawerNavItem(
             title: 'Favoris',
             icon: Icons.favorite_rounded,
-            onTap: () => controller.changeTab(4),
+            onTap: () => controller.changeTab(kBmFavoritesTab),
           ),
         ],
       ),
@@ -134,10 +142,12 @@ class BlowMusicHomeView extends GetView<BlowMusicController> {
           case 1:
             return _LiveTab(accent: accent, fg: fg);
           case 2:
-            return _LibraryTab(accent: accent, fg: fg);
+            return BmShowsTab(accent: accent, fg: fg);
           case 3:
-            return _PlaylistsTab(fg: fg);
+            return _LibraryTab(accent: accent, fg: fg);
           case 4:
+            return _PlaylistsTab(fg: fg);
+          case kBmFavoritesTab:
             return _FavoritesTab(accent: accent, fg: fg);
           default:
             return _HomeTab(accent: accent, fg: fg);
@@ -1668,10 +1678,7 @@ class _PlaylistsTab extends StatelessWidget {
       );
       if (name == null) return;
       final p = await ctrl.createPlaylist(name);
-      if (p != null && context.mounted)
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => BmPlaylistPage(playlist: p)));
+      if (p != null && context.mounted) bmOpenPlaylist(p);
     }
 
     return Obx(() {
@@ -1822,14 +1829,7 @@ class _PlaylistsTab extends StatelessWidget {
                       PopupMenuItem(value: 'delete', child: Text('Supprimer')),
                     ],
                   ),
-                  onTap: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => BmPlaylistPage(playlist: p),
-                      ),
-                    );
-                    ctrl.playlists.refresh();
-                  },
+                  onTap: () => bmOpenPlaylist(p),
                 ),
               ),
           ],
@@ -2304,9 +2304,7 @@ class _PlaylistsRow extends StatelessWidget {
         itemBuilder: (_, i) {
           final p = playlists[i];
           return GestureDetector(
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => BmPlaylistPage(playlist: p)),
-            ),
+            onTap: () => bmOpenPlaylist(p),
             child: SizedBox(
               width: 140,
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

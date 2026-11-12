@@ -1,5 +1,6 @@
 // Onglet « Chaînes » : TOP 10 mis en avant (2 par ligne, classé par l'admin) puis liste alphabétique complète
 // (2 colonnes ou 1 colonne), barre de recherche, index A–Z. Blowmusic y apparaît avec une présentation à part.
+import 'channel_live_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -74,6 +75,9 @@ class _ChannelsHubViewState extends State<ChannelsHubView> {
   void _open(_Entry e) {
     if (e.blow) {
       Get.toNamed('/blowmusic/home');
+    } else if (e.ch!.liveOnly && (e.ch!.streamUrl ?? '').isNotEmpty) {
+      // Web radio / web TV « direct uniquement » : lecteur live dédié, pas de catalogue.
+      Get.to(() => ChannelLivePage(channel: e.ch!));
     } else {
       Get.toNamed('/channel/${e.ch!.id}');
     }
@@ -199,7 +203,7 @@ class _ChannelsHubViewState extends State<ChannelsHubView> {
                           children: [
                             const Icon(Icons.wifi_off_rounded, size: 40),
                             const SizedBox(height: 8),
-                            const Text('Impossible de charger les chaînes.'),
+                            const Text('Impossible de charger les médias.'),
                             TextButton.icon(
                               onPressed: c.load,
                               icon: const Icon(Icons.refresh_rounded),
@@ -210,13 +214,12 @@ class _ChannelsHubViewState extends State<ChannelsHubView> {
                       ),
                     )
                   else ...[
-                    // ── TOP 10 (3 par ligne) ──────────────────────────────────
-                    if (q.isEmpty &&
-                        (featured.isNotEmpty || isBlowMusicActivated)) ...[
+                    // ── TOP 10 (2 par ligne) ──────────────────────────────────
+                    if (q.isEmpty && featured.isNotEmpty) ...[
                       const _SectionTitle(
                         icon: Icons.local_fire_department_rounded,
                         title: 'À la une',
-                        subtitle: 'Les chaînes à ne pas manquer',
+                        subtitle: 'Les médias à ne pas manquer',
                       ),
                       const SizedBox(height: 10),
                       // if (isBlowMusicActivated) ...[
@@ -269,7 +272,7 @@ class _ChannelsHubViewState extends State<ChannelsHubView> {
                           Expanded(
                             child: _SectionTitle(
                               icon: Icons.sort_by_alpha_rounded,
-                              title: 'Toutes les chaînes',
+                              title: 'Tous les médias',
                               subtitle: '${all.length} au total',
                             ),
                           ),

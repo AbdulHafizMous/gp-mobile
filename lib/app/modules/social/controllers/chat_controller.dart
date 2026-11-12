@@ -150,7 +150,6 @@ class ChatController extends GetxController {
       messageText.value = messageCtrl.text;
       _onTyping();
     });
-    searchCtrl.addListener(() => searchQuery.value = searchCtrl.text);
   }
 
   @override
@@ -163,7 +162,6 @@ class ChatController extends GetxController {
     _recorder.dispose();
     for (final p in _players.values) { p.dispose(); }
     messageCtrl.dispose();
-    searchCtrl.dispose();
     super.onClose();
   }
 

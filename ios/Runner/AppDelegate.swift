@@ -2,6 +2,7 @@ import Flutter
 import UIKit
 import FirebaseCore
 import FirebaseMessaging
+import GoogleMaps
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -10,6 +11,8 @@ import FirebaseMessaging
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     // FirebaseApp.configure()
+    // Clé Google Maps iOS (Club). Remplacez-la par votre clé Maps SDK for iOS.
+    GMSServices.provideAPIKey("VOTRE_CLE_GOOGLE_MAPS_IOS")
     GeneratedPluginRegistrant.register(with: self)
 
     // Demande permission notifications iOS

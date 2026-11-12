@@ -29,6 +29,8 @@ class AppLinkRouter {
     try {
       switch (type) {
         case 'media':
+        case 'short':
+        case 'article':
           if (id == null) return;
           final res = await RequestService().get('/videos/$id');
           if (res.statusCode == 200) {
@@ -57,9 +59,28 @@ class AppLinkRouter {
           Get.to(() => ShopDetailView(listingId: int.parse(id)));
           break;
 
+        // 'channel' = chaîne média (page chaîne) ; 'canal' = canal de discussion.
         case 'channel':
+          if (id == null) return;
+          Get.toNamed('/channel/$id');
+          break;
+
+        case 'canal':
         case 'chat_channel':
-          Get.to(() => const ChatListView());
+          final cc = Get.isRegistered<ChatController>()
+              ? Get.find<ChatController>()
+              : Get.put(ChatController());
+          if (id == null) {
+            Get.to(() => const ChatListView());
+            return;
+          }
+          if (cc.channels.isEmpty) await cc.loadChannels();
+          final ch = cc.channels.firstWhereOrNull((c) => c.id.toString() == id);
+          if (ch != null && ch.isJoined) {
+            Get.to(() => ChatRoomView(channel: ch));
+          } else {
+            Get.to(() => const ChatListView());
+          }
           break;
 
         case 'chat_private':
@@ -103,6 +124,14 @@ class AppLinkRouter {
           Get.offAllNamed('/youwiiin/home', arguments: {'tab': 0});
           break;
 
+        case 'tournament':
+        case 'gz_tournament':
+          final tid = (id ?? extra?['tournament_id'])?.toString();
+          await AppModeService.setMode(AppMode.youwiiin);
+          Get.offAllNamed('/youwiiin/home', arguments: {'tab': 0});
+          if (tid != null && tid.isNotEmpty) Get.toNamed('/youwiiin/tournament/$tid');
+          break;
+
         // Multijoueur Youwiiin : invitation / salle lancée / résultat →
         // ouvre l'accueil du module puis le lobby de la salle (code = id).
         case 'gz_invite':
@@ -138,7 +167,14 @@ class AppLinkRouter {
     final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
     // https://grandpublic.bj/m/media/12  → segments = ['m', 'media', '12']
     // grandpublic://media/12             → segments = ['media', '12']
-    final parts = segments.first == 'm' ? segments.skip(1).toList() : segments;
+    // Schéma custom : le « host » est le type (grandpublic://media/12).
+    final isWeb = uri.scheme == 'http' || uri.scheme == 'https';
+    final all = <String>[
+      if (!isWeb && uri.host.isNotEmpty) uri.host,
+      ...segments,
+    ];
+    if (all.isEmpty) return;
+    final parts = all.first == 'm' ? all.skip(1).toList() : all;
     if (parts.isEmpty) return;
     final type = parts[0];
     final id = parts.length > 1 ? parts[1] : null;
@@ -165,6 +201,7 @@ class AppLinkRouter {
     if (type == null) return;
     final id =
         data['media_id'] ??
+        data['tournament_id'] ??
         data['promotion_id'] ??
         data['partner_id'] ??
         data['listing_id'] ??

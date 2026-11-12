@@ -10,6 +10,9 @@ import 'package:grand_public_v2/app/modules/club/views/promo_detail_view.dart';
 import 'package:grand_public_v2/app/modules/club/views/partner_detail_view.dart';
 import 'package:grand_public_v2/app/modules/club/views/partner_dashboard_view.dart';
 import 'package:grand_public_v2/app/utils/share_helper.dart';
+import 'package:grand_public_v2/app/components/expandable_menu_fab.dart';
+import 'package:grand_public_v2/app/modules/club/views/club_map_view.dart';
+import 'package:grand_public_v2/app/services/club_proximity_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THEME HELPERS (mêmes conventions que Chat / Bizz)
@@ -89,6 +92,7 @@ class ClubView extends StatelessWidget {
                     : ctrl.toggleReminders,
               ),
             ),
+            const _ProximitySettings(),
           ],
         ),
       ),
@@ -103,7 +107,8 @@ class ClubView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: context.bg,
-      body: SafeArea(
+      body: Stack(children: [
+       SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -165,34 +170,8 @@ class ClubView extends StatelessWidget {
               ),
             ),
 
-            // ── Tabs Offres / Partenaires ──────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Obx(
-                () => Row(
-                  children: [
-                    _ClubTabChip(
-                      label: 'Offres',
-                      icon: Icons.local_offer_outlined,
-                      active: ctrl.clubTab.value == 0,
-                      onTap: () => ctrl.clubTab.value = 0,
-                    ),
-                    const SizedBox(width: 8),
-                    _ClubTabChip(
-                      label: 'Partenaires',
-                      icon: Icons.storefront_outlined,
-                      active: ctrl.clubTab.value == 1,
-                      onTap: () => ctrl.clubTab.value = 1,
-                    ),
-                    const SizedBox(width: 8),
-                    const _ClubNotifsChip(),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Recherche ────────────────────────────────────────────────
-            Padding(
+            // ── Recherche (masquée sur la carte) ─────────────────────────
+            Obx(() => ctrl.clubTab.value == 2 ? const SizedBox.shrink() : Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
               child: TextField(
                 controller: ctrl.searchCtrl,
@@ -216,25 +195,128 @@ class ClubView extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
+            )),
 
             // ── Contenu ──────────────────────────────────────────────────
             Expanded(
               child: Obx(
                 () => ctrl.clubTab.value == 0
                     ? _OffresTab(ctrl: ctrl)
-                    : _PartenairesTab(ctrl: ctrl),
+                    : ctrl.clubTab.value == 1
+                    ? _PartenairesTab(ctrl: ctrl)
+                    : const ClubMapView(),
               ),
             ),
           ],
         ),
-      ),
+       ),
+        Positioned.fill(child: _ClubFab(ctrl: ctrl)),
+      ]),
     );
+  }
+}
+
+/// Menu flottant animé du Club (même composant que Social) : Offres · Partenaires · Carte · Notifs.
+class _ClubFab extends StatelessWidget {
+  final ClubController ctrl;
+  const _ClubFab({required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final notifsCtrl = Get.isRegistered<NotifsPageController>()
+        ? Get.find<NotifsPageController>()
+        : Get.put(NotifsPageController());
+    return Obx(() {
+      final unread = notifsCtrl.notifications
+          .where((n) => !n.isRead && kClubNotificationTypes.contains(n.type))
+          .length;
+      return ExpandableMenuFab(
+        color: GPTheme.clubColor,
+        selected: ctrl.clubTab.value,
+        onSelect: (i) {
+          if (i == 3) {
+            notifsCtrl.selectedCategory.value = 'club';
+            Get.find<HomeController>().navigateTo('/notifs');
+          } else {
+            ctrl.clubTab.value = i;
+          }
+        },
+        items: [
+          const FabMenuItem(icon: Icons.local_offer_outlined, label: 'Offres'),
+          const FabMenuItem(icon: Icons.storefront_outlined, label: 'Partenaires'),
+          const FabMenuItem(icon: Icons.map_rounded, label: 'Carte'),
+          FabMenuItem(icon: Icons.notifications_outlined, label: 'Notifs', badge: unread),
+        ],
+      );
+    });
+  }
+}
+
+/// Réglages des alertes de proximité (dans « Paramètres du Club »).
+class _ProximitySettings extends StatefulWidget {
+  const _ProximitySettings();
+
+  @override
+  State<_ProximitySettings> createState() => _ProximitySettingsState();
+}
+
+class _ProximitySettingsState extends State<_ProximitySettings> {
+  bool _on = ClubProximityService.enabled;
+  double _radius = ClubProximityService.radiusM.toDouble();
+  bool _busy = false;
+
+  Future<void> _toggle(bool v) async {
+    setState(() => _busy = true);
+    final full = await ClubProximityService.setEnabled(v);
+    if (!mounted) return;
+    setState(() {
+      _on = ClubProximityService.enabled;
+      _busy = false;
+    });
+    if (v && !_on) {
+      Get.snackbar('Position refusée', 'Autorise la localisation pour recevoir les alertes.', snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(12));
+    } else if (v && !full) {
+      Get.snackbar('Presque !', 'Choisis « Toujours autoriser » dans les réglages pour être alerté même app fermée.', snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(12));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        activeColor: GPTheme.clubColor,
+        title: Text('Alertes de proximité', style: TextStyle(color: context.primary, fontWeight: FontWeight.w600)),
+        subtitle: Text(
+          'Être notifié quand tu passes près d\'un partenaire qui a des offres, même app fermée.',
+          style: TextStyle(color: context.subtle, fontSize: 12),
+        ),
+        value: _on,
+        onChanged: _busy ? null : _toggle,
+      ),
+      if (_on) ...[
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text('Distance de déclenchement : ${_radius.round()} m', style: TextStyle(color: context.primary, fontSize: 13, fontWeight: FontWeight.w700)),
+        ),
+        Slider(
+          value: _radius,
+          min: ClubProximityService.minRadiusM.toDouble(),
+          max: ClubProximityService.maxRadiusM.toDouble(),
+          divisions: 24,
+          activeColor: GPTheme.clubColor,
+          label: '${_radius.round()} m',
+          onChanged: (v) => setState(() => _radius = v),
+          onChangeEnd: (v) => ClubProximityService.setRadius(v.round()),
+        ),
+      ],
+    ]);
   }
 }
 
 // ── Chip "Notifs" avec badge — ouvre l'écran de notifications filtré sur
 // les types Club (offres, promos, partenaires) ─────────────────────────────
+// ignore: unused_element
 class _ClubNotifsChip extends StatelessWidget {
   const _ClubNotifsChip();
 
@@ -320,6 +402,7 @@ class _ClubNotifsChip extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _ClubTabChip extends StatelessWidget {
   final String label;
   final IconData icon;

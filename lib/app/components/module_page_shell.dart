@@ -17,6 +17,13 @@ import 'package:grand_public_v2/app/services/app_mode_service.dart';
 /// Grandpublic : le header (menu, logo, cloche, profil) reste visible.
 class ModuleOverlay {
   static final RxnString current = RxnString();
+  static Widget? _custom;
+
+  /// Ouvre un widget quelconque sous le header du module (ex. une playlist Blowmusic).
+  static void openWidget(Widget w) {
+    _custom = w;
+    current.value = 'custom#${DateTime.now().microsecondsSinceEpoch}';
+  }
 
   static void open(String page, {String? notifCategory}) {
     if (page == 'notifs') {
@@ -29,7 +36,10 @@ class ModuleOverlay {
     current.value = page;
   }
 
-  static void close() => current.value = null;
+  static void close() {
+    _custom = null;
+    current.value = null;
+  }
 
   /// Retour : remonte d'abord les sous-pages du profil, puis ferme.
   static void back() {
@@ -44,11 +54,15 @@ class ModuleOverlay {
   }
 
   /// Contenu à afficher sous le header, ou null.
-  static Widget? get page => switch (current.value) {
-    'notifs' => const NotificationPage(),
-    'profile' => const ProfileView(embedded: true),
-    _ => null,
-  };
+  static Widget? get page {
+    final v = current.value;
+    if (v != null && v.startsWith('custom#')) return _custom;
+    return switch (v) {
+      'notifs' => const NotificationPage(),
+      'profile' => const ProfileView(embedded: true),
+      _ => null,
+    };
+  }
 
   /// Flèche retour à placer en `leading` quand une page est ouverte.
   static Widget backButton(Color color) => IconButton(

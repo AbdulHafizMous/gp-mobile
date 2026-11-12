@@ -7,6 +7,8 @@
 //  - sons / haptique (couche yw.js injectée si absente) et bandeau de gain ;
 //  - écran de fin natif animé (victoire / défaite / égalité).
 
+import '../widgets/youwiiin_premium_sheet.dart';
+import 'package:grand_public_v2/app/services/ad_service.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -25,7 +27,10 @@ class YouwiiinGameView extends StatefulWidget {
 
   /// Non null = partie multijoueur dans cette salle (status `playing`).
   final GzRoom? room;
-  const YouwiiinGameView({super.key, required this.game, this.room});
+
+  /// Non null = partie comptant pour ce tournoi (format multi-tours).
+  final int? tournamentId;
+  const YouwiiinGameView({super.key, required this.game, this.room, this.tournamentId});
 
   @override
   State<YouwiiinGameView> createState() => _YouwiiinGameViewState();
@@ -75,7 +80,14 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
     _room = widget.room;
     _lastRoomSig = widget.room == null ? '' : jsonEncode(widget.room!.raw);
     // Pas de zone grise autour du jeu : plein écran immersif, portrait.
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    // Jeux paysage (ex. Super Koffi, Sèche-cours) : l'écran tourne à l'ouverture.
+    if (widget.game.isLandscape) {
+      SystemChrome.setPreferredOrientations(const [
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    }
     _setupController();
     _initSession();
   }
@@ -138,6 +150,7 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
     } catch (_) {}
   }
 
+  // ignore: unused_element
   Future<void> _toggleSound() async {
     HapticFeedback.selectionClick();
     await _js('try{window.YW&&YW.sfx&&YW.sfx.toggle()}catch(e){}');
@@ -163,6 +176,9 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
           break;
         case 'mp_leave':
           if (_isMp) _leave();
+          break;
+        case 'quit':
+          _leave(); // bouton « Quitter » du jeu (menu pause / fin de partie)
           break;
       }
     } catch (_) {}
@@ -421,7 +437,25 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
       // Pas de session solo : le jeu parle seulement mp_*.
       url = widget.room!.playUrl;
     } else {
-      final session = await _ctrl.startSession(widget.game);
+      final session = await _ctrl.startSession(widget.game, tournamentId: widget.tournamentId);
+      if (session != null && session['premium_required'] == '1') {
+        if (mounted) {
+          Get.back();
+          gzShowPremiumSheet(widget.game);
+        }
+        return;
+      }
+      if (session != null && session['error'] != null) {
+        if (mounted) {
+          Get.back();
+          Get.snackbar('Impossible de lancer', session['error']!);
+        }
+        return;
+      }
+      if (session != null && session['access'] == 'demo' && mounted) {
+        final left = session['demo_left'] ?? '';
+        Get.snackbar('Mode démo 🎮', left.isEmpty ? 'Partie de démonstration.' : 'Il te reste $left partie(s) de démo.', duration: const Duration(seconds: 3));
+      }
       if (session == null) {
         if (mounted) {
           Get.back();
@@ -507,6 +541,11 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
     _stopPolling(); // le polling d'événements s'arrête avec la vue
     _bannerTimer?.cancel();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // Interstitiel de fin de partie : 1 sortie de jeu sur 2 (et jamais plus d'une pub / 90 s).
+    Future.delayed(const Duration(milliseconds: 500), () => AdService.maybeInterstitial('game_end', every: 2, screen: 'game_end'));
+    if (widget.game.isLandscape) {
+      SystemChrome.setPreferredOrientations(const [DeviceOrientation.portraitUp]);
+    }
     super.dispose();
   }
 
@@ -649,95 +688,70 @@ class _YouwiiinGameViewState extends State<YouwiiinGameView> {
         backgroundColor: const Color(0xFF0F0E13),
         body: Stack(
           children: [
-            SafeArea(
-              bottom: false,
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 40,
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            color: Colors.white70,
-                            size: 18,
-                          ),
-                          onPressed: _leave,
-                        ),
-                        Expanded(
-                          child: Text(
-                            widget.game.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
-                        if (r != null && r.pot > 0)
-                          Container(
-                            margin: const EdgeInsets.only(right: 6),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 9,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: GPTheme.primaryColor,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.toll_rounded,
-                                  size: 14,
+            // Jeu en plein écran (pas d'AppBar native : le jeu a déjà sa propre barre) ;
+            // seuls un retour discret et la pastille de pot flottent par-dessus.
+            Positioned.fill(
+              child: SafeArea(
+                bottom: false,
+                left: true,
+                right: true,
+                child: Stack(
+                  children: [
+                    if (_ready) WebViewWidget(controller: _webCtrl),
+                    if (_loading)
+                      const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    if (chip != null) chip,
+                    _banner(),
+                    Positioned(
+                      left: 6,
+                      top: 6,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Material(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            shape: const CircleBorder(),
+                            child: InkWell(
+                              customBorder: const CircleBorder(),
+                              onTap: _leave,
+                              child: const SizedBox(
+                                width: 36,
+                                height: 36,
+                                child: Icon(
+                                  Icons.arrow_back_ios_new_rounded,
                                   color: Colors.white,
+                                  size: 16,
                                 ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Pot ${r.pot}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          if (r != null && r.pot > 0)
+                            Container(
+                              margin: const EdgeInsets.only(left: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: GPTheme.primaryColor,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.toll_rounded, size: 14, color: Colors.white),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Pot ${r.pot}',
+                                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        IconButton(
-                          tooltip: _muted ? 'Activer le son' : 'Couper le son',
-                          icon: Icon(
-                            _muted
-                                ? Icons.volume_off_rounded
-                                : Icons.volume_up_rounded,
-                            color: Colors.white70,
-                            size: 22,
-                          ),
-                          onPressed: _toggleSound,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        if (_ready) WebViewWidget(controller: _webCtrl),
-                        if (_loading)
-                          const Center(
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                            ),
-                          ),
-                        if (chip != null) chip,
-                        _banner(),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             if (end != null)

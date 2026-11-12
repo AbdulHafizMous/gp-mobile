@@ -6,7 +6,7 @@
 // (GET /ads/serve) et enregistre les impressions / clics par module.
 
 import 'package:flutter/material.dart';
-// import 'package:get/get.dart';
+import 'package:get/get.dart';
 import 'package:grand_public_v2/app/components/ad_interstitial_page.dart';
 import 'package:grand_public_v2/app/services/app_mode_service.dart';
 import 'package:grand_public_v2/app/services/dio.services.dart';
@@ -83,22 +83,51 @@ class AdService {
     }
   }
 
-  static void track(
+  /// Enregistre un affichage (ou un clic). Retourne l'id d'affichage (pour [trackEnd]).
+  static Future<int?> track(
     AdItem ad, {
     bool clicked = false,
     String? screen,
     int? channelId,
-  }) {
-    RequestService()
-        .post(
-          '/ads/${ad.id}/impression',
-          data: {
-            'clicked': clicked,
-            'module': module(channelId: channelId),
-            if (screen != null) 'screen': screen,
-            if (channelId != null) 'channel_id': channelId,
-          },
-        );
+  }) async {
+    try {
+      final res = await RequestService().post(
+        '/ads/${ad.id}/impression',
+        data: {
+          'event': clicked ? 'click' : 'view',
+          'module': module(channelId: channelId),
+          if (screen != null) 'screen': screen,
+          if (channelId != null) 'channel_id': channelId,
+        },
+      );
+      final id = res.data?['data']?['impression_id'];
+      return id is int ? id : int.tryParse('$id');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Fin de visionnage : durée réellement vue, vidéo terminée ou passée.
+  static Future<void> trackEnd(
+    AdItem ad,
+    int? impressionId, {
+    required int watchSeconds,
+    required bool completed,
+    required bool skipped,
+  }) async {
+    if (impressionId == null) return;
+    try {
+      await RequestService().post(
+        '/ads/${ad.id}/impression',
+        data: {
+          'event': 'end',
+          'impression_id': impressionId,
+          'watch_seconds': watchSeconds,
+          'completed': completed,
+          'skipped': skipped,
+        },
+      );
+    } catch (_) {}
   }
 
   static Future<void> openCta(AdItem ad, {String? screen, int? channelId}) async {
@@ -109,7 +138,7 @@ class AdService {
     }
   }
 
-  /// Affiche (si une annonce existe) une pub plein écran passable.
+  /// Affiche (si une annonce existe) une pub plein écran.
   /// [placement] : 'interstitial' ou 'preroll'. Retourne quand elle est fermée.
   static Future<void> showFullscreen(
     BuildContext context,
@@ -119,11 +148,32 @@ class AdService {
   }) async {
     final ads = await fetch(placement, channelId: channelId, screen: screen, limit: 1);
     if (ads.isEmpty || !context.mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (_) => AdInterstitialPage(ad: ads.first, channelId: channelId, screen: screen),
-      ),
-    );
+    await presentFullscreen(Navigator.of(context), ads.first, channelId: channelId, screen: screen);
+  }
+
+  // ── Fréquence : jamais plus d'une pub plein écran toutes les [minGap] et toutes les [every] occurrences ──
+  static final Map<String, int> _counters = {};
+  static DateTime? _lastFullscreen;
+
+  /// Point d'entrée UNIQUE des interstitiels « sur événement » (fin de jeu, Nième titre, Nième article…).
+  /// [key] identifie le compteur (ex. 'bm_track', 'game_end'), [every] le rythme.
+  /// Ne bloque jamais, ne montre rien s'il n'y a pas d'annonce.
+  static Future<void> maybeInterstitial(
+    String key, {
+    int every = 4,
+    String? screen,
+    int? channelId,
+    Duration minGap = const Duration(seconds: 90),
+    String placement = 'interstitial',
+  }) async {
+    final n = (_counters[key] ?? 0) + 1;
+    _counters[key] = n;
+    if (n % every != 0) return;
+    final last = _lastFullscreen;
+    if (last != null && DateTime.now().difference(last) < minGap) return;
+    final ctx = Get.context;
+    if (ctx == null || !ctx.mounted) return;
+    _lastFullscreen = DateTime.now();
+    await showFullscreen(ctx, placement, channelId: channelId, screen: screen ?? key);
   }
 }

@@ -50,6 +50,9 @@ class YouwiiinController extends GetxController {
   final invitationsLoaded = false.obs;
   bool _invBusy = false;
 
+  // Argent réel (F CFA) — 2e solde du portefeuille
+  final cashBalance = 0.obs;
+
   // GCoin
   final gcoinBalance = 0.obs;
   final gcoinHistory = <Map<String, dynamic>>[].obs;
@@ -130,6 +133,7 @@ class YouwiiinController extends GetxController {
     try {
       final res = await RequestService().get('/gamez/me');
       gcoinBalance.value = _i(res.data?['data']?['gcoin_balance']);
+      cashBalance.value = _i(res.data?['data']?['cash_balance']);
     } catch (_) {}
   }
 
@@ -193,15 +197,23 @@ class YouwiiinController extends GetxController {
     }
   }
 
-  Future<Map<String, String>?> startSession(GzGame game) async {
+  Future<Map<String, String>?> startSession(GzGame game, {int? tournamentId}) async {
     try {
-      final res = await RequestService().post('/gamez/games/${game.id}/session');
+      final res = await RequestService().post('/gamez/games/${game.id}/session', data: {
+        if (tournamentId != null) 'tournament_id': tournamentId,
+      });
       final data = res.data?['data'];
       RecentHistoryService.addRecentGame(id: game.id, name: game.name, cover: game.coverUrl);
       return {
         'session_token': data['session_token']?.toString() ?? '',
         'entry_url': data['entry_url']?.toString() ?? game.entryUrl,
+        'access': data['access']?.toString() ?? 'free',
+        'demo_left': data['demo_left']?.toString() ?? '',
       };
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 402) return {'premium_required': '1'};
+      final m = e.response?.data is Map ? e.response?.data['message']?.toString() : null;
+      return m == null ? null : {'error': m};
     } catch (_) {
       return null;
     }
@@ -363,6 +375,7 @@ class YouwiiinController extends GetxController {
   Future<GzResult<GzRoom>> createRoom(
     GzGame game, {
     required int stake,
+    String currency = 'gcoin',
     required int maxPlayers,
     required List<int> inviteUserIds,
     String? mode,
@@ -372,6 +385,7 @@ class YouwiiinController extends GetxController {
       final res = await RequestService().post('/gamez/rooms', data: {
         'game_id': game.id,
         'stake': stake,
+        'currency': currency,
         'max_players': maxPlayers,
         'invite_user_ids': inviteUserIds,
         if (mode != null) 'mode': mode,

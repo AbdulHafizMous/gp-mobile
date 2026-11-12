@@ -98,183 +98,181 @@ class _BmMiniBar extends StatelessWidget {
       final loading = ctrl.playbackState.value == BmPlaybackState.loading;
       final playing = ctrl.isPlaying.value;
       final title =
-          track?.title ??
-          ctrl.liveStream.value?['title']?.toString() ??
-          'Direct';
+          track?.title ?? ctrl.liveStream.value?['title']?.toString() ?? 'Direct';
       final cover =
           track?.coverUrl ?? ctrl.liveStream.value?['cover_url']?.toString();
       final hasCover = cover != null && cover.isNotEmpty;
       final hasQueue = !live && ctrl.queue.length > 1;
 
       final band = Material(
-        type: MaterialType.transparency,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: _open,
-          child: Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              // Même ambiance que le lecteur plein écran : dégradé sombre
-              // teinté de l'accent.
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  Color.lerp(accent, Colors.black, .6)!,
-                  const Color(0xFF0B0810),
+          type: MaterialType.transparency,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _open,
+            child: Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                // Même ambiance que le lecteur plein écran : dégradé sombre
+                // teinté de l'accent.
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    Color.lerp(accent, Colors.black, .6)!,
+                    const Color(0xFF0B0810),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withValues(alpha: .08)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: .4),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6),
+                  ),
                 ],
               ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: .08)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: .4),
-                  blurRadius: 18,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
-                  child: Row(
-                    children: [
-                      VinylDisc(
-                        size: 46,
-                        playing: playing,
-                        accent: accent,
-                        coverUrl: cover,
-                        isCoverUrlAvailable: hasCover,
-                        fallbackIcon: live
-                            ? Icons.podcasts_rounded
-                            : Icons.music_note_rounded,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            if (live)
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFFB7185),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    'EN DIRECT',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(alpha: .7),
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: .6,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            else
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
+                    child: Row(
+                      children: [
+                        VinylDisc(
+                          size: 46,
+                          playing: playing,
+                          accent: accent,
+                          coverUrl: cover,
+                          isCoverUrlAvailable: hasCover,
+                          fallbackIcon: live
+                              ? Icons.podcasts_rounded
+                              : Icons.music_note_rounded,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
                               Text(
-                                track?.artistName ?? 'Blowmusic',
+                                title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: .6),
-                                  fontSize: 11.5,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
-                          ],
-                        ),
-                      ),
-                      // Lecture / pause (spinner pendant le chargement)
-                      GestureDetector(
-                        onTap: loading ? null : ctrl.togglePlayPause,
-                        child: Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: accent,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: accent.withValues(alpha: .45),
-                                blurRadius: 10,
-                              ),
+                              const SizedBox(height: 2),
+                              if (live)
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFFB7185),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      'EN DIRECT',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: .7),
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: .6,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              else
+                                Text(
+                                  track?.artistName ?? 'Blowmusic',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: .6),
+                                    fontSize: 11.5,
+                                  ),
+                                ),
                             ],
                           ),
-                          child: loading
-                              ? const Padding(
-                                  padding: EdgeInsets.all(10),
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : Icon(
-                                  playing
-                                      ? Icons.pause_rounded
-                                      : Icons.play_arrow_rounded,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
                         ),
-                      ),
-                      if (hasQueue)
+                        // Lecture / pause (spinner pendant le chargement)
+                        GestureDetector(
+                          onTap: loading ? null : ctrl.togglePlayPause,
+                          child: Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: accent,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: accent.withValues(alpha: .45),
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ),
+                            child: loading
+                                ? const Padding(
+                                    padding: EdgeInsets.all(10),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Icon(
+                                    playing
+                                        ? Icons.pause_rounded
+                                        : Icons.play_arrow_rounded,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                          ),
+                        ),
+                        if (hasQueue)
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(
+                              Icons.skip_next_rounded,
+                              color: Colors.white,
+                              size: 26,
+                            ),
+                            onPressed: () => ctrl.next(),
+                          ),
                         IconButton(
                           visualDensity: VisualDensity.compact,
-                          icon: const Icon(
-                            Icons.skip_next_rounded,
-                            color: Colors.white,
-                            size: 26,
+                          icon: Icon(
+                            Icons.close_fullscreen_rounded,
+                            color: Colors.white.withValues(alpha: .7),
+                            size: 18,
                           ),
-                          onPressed: () => ctrl.next(),
+                          onPressed: () => _bmCompact.value = true,
                         ),
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        icon: Icon(
-                          Icons.close_fullscreen_rounded,
-                          color: Colors.white.withValues(alpha: .7),
-                          size: 18,
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          icon: Icon(
+                            Icons.close_rounded,
+                            color: Colors.white.withValues(alpha: .55),
+                            size: 20,
+                          ),
+                          // Arrête le son ET retire la notification média.
+                          onPressed: ctrl.closePlayer,
                         ),
-                        onPressed: () => _bmCompact.value = true,
-                      ),
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        icon: Icon(
-                          Icons.close_rounded,
-                          color: Colors.white.withValues(alpha: .55),
-                          size: 20,
-                        ),
-                        // Arrête le son ET retire la notification média.
-                        onPressed: ctrl.closePlayer,
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                if (!live) _ProgressLine(ctrl: ctrl),
-              ],
+                  if (!live) _ProgressLine(ctrl: ctrl),
+                ],
+              ),
             ),
           ),
-        ),
-      );
+        );
 
       final square = _BmSquare(
         ctrl: ctrl,
@@ -313,6 +311,7 @@ class _ProgressLine extends StatelessWidget {
     });
   }
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DÉPLACEMENT + MODE CARRÉ
@@ -519,9 +518,8 @@ class _BmSquare extends StatelessWidget {
                   accent: accent,
                   coverUrl: cover,
                   isCoverUrlAvailable: cover != null && cover!.isNotEmpty,
-                  fallbackIcon: live
-                      ? Icons.podcasts_rounded
-                      : Icons.music_note_rounded,
+                  fallbackIcon:
+                      live ? Icons.podcasts_rounded : Icons.music_note_rounded,
                 ),
               ),
               if (live)
@@ -529,10 +527,7 @@ class _BmSquare extends StatelessWidget {
                   left: 8,
                   top: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 2,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFB7185),
                       borderRadius: BorderRadius.circular(6),
@@ -570,10 +565,7 @@ class _BmSquare extends StatelessWidget {
                   child: Container(
                     width: 28,
                     height: 28,
-                    decoration: BoxDecoration(
-                      color: accent,
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
                     child: loading
                         ? const Padding(
                             padding: EdgeInsets.all(7),
@@ -583,9 +575,7 @@ class _BmSquare extends StatelessWidget {
                             ),
                           )
                         : Icon(
-                            playing
-                                ? Icons.pause_rounded
-                                : Icons.play_arrow_rounded,
+                            playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
                             color: Colors.white,
                             size: 18,
                           ),

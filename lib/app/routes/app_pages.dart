@@ -23,6 +23,7 @@ import 'package:grand_public_v2/app/modules/blowmusic/views/blowmusic_home_view.
 import 'package:grand_public_v2/app/modules/youwiiin/bindings/youwiiin_binding.dart';
 import 'package:grand_public_v2/app/modules/youwiiin/views/youwiiin_home_view.dart';
 import 'package:grand_public_v2/app/modules/youwiiin/views/youwiiin_room_view.dart';
+import 'package:grand_public_v2/app/modules/youwiiin/views/youwiiin_tournaments_view.dart';
 import 'package:grand_public_v2/app/modules/complete_profile/bindings/complete_profile_binding.dart';
 import 'package:grand_public_v2/app/modules/complete_profile/views/complete_profile_view.dart';
 import 'package:grand_public_v2/app/modules/module_choice/bindings/module_choice_binding.dart';
@@ -252,6 +253,12 @@ class AppPages {
       binding: YouwiiinBinding(),
     ),
     // Lobby d'une salle multijoueur : /youwiiin/room/:code
+    // Tournoi : /youwiiin/tournament/:id
+    GetPage(
+      name: _Paths.YOUWIIIN_TOURNAMENT,
+      page: () => YouwiiinTournamentDetailView(id: int.tryParse(Get.parameters['id'] ?? '') ?? 0),
+      binding: YouwiiinBinding(),
+    ),
     GetPage(
       name: _Paths.YOUWIIIN_ROOM,
       page: () => const YouwiiinRoomView(),

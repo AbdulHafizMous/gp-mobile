@@ -128,11 +128,11 @@ class PromoDetailView extends StatelessWidget {
                           ),
                         ),
                         icon: ctrl.isClaiming.value
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 18,
                                 height: 18,
                                 child: CircularProgressIndicator(
-                                  color: Colors.white,
+                                  color: GPTheme.clubOnColor,
                                   strokeWidth: 2,
                                 ),
                               )
@@ -140,7 +140,9 @@ class PromoDetailView extends StatelessWidget {
                         label: Text(
                           ctrl.isClaiming.value
                               ? 'Génération...'
-                              : 'Générer mon code QR',
+                              : (current.gcoinPrice != null && current.gcoinPrice! > 0
+                                  ? 'Obtenir pour ${current.gcoinPrice} GCoin'
+                                  : 'Générer mon code QR'),
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -203,6 +205,21 @@ class PromoDetailView extends StatelessWidget {
   }
 
   Future<void> _onClaim(BuildContext context, Promotion current) async {
+    final price = current.gcoinPrice ?? 0;
+    if (price > 0) {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Payer avec tes GCoin ?'),
+          content: Text('Cette offre coûte $price GCoin. Ton code QR restera valable jusqu\'à son utilisation.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Payer $price GCoin')),
+          ],
+        ),
+      );
+      if (ok != true) return;
+    }
     final usage = await ctrl.claimPromotion(current);
     if (usage != null && context.mounted) {
       _showQrDialog(context, usage);
