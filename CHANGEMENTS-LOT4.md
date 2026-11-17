@@ -1,0 +1,5 @@
+# Lot 4 — mobile (coller et remplacer)
+- Connexion / inscription Google : l'erreur « canceled » renvoyée par Android quand la configuration est refusée n'est plus avalée en silence, un message s'affiche. CAUSE PROBABLE de votre blocage (log « CredManProvService: GetCredentialResponse error ») : l'empreinte SHA-1 de la clé qui signe votre build n'est pas enregistrée dans Firebase. Lancez `cd android && ./gradlew signingReport`, ajoutez les SHA-1 (debug ET release) dans Firebase > Paramètres du projet > votre app Android com.maxafrica.gpbenin, retéléchargez google-services.json (android/app/), recompilez.
+- Carte Club : réglages déplacés dans lib/app/constants/index.dart (MAP_PROVIDER, MAP_DEFAULT_LAT/LNG/ZOOM, URLs des tuiles). Fond OpenStreetMap officiel + secours, avec User-Agent de l'app (l'ancien fond CARTO restait blanc). Désinstallez/relancez : le choix mémorisé est réinitialisé (clé v3).
+- Lecteur d'émission : plus d'erreur « setState() called during build » (lancement différé + mises à jour d'état protégées) ; l'erreur n'est plus confondue avec « lecture impossible ».
+- Badge HAAC retiré (fiche, page live, modèle).

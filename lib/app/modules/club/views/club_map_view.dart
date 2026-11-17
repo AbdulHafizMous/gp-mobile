@@ -63,7 +63,7 @@ class _ClubMapViewState extends State<ClubMapView> {
 
   @override
   Widget build(BuildContext context) {
-    final start = c.userPos.value ?? const LatLng(6.3703, 2.3912); // Cotonou par défaut
+    final start = c.userPos.value ?? c.center;
     return Stack(children: [
       Positioned.fill(
         child: Obx(
@@ -94,7 +94,7 @@ class _ClubMapViewState extends State<ClubMapView> {
             padding: const EdgeInsets.only(top: 110, bottom: 210),
             onMapCreated: (m) {
               c.map = m;
-              if (c.userPos.value != null) c.fitAll();
+              c.fitAll();
             },
             onTap: (_) => c.select(null),
           ),
@@ -165,21 +165,22 @@ class _ClubMapViewState extends State<ClubMapView> {
             )
           : const SizedBox.shrink()),
 
-      // ── Permission refusée ─────────────────────────────────────────────
+      // ── Position indisponible : bandeau NON bloquant (la carte reste utilisable, centrée sur Cotonou) ──
       Obx(() => c.permissionDenied.value
-          ? Positioned.fill(
+          ? Positioned(
+              top: 112,
+              left: 16,
+              right: 16,
               child: Container(
-                color: context.bg.withValues(alpha: 0.94),
-                padding: const EdgeInsets.all(28),
-                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(Icons.location_off_rounded, size: 56, color: GPTheme.clubColor),
-                  const SizedBox(height: 14),
-                  Text('Active ta position', style: TextStyle(color: context.primary, fontWeight: FontWeight.w900, fontSize: 18)),
-                  const SizedBox(height: 6),
-                  Text('Pour voir les partenaires et offres autour de toi, autorise l\'accès à ta position.', textAlign: TextAlign.center, style: TextStyle(color: context.subtle)),
-                  const SizedBox(height: 18),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(backgroundColor: GPTheme.clubColor, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12)),
+                padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+                decoration: BoxDecoration(color: context.bg, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]),
+                child: Row(children: [
+                  Icon(Icons.location_off_rounded, size: 22, color: GPTheme.clubColor),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text('Position indisponible : carte centrée sur Cotonou. Active ta position pour voir les plus proches.', style: TextStyle(color: context.subtle, fontSize: 12)),
+                  ),
+                  TextButton(
                     onPressed: () async {
                       if (await ClubLocationService.isPermanentlyDenied()) {
                         await ClubLocationService.openSettings();
@@ -187,8 +188,7 @@ class _ClubMapViewState extends State<ClubMapView> {
                         c.start();
                       }
                     },
-                    icon: const Icon(Icons.my_location_rounded),
-                    label: const Text('Autoriser', style: TextStyle(fontWeight: FontWeight.w800)),
+                    child: Text('Activer', style: TextStyle(color: GPTheme.clubColor, fontWeight: FontWeight.w800)),
                   ),
                 ]),
               ),
@@ -204,7 +204,7 @@ class _ClubMapViewState extends State<ClubMapView> {
           if (c.route.value != null || c.routeLoading.value) return _RouteBar(c: c);
           final list = c.visible;
           if (list.isEmpty) {
-            return c.loading.value || c.permissionDenied.value
+            return c.loading.value
                 ? const SizedBox.shrink()
                 : Center(
                     child: Container(

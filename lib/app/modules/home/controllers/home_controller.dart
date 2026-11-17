@@ -272,6 +272,18 @@ class HomeController extends GetxController {
       return;
     }
 
+    // Racine d'un menu (ex. Club > Promotions) : on BASCULE de menu (la pile interne est remplacée,
+    // donc la page de notifications ou toute sous-page ouverte disparaît) au lieu d'empiler une page
+    // Club par-dessus le menu courant.
+    if (route == '/home/club') {
+      final i = sections.indexWhere((s) => s.title == 'Club');
+      if (i >= 0) {
+        _stack.assignAll([_sectionDest(i)]);
+        _closeDrawer();
+        return;
+      }
+    }
+
     // « Toutes les chaînes » : retour à l'onglet Chaînes (top 10 + liste A-Z).
     if (route == '/home/channels') {
       goToSection(0, showToast: false);

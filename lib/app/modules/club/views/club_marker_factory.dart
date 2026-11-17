@@ -53,7 +53,7 @@ class ClubMarkerFactory {
       ..arcToPoint(Offset(cx + r, cy), radius: Radius.circular(r), clockwise: true)
       ..cubicTo(cx + r, cy + 16, cx + 8, h - 14, cx, h - 2)
       ..close();
-    c.drawPath(pin, Paint()..shader = ui.Gradient.linear(Offset(cx, 0), Offset(cx, h), [const Color(0xFFFFD84D), GPTheme.clubColor, const Color(0xFFE0A800)]));
+    c.drawPath(pin, Paint()..shader = ui.Gradient.linear(Offset(cx, 0), Offset(cx, h), [ GPTheme.clubColor, const Color(0xFFE0A800)]));
     c.drawPath(pin, Paint()..style = PaintingStyle.stroke..strokeWidth = 2.2..color = const Color(0xFF1A1A1A));
 
     // disque blanc + logo / icône

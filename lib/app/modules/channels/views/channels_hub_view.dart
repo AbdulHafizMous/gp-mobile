@@ -75,7 +75,7 @@ class _ChannelsHubViewState extends State<ChannelsHubView> {
   void _open(_Entry e) {
     if (e.blow) {
       Get.toNamed('/blowmusic/home');
-    } else if (e.ch!.liveOnly && (e.ch!.streamUrl ?? '').isNotEmpty) {
+    } else if (e.ch!.liveOnly) {
       // Web radio / web TV « direct uniquement » : lecteur live dédié, pas de catalogue.
       Get.to(() => ChannelLivePage(channel: e.ch!));
     } else {

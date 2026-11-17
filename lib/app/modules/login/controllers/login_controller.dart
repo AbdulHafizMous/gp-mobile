@@ -176,9 +176,14 @@ class LoginController extends GetxController {
         provider: 'Google',
       );
     } on GoogleSignInException catch (e, st) {
-      if (e.code != GoogleSignInExceptionCode.canceled) {
+      // Android (Credential Manager) renvoie aussi « canceled » quand la configuration est refusée
+      // (empreinte SHA-1 non enregistrée, mauvais client ID) : on ne l'avale plus en silence.
+      final desc = (e.description ?? '').toLowerCase();
+      final userCancelled = e.code == GoogleSignInExceptionCode.canceled &&
+          (desc.isEmpty || desc.contains('user canceled') || desc.contains('user cancelled') || desc.contains('[12501]'));
+      if (!userCancelled) {
         AuthDiagnostics.report(provider: 'Google', step: step, error: e, stack: st);
-        _showError('La connexion avec Google a échoué (${e.code.name}).');
+        _showError('Connexion Google impossible (${e.code.name}). Vérifiez la configuration Google de l\'application (SHA-1) ou réessayez.');
       }
     } on FirebaseAuthException catch (e, st) {
       AuthDiagnostics.report(provider: 'Google', step: step, error: e, stack: st);

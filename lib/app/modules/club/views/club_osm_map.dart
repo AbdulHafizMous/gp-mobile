@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/modules/club/controllers/club_map_controller.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
 import 'package:latlong2/latlong.dart' as ll;
@@ -23,23 +24,21 @@ class ClubOsmMap extends StatelessWidget {
       final route = c.route.value;
       final list = c.visible; // lu ici pour réagir aux changements
       final radius = c.radiusKm.value;
-      final center = me != null ? _p(me.latitude, me.longitude) : _p(6.3703, 2.3912);
+      final center = me != null ? _p(me.latitude, me.longitude) : _p(MAP_DEFAULT_LAT, MAP_DEFAULT_LNG);
 
       final tile = TileLayer(
-        urlTemplate: dark
-            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-            : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-        subdomains: const ['a', 'b', 'c', 'd'],
-        userAgentPackageName: 'bj.grandpublic.app',
-        retinaMode: RetinaMode.isHighDensity(context),
+        urlTemplate: MAP_OSM_TILE_URL,
+        fallbackUrl: MAP_OSM_FALLBACK_TILE_URL,
+        userAgentPackageName: MAP_USER_AGENT,
         maxNativeZoom: 19,
+        evictErrorTileStrategy: EvictErrorTileStrategy.notVisibleRespectMargin,
       );
 
       return FlutterMap(
         mapController: c.osm,
         options: MapOptions(
           initialCenter: center,
-          initialZoom: 13.5,
+          initialZoom: MAP_DEFAULT_ZOOM,
           minZoom: 3,
           maxZoom: 19,
           onTap: (_, __) => c.select(null),
@@ -50,17 +49,25 @@ class ClubOsmMap extends StatelessWidget {
         ),
         children: [
           // Teinte chaude en thème clair, pour rester dans l'univers Grandpublic.
-          dark
-              ? tile
-              : ColorFiltered(
-                  colorFilter: const ColorFilter.matrix(<double>[
-                    1.02, 0.02, 0, 0, 4,
-                    0.01, 1.0, 0, 0, 2,
-                    0, 0.02, 0.92, 0, -6,
-                    0, 0, 0, 1, 0,
-                  ]),
-                  child: tile,
-                ),
+          ColoredBox(
+            color: dark ? const Color(0xFF1B1B1B) : const Color(0xFFEDE8DD),
+            child: ColorFiltered(
+              colorFilter: ColorFilter.matrix(dark
+                  ? const <double>[
+                      -0.8, 0, 0, 0, 255,
+                      0, -0.8, 0, 0, 255,
+                      0, 0, -0.8, 0, 255,
+                      0, 0, 0, 1, 0,
+                    ]
+                  : const <double>[
+                      1.02, 0.02, 0, 0, 4,
+                      0.01, 1.0, 0, 0, 2,
+                      0, 0.02, 0.92, 0, -6,
+                      0, 0, 0, 1, 0,
+                    ]),
+              child: tile,
+            ),
+          ),
           if (me != null)
             CircleLayer(circles: [
               CircleMarker(

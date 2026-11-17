@@ -141,3 +141,17 @@ const String LOGO_YOUWIIIN_NAV_DARK = 'assets/images/Logo_Y_Noir.png';
 const String channelPaymentsIosMessage =
     "L'abonnement aux chaînes n'est pas encore disponible sur iOS. "
     'Rendez-vous sur Android ou sur le site pour vous abonner.';
+
+// ── Carte (Club) ──────────────────────────────────────────────────────────
+// Fournisseur de carte par défaut : 'osm' (OpenStreetMap, aucune clé, jamais d'écran blanc) ou 'google'.
+// L'utilisateur peut basculer depuis la carte ; son choix est mémorisé. Changez ici, pas dans le code des écrans.
+const String MAP_PROVIDER = 'osm';
+// Centre par défaut (Cotonou) quand la position de l'utilisateur est indisponible.
+const double MAP_DEFAULT_LAT = 6.3703;
+const double MAP_DEFAULT_LNG = 2.3912;
+const double MAP_DEFAULT_ZOOM = 13.5;
+// Fond OpenStreetMap officiel (+ secours CARTO si le serveur principal est indisponible).
+const String MAP_OSM_TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const String MAP_OSM_FALLBACK_TILE_URL = 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
+// Identifiant demandé par la politique d'usage d'OpenStreetMap (package Android).
+const String MAP_USER_AGENT = 'com.maxafrica.gpbenin';

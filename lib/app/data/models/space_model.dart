@@ -40,6 +40,10 @@ class SpaceVideo {
   final String? body; // Markdown
   final String? bodyHtml;
   final int readingMinutes;
+  // Téléchargement dans l'app (images d'article, vidéo) : autorisé par le créateur ou non.
+  final bool allowDownload;
+  final String? sourceName; // ex. « Le Matinal »
+  final String? sourceUrl; // article d'origine
 
   const SpaceVideo({
     required this.id,
@@ -75,6 +79,9 @@ class SpaceVideo {
     this.body,
     this.bodyHtml,
     this.readingMinutes = 0,
+    this.allowDownload = false,
+    this.sourceName,
+    this.sourceUrl,
   });
 
   bool get isPortrait => orientation == 'portrait';
@@ -146,6 +153,9 @@ class SpaceVideo {
       body: json['body']?.toString(),
       bodyHtml: json['body_html']?.toString(),
       readingMinutes: _parseInt(json['reading_minutes']),
+      allowDownload: _parseBool(json['allow_download']),
+      sourceName: json['source_name']?.toString(),
+      sourceUrl: json['source_url']?.toString(),
     );
   }
 
@@ -193,6 +203,9 @@ class SpaceVideo {
       body: body,
       bodyHtml: bodyHtml,
       readingMinutes: readingMinutes,
+      allowDownload: allowDownload,
+      sourceName: sourceName,
+      sourceUrl: sourceUrl,
     );
   }
 

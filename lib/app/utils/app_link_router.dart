@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grand_public_v2/app/data/models/space_model.dart';
 import 'package:grand_public_v2/app/modules/club/views/club_view.dart';
+import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
+import 'package:grand_public_v2/app/routes/app_pages.dart';
 import 'package:grand_public_v2/app/modules/club/views/partner_detail_view.dart';
 import 'package:grand_public_v2/app/modules/pages/vid_detail.dart';
 import 'package:grand_public_v2/app/modules/shop/views/shop_detail_view.dart';
@@ -46,7 +48,14 @@ class AppLinkRouter {
           // par id seul côté navigation externe → on ouvre le Club, qui
           // affiche la liste des offres (l'utilisateur peut ouvrir la
           // sienne). Le detail exact reste accessible en un tap de plus.
-          Get.to(() => const ClubView());
+          // Si l'accueil est déjà là : on revient à lui et on BASCULE sur le menu Club (pas de page
+          // Club empilée par-dessus le menu courant). Sinon (app lancée par la notification) : page Club.
+          if (Get.isRegistered<HomeController>()) {
+            Get.until((r) => r.isFirst || r.settings.name == Routes.HOME);
+            Get.find<HomeController>().navigateTo('/home/club');
+          } else {
+            Get.to(() => const ClubView());
+          }
           break;
 
         case 'partner':

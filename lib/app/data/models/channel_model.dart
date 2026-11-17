@@ -45,6 +45,17 @@ class ChannelSubscriptionModel {
   int get daysLeft => endsAt == null ? 0 : endsAt!.difference(DateTime.now()).inDays.clamp(0, 9999);
 }
 
+/// Ligne de la fiche d'information d'un média (ex. « Fréquence : 106.0 FM »).
+class ChannelInfoRow {
+  final String label;
+  final String value;
+  final String? url;
+  const ChannelInfoRow({required this.label, required this.value, this.url});
+
+  factory ChannelInfoRow.fromJson(Map<String, dynamic> j) =>
+      ChannelInfoRow(label: j['label']?.toString() ?? '', value: j['value']?.toString() ?? '', url: j['url']?.toString());
+}
+
 class ChannelModel {
   final int id;
   final String name;
@@ -60,6 +71,14 @@ class ChannelModel {
   final bool liveOnly; // média « direct uniquement » (web radio / web TV sans catalogue)
   final bool audioOnly;
   final String? streamUrl;
+  final String? websiteUrl;
+  final String? frequency; // ex. « FM 106.0 »
+  final String? city;
+  final List<ChannelInfoRow> info;
+  // Direct payant (radio / TV « direct seulement ») : renvoyé par le serveur.
+  final bool liveIsPaid;
+  final int livePrice;
+  final bool liveHasAccess;
   final List<ChannelPlanModel> plans;
   final ChannelSubscriptionModel? subscription;
 
@@ -78,6 +97,13 @@ class ChannelModel {
     this.liveOnly = false,
     this.audioOnly = false,
     this.streamUrl,
+    this.websiteUrl,
+    this.frequency,
+    this.city,
+    this.info = const [],
+    this.liveIsPaid = false,
+    this.livePrice = 0,
+    this.liveHasAccess = true,
     this.plans = const [],
     this.subscription,
   });
@@ -97,6 +123,16 @@ class ChannelModel {
     liveOnly: j['live_only'] == true || j['live_only'] == 1,
     audioOnly: j['audio_only'] == true || j['audio_only'] == 1,
     streamUrl: j['stream_url']?.toString(),
+    websiteUrl: j['website_url']?.toString(),
+    frequency: j['frequency']?.toString(),
+    city: j['city']?.toString(),
+    info: (j['info'] as List<dynamic>? ?? [])
+        .whereType<Map>()
+        .map((e) => ChannelInfoRow.fromJson(Map<String, dynamic>.from(e)))
+        .toList(),
+    liveIsPaid: j['live'] is Map && (j['live']['is_paid'] == true || j['live']['is_paid'] == 1),
+    livePrice: j['live'] is Map ? int.tryParse('${j['live']['price']}') ?? 0 : 0,
+    liveHasAccess: !(j['live'] is Map) || (j['live']['has_access'] != false && j['live']['has_access'] != 0),
     plans: (j['plans'] as List<dynamic>? ?? [])
         .map((p) => ChannelPlanModel.fromJson(Map<String, dynamic>.from(p as Map)))
         .toList(),

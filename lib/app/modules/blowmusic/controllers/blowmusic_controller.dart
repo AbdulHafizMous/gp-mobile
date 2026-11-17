@@ -7,6 +7,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:grand_public_v2/app/components/live_fullscreen_page.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -445,9 +446,11 @@ class BlowMusicController extends GetxController {
       ctl.addListener(() {
         if (videoPlayerController != ctl) return;
         final v = ctl.value;
-        isPlaying.value = v.isPlaying;
-        position.value = v.position;
-        duration.value = v.duration;
+        _uiSafe(() {
+          isPlaying.value = v.isPlaying;
+          position.value = v.position;
+          duration.value = v.duration;
+        });
         _publishSystemState(v);
 
         if (!isPlayingLive.value &&
@@ -459,18 +462,22 @@ class BlowMusicController extends GetxController {
           return;
         }
 
-        if (v.hasError) {
-          playbackState.value = BmPlaybackState.error;
-        } else if (v.isPlaying) {
-          playbackState.value = BmPlaybackState.playing;
-        } else if (!v.isPlaying && v.position > Duration.zero) {
-          playbackState.value = BmPlaybackState.paused;
-        }
+        _uiSafe(() {
+          if (v.hasError) {
+            debugPrint('Lecteur BM erreur: ${v.errorDescription}');
+            playbackState.value = BmPlaybackState.error;
+          } else if (v.isPlaying) {
+            playbackState.value = BmPlaybackState.playing;
+          } else if (!v.isPlaying && v.position > Duration.zero) {
+            playbackState.value = BmPlaybackState.paused;
+          }
+        });
       });
 
       await ctl.play();
       playbackState.value = BmPlaybackState.playing;
     } catch (e) {
+      debugPrint('Lecteur BM impossible de lire $resolvedUrl : $e');
       playbackState.value = BmPlaybackState.error;
     }
   }
@@ -539,7 +546,21 @@ class BlowMusicController extends GetxController {
   }
 
   /// Lancer la lecture d'un morceau
+  /// Exécute une mise à jour d'état (Rx) hors de la phase de construction : évite
+  /// « setState() or markNeedsBuild() called during build » (Obx) quand le lecteur notifie pendant un build.
+  void _uiSafe(VoidCallback f) {
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.persistentCallbacks || phase == SchedulerPhase.transientCallbacks || phase == SchedulerPhase.midFrameMicrotasks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => f());
+    } else {
+      f();
+    }
+  }
+
   Future<void> playTrack(BmTrack track, {List<BmTrack>? queue, String? label}) async {
+    // Peut être appelé depuis un build (ouverture d'une émission) : on sort de la phase de construction
+    // avant de modifier la file / la piste courante (sinon Obx lève « markNeedsBuild during build »).
+    await Future<void>.delayed(Duration.zero);
     // Interstitiel : tous les 5 titres lancés (au plus 1 pub / 90 s), jamais pendant un direct.
     AdService.maybeInterstitial('bm_track', every: 5, screen: 'blowmusic_track');
     if (queue != null) {

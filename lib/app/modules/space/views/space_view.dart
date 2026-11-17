@@ -6,6 +6,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:grand_public_v2/app/components/channel_about_sheet.dart';
+import 'package:grand_public_v2/app/components/live_gate.dart';
 import 'package:grand_public_v2/app/components/vinyl_disc.dart';
 import 'package:grand_public_v2/app/data/models/space_model.dart';
 import 'package:grand_public_v2/app/modules/space/controllers/space_controller.dart';
@@ -211,6 +213,21 @@ class _SpaceBodyState extends State<_SpaceBody> with TickerProviderStateMixin {
             ),
             actions: [
               if (_ctrl.isChannel) ...[
+                // Fiche du média : site officiel, informations (presse, web TV, radio).
+                Obx(() {
+                  final ch = _ctrl.channel.value;
+                  if (ch == null) return const SizedBox.shrink();
+                  return IconButton(
+                    tooltip: 'À propos',
+                    icon: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.2)),
+                      child: const Icon(Icons.info_outline_rounded, color: Colors.white, size: 18),
+                    ),
+                    onPressed: () => showChannelAbout(context, ch),
+                  );
+                }),
                 // Partager la chaîne : le lien ouvre directement la chaîne dans l'app (liens https://…/m/channel/ID).
                 Obx(() {
                   final ch = _ctrl.channel.value;
@@ -866,11 +883,28 @@ class _CategoryContentView extends StatelessWidget {
             // Section LIVE (uniquement si la catégorie a un live actif)
             if (updatedCat.live != null)
               SliverToBoxAdapter(
-                child: _LiveCard(
-                  key: ValueKey('live-${updatedCat.live!['id']}'),
-                  live: Map<String, dynamic>.from(updatedCat.live as Map),
-                  accent: accentColor,
-                ),
+                child: Builder(builder: (_) {
+                  final live = Map<String, dynamic>.from(updatedCat.live as Map);
+                  return LiveGate(
+                    key: ValueKey('gate-${live['id']}'),
+                    kind: 'media_live',
+                    id: int.tryParse('${live['id']}') ?? 0,
+                    isPaid: live['is_paid'] == true || live['is_paid'] == 1,
+                    hasAccess: live['has_access'] != false && live['has_access'] != 0,
+                    price: int.tryParse('${live['price']}') ?? 0,
+                    title: '${live['title'] ?? ''}',
+                    accent: accentColor,
+                    builder: (_, stream, yt) => _LiveCard(
+                      key: ValueKey('live-${live['id']}-${stream ?? ''}'),
+                      live: {
+                        ...live,
+                        if (stream != null && '${live['stream_url'] ?? ''}'.isEmpty) 'stream_url': stream,
+                        if (yt != null && '${live['youtube_id'] ?? ''}'.isEmpty) 'youtube_id': yt,
+                      },
+                      accent: accentColor,
+                    ),
+                  );
+                }),
               ),
 
             if (updatedCat.videos.isEmpty)

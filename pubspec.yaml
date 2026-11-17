@@ -23,6 +23,7 @@ dependencies:
   feexpay_flutter: ^1.0.12
   uuid: ^4.5.2
   path_provider: ^2.1.5
+  gal: ^2.3.1 # enregistrer images / vidéos autorisées dans la galerie
   # Passé de KKiaPay à Moneroo (paiement Mobile Money / carte) — voir
   # social_premium_controller.dart et videos_controller.dart.
   # webview_flutter (ci-dessous) remplace moneroo_flutter_sdk, retiré : son

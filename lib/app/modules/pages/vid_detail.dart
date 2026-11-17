@@ -15,6 +15,7 @@ import 'package:grand_public_v2/app/data/models/video_comment.dart';
 import 'package:grand_public_v2/app/modules/home/controllers/home_controller.dart';
 import 'package:grand_public_v2/app/modules/videos/controllers/videos_controller.dart';
 import 'package:grand_public_v2/app/themes/app_theme.dart';
+import 'package:grand_public_v2/app/utils/media_downloader.dart';
 import 'package:grand_public_v2/app/utils/share_helper.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -862,8 +863,34 @@ class _VidDetailState extends State<VidDetail> {
           right: 8,
           child: _CircleBtn(icon: Icons.ios_share_rounded, onTap: () => ShareHelper.showShareSheet(context, title: v.title, type: v.isArticle ? 'article' : 'media', id: '${v.id}')),
         ),
+        // Téléchargement : uniquement si le créateur l'autorise pour ce contenu.
+        if (v.allowDownload && v.canRead)
+          Positioned(
+            top: 8,
+            right: 56,
+            child: _CircleBtn(icon: Icons.download_rounded, onTap: () => _downloadImages(context, v)),
+          ),
       ]),
     );
+  }
+
+  /// Enregistre les images de l'article dans la galerie (propose « cette image » ou « toutes »).
+  Future<void> _downloadImages(BuildContext context, SpaceVideo v) async {
+    final urls = v.gallery.isNotEmpty ? v.gallery : [v.thumbnail];
+    if (urls.length == 1) {
+      await MediaDownloader.saveImages(urls);
+      return;
+    }
+    final all = await showModalBottomSheet<bool>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(leading: const Icon(Icons.download_rounded), title: Text('Enregistrer les ${urls.length} images'), onTap: () => Navigator.pop(ctx, true)),
+          ListTile(leading: const Icon(Icons.close_rounded), title: const Text('Annuler'), onTap: () => Navigator.pop(ctx, false)),
+        ]),
+      ),
+    );
+    if (all == true) await MediaDownloader.saveImages(urls);
   }
 
   /// Texte de l'article (Markdown) : titres, listes, citations et LIENS cliquables.
@@ -903,6 +930,23 @@ class _VidDetailState extends State<VidDetail> {
             h3Padding: const EdgeInsets.only(top: 8),
           ),
         ),
+        if ((v.sourceName ?? '').isNotEmpty || (v.sourceUrl ?? '').isNotEmpty) ...[
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: GPTheme.primaryColor.withValues(alpha: .08), borderRadius: BorderRadius.circular(14)),
+            child: Row(children: [
+              Icon(Icons.public_rounded, size: 18, color: GPTheme.primaryColor),
+              const SizedBox(width: 10),
+              Expanded(child: Text('Source : ${v.sourceName ?? 'rédaction d’origine'}', style: TextStyle(color: context.primaryLabel, fontWeight: FontWeight.w700, fontSize: 13))),
+              if ((v.sourceUrl ?? '').isNotEmpty)
+                TextButton(
+                  onPressed: () => launchUrl(Uri.parse(v.sourceUrl!), mode: LaunchMode.externalApplication),
+                  child: Text('Lire la suite', style: TextStyle(color: GPTheme.primaryColor, fontWeight: FontWeight.w800)),
+                ),
+            ]),
+          ),
+        ],
         if (!v.canRead) ...[
           const SizedBox(height: 10),
           Text('La suite de cet article est réservée aux abonnés.', style: TextStyle(color: context.primaryLabel.withValues(alpha: .7), fontStyle: FontStyle.italic)),
@@ -1062,6 +1106,12 @@ class _VidDetailState extends State<VidDetail> {
             ),
 
             _Divider(),
+
+            // Téléchargement de la vidéo (si autorisé par le créateur)
+            if (v.allowDownload && v.canRead && v.sourceType == 'upload' && (v.videoFileUrl ?? '').isNotEmpty) ...[
+              _ActionChip(icon: Icons.download_rounded, label: 'Enregistrer', showLabel: false, onTap: () => MediaDownloader.saveVideo(v.videoFileUrl!)),
+              const SizedBox(width: 6),
+            ],
 
             // Like
             _ActionChip(

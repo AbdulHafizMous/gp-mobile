@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:grand_public_v2/app/data/models/promotion.dart';
 import 'package:grand_public_v2/app/modules/club/views/club_marker_factory.dart';
 import 'package:grand_public_v2/app/services/club_location_service.dart';
@@ -41,11 +42,13 @@ class ClubMapController extends GetxController {
 
   GoogleMapController? map;
 
-  // ── Carte de secours OpenStreetMap ──
-  // MAP_PROVIDER=osm (--dart-define) force OSM ; sinon le choix de l'utilisateur est mémorisé.
-  static const _forced = String.fromEnvironment('MAP_PROVIDER', defaultValue: '');
-  static const _prefKey = 'club_map_osm';
-  final useOsm = (_forced == 'osm' || (GetStorage().read<bool>(_prefKey) ?? false)).obs;
+  // ── Carte : réglages dans constants/index.dart (MAP_PROVIDER, MAP_DEFAULT_*) ──
+  static const _prefKey = 'club_map_osm_v3';
+  final useOsm = (GetStorage().read<bool>(_prefKey) ?? (MAP_PROVIDER != 'google')).obs;
+
+  /// Centre par défaut (Cotonou) quand la position de l'utilisateur est indisponible.
+  static const defaultCenter = LatLng(MAP_DEFAULT_LAT, MAP_DEFAULT_LNG);
+  LatLng get center => userPos.value ?? defaultCenter;
   final fm.MapController osm = fm.MapController();
   bool osmReady = false;
 
@@ -70,8 +73,9 @@ class ClubMapController extends GetxController {
     loading.value = true;
     final p = await ClubLocationService.current();
     if (p == null) {
+      // Pas de position : on affiche quand même la carte et les partenaires autour de Cotonou.
       permissionDenied.value = true;
-      loading.value = false;
+      await refreshNearby();
       return;
     }
     permissionDenied.value = false;
@@ -98,11 +102,10 @@ class ClubMapController extends GetxController {
   }
 
   Future<void> refreshNearby() async {
-    final u = userPos.value;
-    if (u == null) return;
+    final u = center;
     loading.value = true;
     try {
-      final r = await RequestService().get('/partners/nearby', queryParameters: {'lat': u.latitude, 'lng': u.longitude, 'radius_km': radiusKm.value});
+      final r = await RequestService().get('/partners/nearby', queryParameters: {'lat': u.latitude, 'lng': u.longitude, 'radius_km': permissionDenied.value ? 50 : radiusKm.value});
       if (r.statusCode == 200) {
         partners.assignAll((r.data['data']['partners'] as List)
             .map((e) => PartnerFiche.fromJson(Map<String, dynamic>.from(e as Map)))
@@ -178,12 +181,17 @@ class ClubMapController extends GetxController {
   }
 
   void fitAll() {
-    final u = userPos.value;
-    if (u == null || (map == null && !(useOsm.value && osmReady))) return;
-    final pts = <LatLng>[u, ...visible.map((p) => LatLng(p.latitude!, p.longitude!))];
+    final u = center;
+    if (map == null && !(useOsm.value && osmReady)) return;
+    final pts = <LatLng>[if (userPos.value != null) u, ...visible.map((p) => LatLng(p.latitude!, p.longitude!))];
+    if (pts.isEmpty) {
+      map?.animateCamera(CameraUpdate.newLatLngZoom(u, 12.5));
+      if (useOsm.value && osmReady) osm.move(ll.LatLng(u.latitude, u.longitude), 12.5);
+      return;
+    }
     if (pts.length == 1) {
-      map?.animateCamera(CameraUpdate.newLatLngZoom(u, 14));
-      if (useOsm.value && osmReady) osm.move(ll.LatLng(u.latitude, u.longitude), 14);
+      map?.animateCamera(CameraUpdate.newLatLngZoom(pts.first, 14));
+      if (useOsm.value && osmReady) osm.move(ll.LatLng(pts.first.latitude, pts.first.longitude), 14);
       return;
     }
     double minLa = pts.first.latitude, maxLa = minLa, minLo = pts.first.longitude, maxLo = minLo;
@@ -197,7 +205,7 @@ class ClubMapController extends GetxController {
       osm.fitCamera(fm.CameraFit.bounds(bounds: fm.LatLngBounds(ll.LatLng(minLa, minLo), ll.LatLng(maxLa, maxLo)), padding: const EdgeInsets.fromLTRB(40, 120, 40, 230), maxZoom: 16));
       return;
     }
-    map!.animateCamera(CameraUpdate.newLatLngBounds(LatLngBounds(southwest: LatLng(minLa, minLo), northeast: LatLng(maxLa, maxLo)), 80));
+    map?.animateCamera(CameraUpdate.newLatLngBounds(LatLngBounds(southwest: LatLng(minLa, minLo), northeast: LatLng(maxLa, maxLo)), 80));
   }
 
   // ── Itinéraire ──────────────────────────────────────────────────────────
@@ -258,7 +266,7 @@ class ClubMapController extends GetxController {
       osm.fitCamera(fm.CameraFit.bounds(bounds: fm.LatLngBounds(ll.LatLng(minLa, minLo), ll.LatLng(maxLa, maxLo)), padding: const EdgeInsets.fromLTRB(40, 120, 40, 230), maxZoom: 17));
       return;
     }
-    map!.animateCamera(CameraUpdate.newLatLngBounds(LatLngBounds(southwest: LatLng(minLa, minLo), northeast: LatLng(maxLa, maxLo)), 90));
+    map?.animateCamera(CameraUpdate.newLatLngBounds(LatLngBounds(southwest: LatLng(minLa, minLo), northeast: LatLng(maxLa, maxLo)), 90));
   }
 
   void clearRoute({bool rebuild = true}) {

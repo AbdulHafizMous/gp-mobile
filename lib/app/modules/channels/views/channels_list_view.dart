@@ -8,8 +8,19 @@ import 'package:grand_public_v2/app/themes/app_theme.dart';
 import 'package:grand_public_v2/app/components/ad_native_card.dart';
 import 'package:grand_public_v2/app/data/models/channel_model.dart';
 import 'package:grand_public_v2/app/modules/channels/controllers/channels_list_controller.dart';
+import 'package:grand_public_v2/app/modules/channels/views/channel_live_page.dart';
 
 void openChannel(int id) => Get.toNamed('/channel/$id');
+
+/// Ouvre un média : radio / TV « direct seulement » → lecteur live (avec fiche et site si pas de flux),
+/// sinon la page de la chaîne.
+void openChannelModel(ChannelModel ch) {
+  if (ch.liveOnly) {
+    Get.to(() => ChannelLivePage(channel: ch));
+  } else {
+    openChannel(ch.id);
+  }
+}
 
 class ChannelsListBody extends StatelessWidget {
   final Color? accentColor;
@@ -124,7 +135,7 @@ class _ChannelGridCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
-      onTap: () => openChannel(channel.id),
+      onTap: () => openChannelModel(channel),
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
@@ -185,7 +196,7 @@ class _ChannelRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => openChannel(channel.id),
+      onTap: () => openChannelModel(channel),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         clipBehavior: Clip.antiAlias,
