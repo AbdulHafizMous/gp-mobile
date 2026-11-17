@@ -204,7 +204,7 @@ class ClubView extends StatelessWidget {
                     ? _OffresTab(ctrl: ctrl)
                     : ctrl.clubTab.value == 1
                     ? _PartenairesTab(ctrl: ctrl)
-                    : const ClubMapView(),
+                    : ClubMapView(),
               ),
             ),
           ],

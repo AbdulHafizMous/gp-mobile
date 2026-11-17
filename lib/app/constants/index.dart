@@ -152,6 +152,11 @@ const double MAP_DEFAULT_LNG = 2.3912;
 const double MAP_DEFAULT_ZOOM = 13.5;
 // Fond OpenStreetMap officiel (+ secours CARTO si le serveur principal est indisponible).
 const String MAP_OSM_TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+// Fond sombre (thème sombre de l'app).
+const String MAP_DARK_TILE_URL = 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png';
 const String MAP_OSM_FALLBACK_TILE_URL = 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
 // Identifiant demandé par la politique d'usage d'OpenStreetMap (package Android).
 const String MAP_USER_AGENT = 'com.maxafrica.gpbenin';
+// Optionnel : clé MapTiler gratuite (cloud.maptiler.com > API Keys). Vide = OpenStreetMap, qui ne demande aucune clé.
+// const String MAPTILER_KEY = '';
+const String MAPTILER_KEY = 'Vni47KDKaqMHCN8YCTLp';

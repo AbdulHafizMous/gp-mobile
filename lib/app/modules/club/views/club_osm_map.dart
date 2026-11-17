@@ -9,92 +9,118 @@ import 'package:latlong2/latlong.dart' as ll;
 /// Carte de secours OpenStreetMap (aucune clé API) : mêmes données que la carte Google, mais
 /// avec le dessin Grandpublic — fond doux CARTO (clair/sombre), pins or avec logo partenaire,
 /// point rouge pulsé pour « moi », tracé d'itinéraire jaune cerné de noir.
-class ClubOsmMap extends StatelessWidget {
+class ClubOsmMap extends StatefulWidget {
   final ClubMapController c;
   final bool dark;
   const ClubOsmMap({super.key, required this.c, required this.dark});
 
+  @override
+  State<ClubOsmMap> createState() => _ClubOsmMapState();
+}
+
+class _ClubOsmMapState extends State<ClubOsmMap> {
   static ll.LatLng _p(double la, double lo) => ll.LatLng(la, lo);
+
+  ClubMapController get c => widget.c;
+
+  // IMPORTANT : le fournisseur de tuiles et la couche de tuiles sont créés UNE SEULE FOIS.
+  // Les recréer à chaque rebuild (position, filtres...) annule les téléchargements en cours : la carte reste blanche.
+  late final NetworkTileProvider _provider = NetworkTileProvider();
+  bool _loggedError = false;
+
+  /// Clé MapTiler (gratuite) renseignée dans constants/index.dart => MapTiler ; sinon OpenStreetMap (aucune clé).
+  static String _url(bool dark) {
+    if (MAPTILER_KEY.isNotEmpty) {
+      return 'https://api.maptiler.com/maps/${dark ? 'streets-v2-dark' : 'streets-v2'}/256/{z}/{x}/{y}.png?key=$MAPTILER_KEY';
+    }
+    return dark ? MAP_DARK_TILE_URL : MAP_OSM_TILE_URL;
+  }
+
+  TileLayer _tileLayer(bool dark) => TileLayer(
+        key: ValueKey('tiles_$dark'),
+        urlTemplate: _url(dark),
+        fallbackUrl: dark ? MAP_OSM_TILE_URL : MAP_OSM_FALLBACK_TILE_URL,
+        userAgentPackageName: MAP_USER_AGENT,
+        tileProvider: _provider,
+        maxNativeZoom: 19,
+        errorTileCallback: (tile, error, stack) {
+          if (_loggedError) return;
+          _loggedError = true;
+          debugPrint('[ClubMap] tuile non chargée: $error');
+        },
+      );
+
+  late TileLayer _tiles = _tileLayer(widget.dark);
+
+  @override
+  void didUpdateWidget(covariant ClubOsmMap old) {
+    super.didUpdateWidget(old);
+    if (old.dark != widget.dark) _tiles = _tileLayer(widget.dark);
+  }
+
+  @override
+  void dispose() {
+    _provider.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final me = c.userPos.value;
-      final sel = c.selected.value;
-      final route = c.route.value;
-      final list = c.visible; // lu ici pour réagir aux changements
-      final radius = c.radiusKm.value;
-      final center = me != null ? _p(me.latitude, me.longitude) : _p(MAP_DEFAULT_LAT, MAP_DEFAULT_LNG);
+    final start = c.userPos.value;
+    final center = start != null ? _p(start.latitude, start.longitude) : _p(MAP_DEFAULT_LAT, MAP_DEFAULT_LNG);
 
-      final tile = TileLayer(
-        urlTemplate: MAP_OSM_TILE_URL,
-        fallbackUrl: MAP_OSM_FALLBACK_TILE_URL,
-        userAgentPackageName: MAP_USER_AGENT,
-        maxNativeZoom: 19,
-        evictErrorTileStrategy: EvictErrorTileStrategy.notVisibleRespectMargin,
-      );
-
-      return FlutterMap(
-        mapController: c.osm,
-        options: MapOptions(
-          initialCenter: center,
-          initialZoom: MAP_DEFAULT_ZOOM,
-          minZoom: 3,
-          maxZoom: 19,
-          onTap: (_, __) => c.select(null),
-          onMapReady: () {
-            c.osmReady = true;
-            c.fitAll();
-          },
-        ),
-        children: [
-          // Teinte chaude en thème clair, pour rester dans l'univers Grandpublic.
-          ColoredBox(
-            color: dark ? const Color(0xFF1B1B1B) : const Color(0xFFEDE8DD),
-            child: ColorFiltered(
-              colorFilter: ColorFilter.matrix(dark
-                  ? const <double>[
-                      -0.8, 0, 0, 0, 255,
-                      0, -0.8, 0, 0, 255,
-                      0, 0, -0.8, 0, 255,
-                      0, 0, 0, 1, 0,
-                    ]
-                  : const <double>[
-                      1.02, 0.02, 0, 0, 4,
-                      0.01, 1.0, 0, 0, 2,
-                      0, 0.02, 0.92, 0, -6,
-                      0, 0, 0, 1, 0,
-                    ]),
-              child: tile,
+    return FlutterMap(
+      mapController: c.osm,
+      options: MapOptions(
+        initialCenter: center,
+        initialZoom: MAP_DEFAULT_ZOOM,
+        minZoom: 3,
+        maxZoom: 19,
+        backgroundColor: widget.dark ? const Color(0xFF1B1B1B) : const Color(0xFFEDE8DD),
+        onTap: (_, __) => c.select(null),
+        onMapReady: () {
+          c.osmReady = true;
+          c.fitAll();
+        },
+      ),
+      children: [
+        _tiles,
+        // Couches dynamiques : chacune réagit seule, sans toucher à la couche de tuiles.
+        Obx(() {
+          final me = c.userPos.value;
+          if (me == null) return const SizedBox.shrink();
+          return CircleLayer(circles: [
+            CircleMarker(
+              point: _p(me.latitude, me.longitude),
+              radius: c.radiusKm.value * 1000,
+              useRadiusInMeter: true,
+              color: GPTheme.clubColor.withValues(alpha: 0.07),
+              borderColor: GPTheme.clubColor.withValues(alpha: 0.7),
+              borderStrokeWidth: 2,
             ),
-          ),
-          if (me != null)
-            CircleLayer(circles: [
-              CircleMarker(
-                point: _p(me.latitude, me.longitude),
-                radius: radius * 1000,
-                useRadiusInMeter: true,
-                color: GPTheme.clubColor.withValues(alpha: 0.07),
-                borderColor: GPTheme.clubColor.withValues(alpha: 0.7),
-                borderStrokeWidth: 2,
-              ),
-            ]),
-          if (route != null && route.points.length > 1) ...[
-            PolylineLayer(polylines: [
-              Polyline(points: route.points.map((e) => _p(e.latitude, e.longitude)).toList(), color: const Color(0xFF1A1A1A), strokeWidth: 10, strokeCap: StrokeCap.round, strokeJoin: StrokeJoin.round),
-            ]),
-            PolylineLayer(polylines: [
-              Polyline(
-                points: route.points.map((e) => _p(e.latitude, e.longitude)).toList(),
-                color: const Color(0xFFFFC600),
-                strokeWidth: 6,
-                strokeCap: StrokeCap.round,
-                strokeJoin: StrokeJoin.round,
-                pattern: route.approximate ? StrokePattern.dashed(segments: const [14, 9]) : const StrokePattern.solid(),
-              ),
-            ]),
-          ],
-          MarkerLayer(markers: [
+          ]);
+        }),
+        Obx(() {
+          final route = c.route.value;
+          if (route == null || route.points.length < 2) return const SizedBox.shrink();
+          final pts = route.points.map((e) => _p(e.latitude, e.longitude)).toList();
+          return PolylineLayer(polylines: [
+            Polyline(points: pts, color: const Color(0xFF1A1A1A), strokeWidth: 10, strokeCap: StrokeCap.round, strokeJoin: StrokeJoin.round),
+            Polyline(
+              points: pts,
+              color: const Color(0xFFFFC600),
+              strokeWidth: 6,
+              strokeCap: StrokeCap.round,
+              strokeJoin: StrokeJoin.round,
+              pattern: route.approximate ? StrokePattern.dashed(segments: const [14, 9]) : const StrokePattern.solid(),
+            ),
+          ]);
+        }),
+        Obx(() {
+          final me = c.userPos.value;
+          final sel = c.selected.value;
+          final list = c.visible;
+          return MarkerLayer(markers: [
             for (final p in list)
               if (p.hasPosition)
                 Marker(
@@ -105,18 +131,18 @@ class ClubOsmMap extends StatelessWidget {
                   child: GestureDetector(onTap: () => c.select(p), child: _Pin(logo: p.logoUrl, offers: p.offers.length, selected: sel?.id == p.id)),
                 ),
             if (me != null) Marker(point: _p(me.latitude, me.longitude), width: 44, height: 44, child: const _MeDot()),
-          ]),
-          RichAttributionWidget(
-            alignment: AttributionAlignment.bottomLeft,
-            popupInitialDisplayDuration: const Duration(seconds: 3),
-            attributions: [
-              TextSourceAttribution('© OpenStreetMap contributors'),
-              TextSourceAttribution('© CARTO'),
-            ],
-          ),
-        ],
-      );
-    });
+          ]);
+        }),
+        RichAttributionWidget(
+          alignment: AttributionAlignment.bottomLeft,
+          popupInitialDisplayDuration: const Duration(seconds: 3),
+          attributions: [
+            TextSourceAttribution('© OpenStreetMap contributors'),
+            TextSourceAttribution('© CARTO / MapTiler'),
+          ],
+        ),
+      ],
+    );
   }
 }
 

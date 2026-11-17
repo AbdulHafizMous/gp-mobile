@@ -43,8 +43,9 @@ class ClubMapController extends GetxController {
   GoogleMapController? map;
 
   // ── Carte : réglages dans constants/index.dart (MAP_PROVIDER, MAP_DEFAULT_*) ──
-  static const _prefKey = 'club_map_osm_v3';
-  final useOsm = (GetStorage().read<bool>(_prefKey) ?? (MAP_PROVIDER != 'google')).obs;
+  // Le fond par défaut vient TOUJOURS de MAP_PROVIDER : un ancien choix mémorisé (Google sans clé = carte blanche)
+  // ne peut plus bloquer l'affichage. Le bouton « calques » bascule seulement pour la session en cours.
+  final useOsm = (MAP_PROVIDER != 'google').obs;
 
   /// Centre par défaut (Cotonou) quand la position de l'utilisateur est indisponible.
   static const defaultCenter = LatLng(MAP_DEFAULT_LAT, MAP_DEFAULT_LNG);
@@ -56,7 +57,6 @@ class ClubMapController extends GetxController {
     useOsm.value = v;
     map = null;
     osmReady = false;
-    GetStorage().write(_prefKey, v);
   }
 
   /// Google n'a pas fini de s'initialiser (clé absente / services indisponibles) → bascule sur OSM.
@@ -202,7 +202,15 @@ class ClubMapController extends GetxController {
       if (p.longitude > maxLo) maxLo = p.longitude;
     }
     if (useOsm.value && osmReady) {
-      osm.fitCamera(fm.CameraFit.bounds(bounds: fm.LatLngBounds(ll.LatLng(minLa, minLo), ll.LatLng(maxLa, maxLo)), padding: const EdgeInsets.fromLTRB(40, 120, 40, 230), maxZoom: 16));
+      if ((maxLa - minLa).abs() < 1e-5 && (maxLo - minLo).abs() < 1e-5) {
+        osm.move(ll.LatLng(minLa, minLo), 14);
+      } else {
+        try {
+          osm.fitCamera(fm.CameraFit.bounds(bounds: fm.LatLngBounds(ll.LatLng(minLa, minLo), ll.LatLng(maxLa, maxLo)), padding: const EdgeInsets.all(48), maxZoom: 16));
+        } catch (_) {
+          osm.move(ll.LatLng(minLa, minLo), 13);
+        }
+      }
       return;
     }
     map?.animateCamera(CameraUpdate.newLatLngBounds(LatLngBounds(southwest: LatLng(minLa, minLo), northeast: LatLng(maxLa, maxLo)), 80));
@@ -263,7 +271,7 @@ class ClubMapController extends GetxController {
       if (p.longitude > maxLo) maxLo = p.longitude;
     }
     if (useOsm.value && osmReady) {
-      osm.fitCamera(fm.CameraFit.bounds(bounds: fm.LatLngBounds(ll.LatLng(minLa, minLo), ll.LatLng(maxLa, maxLo)), padding: const EdgeInsets.fromLTRB(40, 120, 40, 230), maxZoom: 17));
+      osm.fitCamera(fm.CameraFit.bounds(bounds: fm.LatLngBounds(ll.LatLng(minLa, minLo), ll.LatLng(maxLa, maxLo)), padding: const EdgeInsets.all(48), maxZoom: 17));
       return;
     }
     map?.animateCamera(CameraUpdate.newLatLngBounds(LatLngBounds(southwest: LatLng(minLa, minLo), northeast: LatLng(maxLa, maxLo)), 90));
