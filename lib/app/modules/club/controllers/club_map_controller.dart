@@ -5,7 +5,7 @@ import 'package:flutter/material.dart' show Color, debugPrint, EdgeInsets;
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
+// import 'package:get_storage/get_storage.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
