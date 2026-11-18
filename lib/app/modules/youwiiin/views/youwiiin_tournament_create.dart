@@ -60,7 +60,8 @@ class _CreateSheetState extends State<_CreateSheet> {
   int _min = 4, _max = 8;
   final Set<int> _games = {};
   final Set<int> _invites = {};
-  List<Map<String, dynamic>> _all = [];
+  List<GzGame> _all = [];
+  bool _gamesLoading = true;
   List<GzUserLite> _friends = [];
   bool _busy = false;
 
@@ -71,16 +72,40 @@ class _CreateSheetState extends State<_CreateSheet> {
   }
 
   Future<void> _loadData() async {
+    // Les jeux viennent du catalogue déjà chargé par l'accueil (même source que la grille des jeux).
     try {
-      final r = await RequestService().get('/gamez/games');
-      final d = r.data['data'];
-      final list = d is Map ? d['games'] : d;
-      _all = List<Map<String, dynamic>>.from((list as List).map((e) => Map<String, dynamic>.from(e)));
+      final c = gzController;
+      if (c.catalog.isEmpty && c.featured.isEmpty) await c.loadHome();
+      final byId = <int, GzGame>{for (final g in [...c.featured, ...c.catalog]) g.id: g};
+      _all = byId.values.where((g) => g.isActive).toList();
     } catch (_) {}
+    _gamesLoading = false;
+    if (mounted) setState(() {});
     try {
-      if (Get.isRegistered<YouwiiinController>()) _friends = await Get.find<YouwiiinController>().fetchPlayerSuggestions();
+      _friends = await gzController.fetchPlayerSuggestions();
     } catch (_) {}
     if (mounted) setState(() {});
+  }
+
+  Future<void> _retryGames() async {
+    setState(() => _gamesLoading = true);
+    await _loadData();
+  }
+
+  void _setFormat(String f) => setState(() {
+        _format = f;
+        // Élimination directe : seuls les jeux multijoueurs sont possibles.
+        if (f == 'bracket') _games.removeWhere((id) => !(_all.firstWhereOrNull((g) => g.id == id)?.isMultiplayer ?? false));
+      });
+
+  void _toggleGame(GzGame g) {
+    if (_games.contains(g.id)) {
+      setState(() => _games.remove(g.id));
+    } else if (_games.length >= 6) {
+      Get.snackbar('Tournoi', '6 jeux maximum par tournoi.');
+    } else {
+      setState(() => _games.add(g.id));
+    }
   }
 
   @override
@@ -125,7 +150,14 @@ class _CreateSheetState extends State<_CreateSheet> {
   @override
   Widget build(BuildContext context) {
     final st = YwStyle.of(context);
-    Widget label(String t) => Padding(padding: const EdgeInsets.only(top: 16, bottom: 6), child: Text(t, style: TextStyle(color: st.fg, fontWeight: FontWeight.w800)));
+    Widget label(String t, {String? hint}) => Padding(
+          padding: const EdgeInsets.only(top: 22, bottom: 10),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+            Text(t, style: TextStyle(color: st.fg, fontWeight: FontWeight.w900, fontSize: 15)),
+            if (hint != null) ...[const SizedBox(width: 8), Flexible(child: Text(hint, style: TextStyle(color: st.sub, fontSize: 12)))],
+          ]),
+        );
+    final shown = _all.where((g) => _format == 'rounds' || g.isMultiplayer).toList();
     return DraggableScrollableSheet(
       initialChildSize: .92,
       minChildSize: .5,
@@ -139,30 +171,32 @@ class _CreateSheetState extends State<_CreateSheet> {
           Text('Organiser un tournoi', style: TextStyle(color: st.fg, fontSize: 20, fontWeight: FontWeight.w900)),
           label('Nom'),
           TextField(controller: _title, maxLength: 80, style: TextStyle(color: st.fg), decoration: const InputDecoration(hintText: 'Ex. Coupe du quartier')),
-          label('Format'),
-          Wrap(spacing: 8, children: [
-            YwChoiceChip(label: 'Classement par tours', selected: _format == 'rounds', onTap: () => setState(() => _format = 'rounds')),
-            YwChoiceChip(label: 'Élimination directe', selected: _format == 'bracket', onTap: () => setState(() => _format = 'bracket')),
+          label('Format', hint: _format == 'rounds' ? 'Chaque jeu = un tour, classement cumulé' : 'Duels, le perdant est éliminé'),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            YwChoiceChip(label: 'Classement par tours', selected: _format == 'rounds', onTap: () => _setFormat('rounds')),
+            YwChoiceChip(label: 'Élimination directe', selected: _format == 'bracket', onTap: () => _setFormat('bracket')),
           ]),
-          label('Jeux (${_games.length})'),
-          SizedBox(
-            height: 46,
-            child: ListView(scrollDirection: Axis.horizontal, children: [
-              for (final g in _all)
-                if (_format == 'rounds' || g['is_multiplayer'] == true || g['is_multiplayer'] == 1 || _games.contains(g['id']))
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: YwChoiceChip(
-                      label: '${g['name']}',
-                      selected: _games.contains((g['id'] as num).toInt()),
-                      onTap: () => setState(() {
-                        final id = (g['id'] as num).toInt();
-                        _games.contains(id) ? _games.remove(id) : _games.add(id);
-                      }),
-                    ),
-                  ),
-            ]),
-          ),
+          label('Jeux', hint: _games.isEmpty ? '1 à 6 jeux' : '${_games.length} choisi${_games.length > 1 ? 's' : ''} sur 6'),
+          if (_gamesLoading)
+            const Padding(padding: EdgeInsets.symmetric(vertical: 28), child: Center(child: CircularProgressIndicator()))
+          else if (shown.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(color: st.faint, borderRadius: BorderRadius.circular(16)),
+              child: Column(children: [
+                Text(_all.isEmpty ? 'Impossible de charger les jeux.' : 'Aucun jeu multijoueur disponible pour ce format.', textAlign: TextAlign.center, style: TextStyle(color: st.sub)),
+                const SizedBox(height: 8),
+                TextButton.icon(onPressed: _retryGames, icon: const Icon(Icons.refresh_rounded), label: const Text('Réessayer')),
+              ]),
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: shown.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: .82),
+              itemBuilder: (_, i) => _GameTile(g: shown[i], selected: _games.contains(shown[i].id), onTap: () => _toggleGame(shown[i]), st: st),
+            ),
           label('Places : $_min à $_max joueurs'),
           RangeSlider(
             values: RangeValues(_min.toDouble(), _max.toDouble()),
@@ -177,7 +211,7 @@ class _CreateSheetState extends State<_CreateSheet> {
             }),
           ),
           label("Droit d'entrée"),
-          Wrap(spacing: 8, children: [
+          Wrap(spacing: 8, runSpacing: 8, children: [
             for (final c in const [('free', 'Gratuit'), ('gcoin', 'GCoin'), ('cash', 'Argent réel')])
               YwChoiceChip(label: c.$2, selected: _currency == c.$1, onTap: () => setState(() => _currency = c.$1)),
           ]),
@@ -186,7 +220,7 @@ class _CreateSheetState extends State<_CreateSheet> {
             TextField(controller: _fee, keyboardType: TextInputType.number, style: TextStyle(color: st.fg), decoration: InputDecoration(suffixText: _currency == 'cash' ? 'F' : 'GCoin', hintText: 'Montant')),
           ],
           label('Visibilité'),
-          Wrap(spacing: 8, children: [
+          Wrap(spacing: 8, runSpacing: 8, children: [
             YwChoiceChip(label: 'Public', selected: _public, onTap: () => setState(() => _public = true)),
             YwChoiceChip(label: 'Privé (sur invitation)', selected: !_public, onTap: () => setState(() => _public = false)),
           ]),
@@ -211,4 +245,70 @@ class _CreateSheetState extends State<_CreateSheet> {
       ),
     );
   }
+}
+
+
+/// Carte d'un jeu sélectionnable : visuel, nom, pastille multijoueur et coche.
+class _GameTile extends StatelessWidget {
+  final GzGame g;
+  final bool selected;
+  final VoidCallback onTap;
+  final YwStyle st;
+  const _GameTile({required this.g, required this.selected, required this.onTap, required this.st});
+
+  @override
+  Widget build(BuildContext context) {
+    final img = (g.iconUrl != null && g.iconUrl!.isNotEmpty) ? g.iconUrl : g.coverUrl;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: selected ? st.accent.withValues(alpha: .12) : st.faint,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: selected ? st.accent : Colors.transparent, width: 2),
+        ),
+        child: Column(children: [
+          Expanded(
+            child: Stack(children: [
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: img != null
+                      ? Image.network(img, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _fallback())
+                      : _fallback(),
+                ),
+              ),
+              if (g.isMultiplayer)
+                Positioned(
+                  left: 4,
+                  bottom: 4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(color: Colors.black.withValues(alpha: .65), borderRadius: BorderRadius.circular(8)),
+                    child: const Text('Multi', style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w800)),
+                  ),
+                ),
+              if (selected)
+                Positioned(
+                  right: 4,
+                  top: 4,
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(color: st.accent, shape: BoxShape.circle),
+                    child: const Icon(Icons.check_rounded, size: 15, color: Colors.white),
+                  ),
+                ),
+            ]),
+          ),
+          const SizedBox(height: 6),
+          Text(g.name, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: TextStyle(color: st.fg, fontWeight: FontWeight.w800, fontSize: 11.5, height: 1.15)),
+        ]),
+      ),
+    );
+  }
+
+  Widget _fallback() => Container(color: g.accent.withValues(alpha: .25), alignment: Alignment.center, child: Icon(Icons.sports_esports_rounded, color: g.accent, size: 30));
 }

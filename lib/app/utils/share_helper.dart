@@ -446,9 +446,22 @@ class _FriendPickerSheetState extends State<_FriendPickerSheet> {
         snackPosition: SnackPosition.BOTTOM,
         margin: const EdgeInsets.all(12),
         mainButton: TextButton(
-          onPressed: () {
-            final conv = chat.privateConversations.firstWhereOrNull((c) => c.id == convId);
-            if (conv != null) Get.to(() => ChatRoomView(privateConv: conv));
+          onPressed: () async {
+            // Même séquence que la liste des discussions : on ouvre la conversation dans le contrôleur
+            // AVANT d'afficher l'écran (sinon l'écran de chat plante faute de conversation active).
+            try {
+              Get.closeCurrentSnackbar();
+              var conv = chat.privateConversations.firstWhereOrNull((c) => c.id == convId);
+              if (conv == null) {
+                await chat.loadPrivateConversations();
+                conv = chat.privateConversations.firstWhereOrNull((c) => c.id == convId);
+              }
+              if (conv == null) return;
+              await chat.openPrivateConversation(conv);
+              Get.to(() => ChatRoomView(privateConv: conv), transition: Transition.rightToLeft);
+            } catch (e) {
+              debugPrint('Ouverture de la conversation impossible: $e');
+            }
           },
           child: const Text('Voir'),
         ),

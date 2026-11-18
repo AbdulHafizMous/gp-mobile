@@ -28,34 +28,26 @@ class _ClubOsmMapState extends State<ClubOsmMap> {
   late final NetworkTileProvider _provider = NetworkTileProvider();
   bool _loggedError = false;
 
-  /// Clé MapTiler (gratuite) renseignée dans constants/index.dart => MapTiler ; sinon OpenStreetMap (aucune clé).
-  static String _url(bool dark) {
-    if (MAPTILER_KEY.isNotEmpty) {
-      return 'https://api.maptiler.com/maps/${dark ? 'streets-v2-dark' : 'streets-v2'}/256/{z}/{x}/{y}.png?key=$MAPTILER_KEY';
-    }
-    return dark ? MAP_DARK_TILE_URL : MAP_OSM_TILE_URL;
-  }
+  Map<String, dynamic> _def(String id) =>
+      MAP_STYLES.firstWhere((m) => m['id'] == id, orElse: () => MAP_STYLES.first);
 
-  TileLayer _tileLayer(bool dark) => TileLayer(
-        key: ValueKey('tiles_$dark'),
-        urlTemplate: _url(dark),
-        fallbackUrl: dark ? MAP_OSM_TILE_URL : MAP_OSM_FALLBACK_TILE_URL,
-        userAgentPackageName: MAP_USER_AGENT,
-        tileProvider: _provider,
-        maxNativeZoom: 19,
-        errorTileCallback: (tile, error, stack) {
-          if (_loggedError) return;
-          _loggedError = true;
-          debugPrint('[ClubMap] tuile non chargée: $error');
-        },
-      );
-
-  late TileLayer _tiles = _tileLayer(widget.dark);
-
-  @override
-  void didUpdateWidget(covariant ClubOsmMap old) {
-    super.didUpdateWidget(old);
-    if (old.dark != widget.dark) _tiles = _tileLayer(widget.dark);
+  TileLayer _tile(String id, bool dark) {
+    final d = _def(id);
+    var url = (dark && d['darkUrl'] != null ? d['darkUrl'] : d['url']) as String;
+    url = url.replaceAll('{key}', MAPTILER_KEY);
+    return TileLayer(
+      key: ValueKey('tiles_${id}_${dark && d['darkUrl'] != null}'),
+      urlTemplate: url,
+      fallbackUrl: id == 'sat' || id.startsWith('mt_') ? null : MAP_OSM_FALLBACK_TILE_URL,
+      userAgentPackageName: MAP_USER_AGENT,
+      tileProvider: _provider,
+      maxNativeZoom: (d['maxZoom'] as int?) ?? 19,
+      errorTileCallback: (tile, error, stack) {
+        if (_loggedError) return;
+        _loggedError = true;
+        debugPrint('[ClubMap] tuile non chargée ($id): $error');
+      },
+    );
   }
 
   @override
@@ -84,7 +76,7 @@ class _ClubOsmMapState extends State<ClubOsmMap> {
         },
       ),
       children: [
-        _tiles,
+        Obx(() => _tile(c.mapStyle.value, widget.dark)),
         // Couches dynamiques : chacune réagit seule, sans toucher à la couche de tuiles.
         Obx(() {
           final me = c.userPos.value;
@@ -125,10 +117,10 @@ class _ClubOsmMapState extends State<ClubOsmMap> {
               if (p.hasPosition)
                 Marker(
                   point: _p(p.latitude!, p.longitude!),
-                  width: 56,
-                  height: 72,
+                  width: 40,
+                  height: 52,
                   alignment: Alignment.topCenter,
-                  child: GestureDetector(onTap: () => c.select(p), child: _Pin(logo: p.logoUrl, offers: p.offers.length, selected: sel?.id == p.id)),
+                  child: GestureDetector(onTap: () => c.select(p), child: _Pin(key: ValueKey('pin_${p.id}'), logo: p.logoUrl, offers: p.offers.length, selected: sel?.id == p.id)),
                 ),
             if (me != null) Marker(point: _p(me.latitude, me.longitude), width: 44, height: 44, child: const _MeDot()),
           ]);
@@ -136,10 +128,7 @@ class _ClubOsmMapState extends State<ClubOsmMap> {
         RichAttributionWidget(
           alignment: AttributionAlignment.bottomLeft,
           popupInitialDisplayDuration: const Duration(seconds: 3),
-          attributions: [
-            TextSourceAttribution('© OpenStreetMap contributors'),
-            TextSourceAttribution('© CARTO / MapTiler'),
-          ],
+          attributions: [TextSourceAttribution(_def(c.mapStyle.value)['attr'] as String)],
         ),
       ],
     );
@@ -150,21 +139,28 @@ class _Pin extends StatelessWidget {
   final String? logo;
   final int offers;
   final bool selected;
-  const _Pin({this.logo, required this.offers, required this.selected});
+  const _Pin({super.key, this.logo, required this.offers, required this.selected});
 
   @override
   Widget build(BuildContext context) {
-    final s = selected ? 1.18 : 1.0;
-    return AnimatedScale(
+    final s = selected ? 1.25 : 1.0;
+    // Apparition « pop » à la première pose, puis léger zoom quand le pin est sélectionné.
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 520),
+      curve: Curves.elasticOut,
+      builder: (_, v, child) => Transform.scale(scale: v.clamp(0.0, 1.2), alignment: Alignment.bottomCenter, child: child),
+      child: AnimatedScale(
       scale: s,
-      duration: const Duration(milliseconds: 180),
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutBack,
       alignment: Alignment.bottomCenter,
       child: Stack(clipBehavior: Clip.none, alignment: Alignment.topCenter, children: [
         Column(mainAxisSize: MainAxisSize.min, children: [
           Container(
-            width: 48,
-            height: 48,
-            padding: const EdgeInsets.all(3),
+            width: 34,
+            height: 34,
+            padding: const EdgeInsets.all(2),
             decoration: BoxDecoration(
               color: GPTheme.clubColor,
               shape: BoxShape.circle,
@@ -173,24 +169,24 @@ class _Pin extends StatelessWidget {
             ),
             child: ClipOval(
               child: logo != null && logo!.isNotEmpty
-                  ? Image.network(logo!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.storefront_rounded, color: Colors.black, size: 24))
-                  : const Icon(Icons.storefront_rounded, color: Colors.black, size: 24),
+                  ? Image.network(logo!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.storefront_rounded, color: Colors.black, size: 18))
+                  : const Icon(Icons.storefront_rounded, color: Colors.black, size: 18),
             ),
           ),
-          CustomPaint(size: const Size(14, 10), painter: _Tail()),
+          CustomPaint(size: const Size(10, 7), painter: _Tail()),
         ]),
         if (offers > 0)
           Positioned(
-            right: 0,
-            top: -4,
+            right: 2,
+            top: -5,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
               decoration: BoxDecoration(color: const Color(0xFFE53935), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white, width: 1.5)),
-              child: Text('$offers', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
+              child: Text('$offers', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
             ),
           ),
       ]),
-    );
+    ));
   }
 }
 

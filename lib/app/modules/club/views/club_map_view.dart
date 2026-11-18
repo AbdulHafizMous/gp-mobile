@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:grand_public_v2/app/constants/index.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:grand_public_v2/app/data/models/promotion.dart';
@@ -61,6 +62,58 @@ class _ClubMapViewState extends State<ClubMapView> {
     Get.bottomSheet(_PartnerSheet(p: p, c: c), isScrollControlled: true, backgroundColor: Colors.transparent);
   }
 
+  void _openStyles(BuildContext context) {
+    final styles = MAP_STYLES.where((m) => m['needsKey'] != true || MAPTILER_KEY.isNotEmpty).toList();
+    IconData icon(String k) => switch (k) {
+          'public' => Icons.public_rounded,
+          'volunteer' => Icons.volunteer_activism_rounded,
+          'terrain' => Icons.terrain_rounded,
+          'satellite' => Icons.satellite_alt_rounded,
+          'dark' => Icons.dark_mode_rounded,
+          _ => Icons.map_rounded,
+        };
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        decoration: BoxDecoration(color: context.bg, borderRadius: const BorderRadius.vertical(top: Radius.circular(24))),
+        child: SafeArea(
+          top: false,
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Center(child: Container(width: 38, height: 4, decoration: BoxDecoration(color: context.subtle.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(4)))),
+            const SizedBox(height: 14),
+            Text('Style de carte', style: TextStyle(color: context.primary, fontWeight: FontWeight.w900, fontSize: 16)),
+            const SizedBox(height: 12),
+            Obx(() => Wrap(spacing: 10, runSpacing: 10, children: [
+                  for (final m in styles)
+                    GestureDetector(
+                      onTap: () {
+                        c.setMapStyle(m['id'] as String);
+                        Get.back();
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 160),
+                        width: 98,
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+                        decoration: BoxDecoration(
+                          color: c.useOsm.value && c.mapStyle.value == m['id'] ? GPTheme.clubColor : Colors.transparent,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: c.useOsm.value && c.mapStyle.value == m['id'] ? Colors.black87 : context.subtle.withValues(alpha: 0.35)),
+                        ),
+                        child: Column(children: [
+                          Icon(icon(m['icon'] as String), size: 24, color: c.useOsm.value && c.mapStyle.value == m['id'] ? Colors.black : context.primary),
+                          const SizedBox(height: 6),
+                          Text(m['label'] as String, textAlign: TextAlign.center, maxLines: 2, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: c.useOsm.value && c.mapStyle.value == m['id'] ? Colors.black : context.primary)),
+                        ]),
+                      ),
+                    ),
+                ])),
+          ]),
+        ),
+      ),
+      backgroundColor: Colors.transparent,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final start = c.userPos.value ?? c.center;
@@ -69,183 +122,175 @@ class _ClubMapViewState extends State<ClubMapView> {
       height: double.infinity,
       width: double.infinity,
       child: Stack(children: [
-        Positioned.fill(
-          child: Obx(
-            () => c.useOsm.value
-                ? ClubOsmMap(c: c, dark: context.isDark)
-                : GoogleMap(
-              initialCameraPosition: CameraPosition(target: start, zoom: 13.5),
-              style: context.isDark ? kClubMapStyleDark : kClubMapStyleLight,
-              markers: c.markers.toSet(),
-              polylines: c.polylines.toSet(),
-              circles: {
-                if (c.userPos.value != null)
-                  Circle(
-                    circleId: const CircleId('radius'),
-                    center: c.userPos.value!,
-                    radius: c.radiusKm.value * 1000,
-                    strokeColor: GPTheme.clubColor.withValues(alpha: 0.7),
-                    strokeWidth: 2,
-                    fillColor: GPTheme.clubColor.withValues(alpha: 0.07),
-                  ),
-              },
-              myLocationEnabled: false,
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
-              mapToolbarEnabled: false,
-              compassEnabled: false,
-              rotateGesturesEnabled: true,
-              padding: const EdgeInsets.only(top: 110, bottom: 210),
-              onMapCreated: (m) {
-                c.map = m;
-                c.fitAll();
-              },
-              onTap: (_) => c.select(null),
-            ),
+      Positioned.fill(
+        child: Obx(
+          () => c.useOsm.value
+              ? ClubOsmMap(c: c, dark: context.isDark)
+              : GoogleMap(
+            initialCameraPosition: CameraPosition(target: start, zoom: 13.5),
+            style: context.isDark ? kClubMapStyleDark : kClubMapStyleLight,
+            markers: c.markers.toSet(),
+            polylines: c.polylines.toSet(),
+            circles: {
+              if (c.userPos.value != null)
+                Circle(
+                  circleId: const CircleId('radius'),
+                  center: c.userPos.value!,
+                  radius: c.radiusKm.value * 1000,
+                  strokeColor: GPTheme.clubColor.withValues(alpha: 0.7),
+                  strokeWidth: 2,
+                  fillColor: GPTheme.clubColor.withValues(alpha: 0.07),
+                ),
+            },
+            myLocationEnabled: false,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
+            mapToolbarEnabled: false,
+            compassEnabled: false,
+            rotateGesturesEnabled: true,
+            padding: const EdgeInsets.only(top: 110, bottom: 210),
+            onMapCreated: (m) {
+              c.map = m;
+              c.fitAll();
+            },
+            onTap: (_) => c.select(null),
           ),
         ),
-      
-        // ── Bandeau haut : rayon + mode ────────────────────────────────────
-        Positioned(
-          top: 8,
-          left: 0,
-          right: 0,
-          child: Column(children: [
-            SizedBox(
-              height: 38,
-              child: Obx(
-                () => ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  children: [
-                    _Pill(
-                      icon: Icons.local_offer_rounded,
-                      label: c.offersMode.value ? 'Offres' : 'Partenaires',
-                      active: true,
-                      onTap: () => c.toggleOffersMode(!c.offersMode.value),
-                    ),
+      ),
+
+      // ── Bandeau haut : rayon + mode ────────────────────────────────────
+      Positioned(
+        top: 8,
+        left: 0,
+        right: 0,
+        child: Column(children: [
+          SizedBox(
+            height: 38,
+            child: Obx(
+              () => ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: [
+                  for (final r in ClubMapController.radiusOptions) ...[
+                    _Pill(label: r < 1 ? '${(r * 1000).round()} m' : '${r.round()} km', active: c.radiusKm.value == r, onTap: () => c.setRadius(r)),
                     const SizedBox(width: 8),
-                    for (final r in ClubMapController.radiusOptions) ...[
-                      _Pill(label: r < 1 ? '${(r * 1000).round()} m' : '${r.round()} km', active: c.radiusKm.value == r, onTap: () => c.setRadius(r)),
-                      const SizedBox(width: 8),
-                    ],
                   ],
-                ),
+                ],
               ),
             ),
-          ]),
-        ),
-      
-        // ── Boutons latéraux ───────────────────────────────────────────────
-        Positioned(
-          right: 12,
-          top: 58,
-          child: Column(children: [
-            Obx(() => _RoundBtn(icon: c.useOsm.value ? Icons.map_rounded : Icons.layers_rounded, onTap: () => c.setUseOsm(!c.useOsm.value))),
-            const SizedBox(height: 8),
-            _RoundBtn(icon: Icons.my_location_rounded, onTap: c.recenter),
-            const SizedBox(height: 8),
-            _RoundBtn(icon: Icons.zoom_out_map_rounded, onTap: c.fitAll),
-          ]),
-        ),
-      
-        // ── Chargement ─────────────────────────────────────────────────────
-        Obx(() => c.loading.value
-            ? Positioned(
-                top: 52,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(color: context.bg, borderRadius: BorderRadius.circular(20), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)]),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: GPTheme.clubColor)),
-                      const SizedBox(width: 8),
-                      Text('Recherche autour de toi…', style: TextStyle(color: context.primary, fontSize: 12, fontWeight: FontWeight.w700)),
-                    ]),
-                  ),
-                ),
-              )
-            : const SizedBox.shrink()),
-      
-        // ── Position indisponible : bandeau NON bloquant (la carte reste utilisable, centrée sur Cotonou) ──
-        Obx(() => c.permissionDenied.value
-            ? Positioned(
-                top: 112,
-                left: 16,
-                right: 16,
+          ),
+        ]),
+      ),
+
+      // ── Boutons latéraux ───────────────────────────────────────────────
+      Positioned(
+        right: 12,
+        top: 58,
+        child: Column(children: [
+          _RoundBtn(icon: Icons.layers_rounded, onTap: () => _openStyles(context)),
+          const SizedBox(height: 8),
+          _RoundBtn(icon: Icons.my_location_rounded, onTap: c.recenter),
+          const SizedBox(height: 8),
+          _RoundBtn(icon: Icons.zoom_out_map_rounded, onTap: c.fitAll),
+        ]),
+      ),
+
+      // ── Chargement ─────────────────────────────────────────────────────
+      Obx(() => c.loading.value
+          ? Positioned(
+              top: 52,
+              left: 0,
+              right: 0,
+              child: Center(
                 child: Container(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
-                  decoration: BoxDecoration(color: context.bg, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]),
-                  child: Row(children: [
-                    Icon(Icons.location_off_rounded, size: 22, color: GPTheme.clubColor),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text('Position indisponible : carte centrée sur Cotonou. Active ta position pour voir les plus proches.', style: TextStyle(color: context.subtle, fontSize: 12)),
-                    ),
-                    TextButton(
-                      onPressed: () async {
-                        if (await ClubLocationService.isPermanentlyDenied()) {
-                          await ClubLocationService.openSettings();
-                        } else {
-                          c.start();
-                        }
-                      },
-                      child: Text('Activer', style: TextStyle(color: GPTheme.clubColor, fontWeight: FontWeight.w800)),
-                    ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(color: context.bg, borderRadius: BorderRadius.circular(20), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)]),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: GPTheme.clubColor)),
+                    const SizedBox(width: 8),
+                    Text('Recherche autour de toi…', style: TextStyle(color: context.primary, fontSize: 12, fontWeight: FontWeight.w700)),
                   ]),
                 ),
-              )
-            : const SizedBox.shrink()),
-      
-        // ── Bas : itinéraire OU carrousel ──────────────────────────────────
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 84,
-          child: Obx(() {
-            if (c.route.value != null || c.routeLoading.value) return _RouteBar(c: c);
-            final list = c.visible;
-            if (list.isEmpty) {
-              return c.loading.value
-                  ? const SizedBox.shrink()
-                  : Center(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 24),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(color: context.bg, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]),
-                        child: Text(
-                          c.offersMode.value ? 'Aucune offre dans ce rayon. Élargis la recherche.' : 'Aucun partenaire dans ce rayon. Élargis la recherche.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: context.subtle, fontSize: 13),
-                        ),
-                      ),
-                    );
-            }
-            // Quand un marqueur est tapé, le carrousel saute sur la bonne carte.
-            final sel = c.selected.value;
-            if (sel != null) {
-              final i = list.indexWhere((p) => p.id == sel.id);
-              if (i >= 0 && _pager.hasClients && (_pager.page?.round() ?? 0) != i) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (_pager.hasClients) _pager.animateToPage(i, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
-                });
-              }
-            }
-            return SizedBox(
-              height: 142,
-              child: PageView.builder(
-                controller: _pager,
-                itemCount: list.length,
-                onPageChanged: (i) => c.select(list[i]),
-                itemBuilder: (_, i) => _PartnerCard(p: list[i], c: c, onTap: () => _openSheet(list[i])),
               ),
-            );
-          }),
-        ),
-      ]),
-    );
+            )
+          : const SizedBox.shrink()),
+
+      // ── Position indisponible : bandeau NON bloquant (la carte reste utilisable, centrée sur Cotonou) ──
+      Obx(() => c.permissionDenied.value
+          ? Positioned(
+              top: 112,
+              left: 16,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+                decoration: BoxDecoration(color: context.bg, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]),
+                child: Row(children: [
+                  Icon(Icons.location_off_rounded, size: 22, color: GPTheme.clubColor),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text('Position indisponible : carte centrée sur Cotonou. Active ta position pour voir les plus proches.', style: TextStyle(color: context.subtle, fontSize: 12)),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      if (await ClubLocationService.isPermanentlyDenied()) {
+                        await ClubLocationService.openSettings();
+                      } else {
+                        c.start();
+                      }
+                    },
+                    child: Text('Activer', style: TextStyle(color: GPTheme.clubColor, fontWeight: FontWeight.w800)),
+                  ),
+                ]),
+              ),
+            )
+          : const SizedBox.shrink()),
+
+      // ── Bas : itinéraire OU carrousel ──────────────────────────────────
+      Positioned(
+        left: 0,
+        right: 0,
+        bottom: 84,
+        child: Obx(() {
+          if (c.route.value != null || c.routeLoading.value) return _RouteBar(c: c);
+          final list = c.visible;
+          if (list.isEmpty) {
+            return c.loading.value
+                ? const SizedBox.shrink()
+                : Center(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(color: context.bg, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]),
+                      child: Text(
+                        c.offersMode.value ? 'Aucune offre dans ce rayon. Élargis la recherche.' : 'Aucun partenaire dans ce rayon. Élargis la recherche.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: context.subtle, fontSize: 13),
+                      ),
+                    ),
+                  );
+          }
+          // Quand un marqueur est tapé, le carrousel saute sur la bonne carte.
+          final sel = c.selected.value;
+          if (sel != null) {
+            final i = list.indexWhere((p) => p.id == sel.id);
+            if (i >= 0 && _pager.hasClients && (_pager.page?.round() ?? 0) != i) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (_pager.hasClients) _pager.animateToPage(i, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+              });
+            }
+          }
+          return SizedBox(
+            height: 142,
+            child: PageView.builder(
+              controller: _pager,
+              itemCount: list.length,
+              onPageChanged: (i) => c.select(list[i]),
+              itemBuilder: (_, i) => _PartnerCard(p: list[i], c: c, onTap: () => _openSheet(list[i])),
+            ),
+          );
+        }),
+      ),
+    ]));
   }
 }
 
@@ -254,7 +299,7 @@ class _Pill extends StatelessWidget {
   final String label;
   final bool active;
   final VoidCallback onTap;
-  const _Pill({this.icon, required this.label, required this.active, required this.onTap});
+  const _Pill({required this.label, required this.active, required this.onTap}) : icon = null;
 
   @override
   Widget build(BuildContext context) => GestureDetector(
@@ -389,42 +434,52 @@ class _RouteBar extends StatelessWidget {
     final p = c.selected.value;
     final r = c.route.value;
     final mode = c.routeMode.value;
+    // Bandeau compact : une ligne (modes + fermer) et une ligne (durée, distance, navigation).
+    Widget chip(String id, IconData icon, String label) {
+      final on = mode == id;
+      return GestureDetector(
+        onTap: () => p == null ? null : c.startRoute(p, mode: id),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          margin: const EdgeInsets.only(right: 6),
+          padding: EdgeInsets.symmetric(horizontal: on ? 10 : 8, vertical: 5),
+          decoration: BoxDecoration(color: on ? GPTheme.clubColor : Colors.transparent, borderRadius: BorderRadius.circular(14), border: Border.all(color: on ? Colors.black87 : context.subtle.withValues(alpha: 0.35))),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, size: 16, color: on ? Colors.black : context.subtle),
+            if (on) ...[const SizedBox(width: 4), Text(label, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Colors.black))],
+          ]),
+        ),
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: context.bg, borderRadius: BorderRadius.circular(22), boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 14, offset: Offset(0, 4))]),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
+      padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
+      decoration: BoxDecoration(color: context.bg, borderRadius: BorderRadius.circular(18), boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 10, offset: Offset(0, 3))]),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Expanded(child: Text(p?.companyName ?? 'Itinéraire', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: context.primary, fontWeight: FontWeight.w900, fontSize: 15))),
-          IconButton(visualDensity: VisualDensity.compact, icon: Icon(Icons.close_rounded, color: context.subtle), onPressed: c.clearRoute),
+          chip('driving', Icons.two_wheeler_rounded, 'Moto/Voiture'),
+          chip('walking', Icons.directions_walk_rounded, 'À pied'),
+          chip('cycling', Icons.pedal_bike_rounded, 'Vélo'),
+          const Spacer(),
+          InkWell(onTap: c.clearRoute, borderRadius: BorderRadius.circular(20), child: Padding(padding: const EdgeInsets.all(6), child: Icon(Icons.close_rounded, size: 20, color: context.subtle))),
         ]),
-        Row(children: [
-              for (final m in const [('driving', Icons.two_wheeler_rounded, 'Moto/Voiture'), ('walking', Icons.directions_walk_rounded, 'À pied'), ('cycling', Icons.pedal_bike_rounded, 'Vélo')]) ...[
-                GestureDetector(
-                  onTap: () => p == null ? null : c.startRoute(p, mode: m.$1),
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(color: mode == m.$1 ? GPTheme.clubColor : Colors.transparent, borderRadius: BorderRadius.circular(14), border: Border.all(color: mode == m.$1 ? Colors.black87 : context.subtle.withValues(alpha: 0.4))),
-                    child: Row(children: [Icon(m.$2, size: 15, color: mode == m.$1 ? Colors.black : context.subtle), const SizedBox(width: 4), Text(m.$3, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: mode == m.$1 ? Colors.black : context.subtle))]),
-                  ),
-                ),
-              ],
-            ]),
-        const SizedBox(height: 10),
+        const SizedBox(height: 4),
         if (c.routeLoading.value || r == null)
-          const Padding(padding: EdgeInsets.all(6), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+          const Padding(padding: EdgeInsets.all(4), child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))
         else
           Row(children: [
-            Text(ClubLocationService.formatDuration(r.durationS), style: TextStyle(color: GPTheme.primaryColor, fontWeight: FontWeight.w900, fontSize: 24)),
-            const SizedBox(width: 10),
-            Text('${r.approximate ? '≈ ' : ''}${ClubLocationService.formatDistance(r.distanceM.toDouble())}', style: TextStyle(color: context.subtle, fontWeight: FontWeight.w700)),
-            const Spacer(),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(backgroundColor: GPTheme.primaryColor, foregroundColor: Colors.white, shape: const StadiumBorder()),
+            Text(ClubLocationService.formatDuration(r.durationS), style: TextStyle(color: GPTheme.primaryColor, fontWeight: FontWeight.w900, fontSize: 18)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text('${r.approximate ? '≈ ' : ''}${ClubLocationService.formatDistance(r.distanceM.toDouble())}${p != null ? '  ·  ${p.companyName}' : ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: context.subtle, fontWeight: FontWeight.w600, fontSize: 12)),
+            ),
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              style: IconButton.styleFrom(backgroundColor: GPTheme.primaryColor),
+              icon: const Icon(Icons.navigation_rounded, size: 18, color: Colors.white),
+              tooltip: 'Naviguer',
               onPressed: p == null ? null : () => _openExternal(p, c),
-              icon: const Icon(Icons.navigation_rounded, size: 18),
-              label: const Text('Naviguer', style: TextStyle(fontWeight: FontWeight.w800)),
             ),
           ]),
       ]),

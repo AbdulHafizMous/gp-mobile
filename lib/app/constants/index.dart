@@ -158,5 +158,19 @@ const String MAP_OSM_FALLBACK_TILE_URL = 'https://a.basemaps.cartocdn.com/raster
 // Identifiant demandé par la politique d'usage d'OpenStreetMap (package Android).
 const String MAP_USER_AGENT = 'com.maxafrica.gpbenin';
 // Optionnel : clé MapTiler gratuite (cloud.maptiler.com > API Keys). Vide = OpenStreetMap, qui ne demande aucune clé.
-// const String MAPTILER_KEY = '';
 const String MAPTILER_KEY = 'Vni47KDKaqMHCN8YCTLp';
+
+// Styles de carte proposés dans le sélecteur (gratuits, sans clé), + styles MapTiler si MAPTILER_KEY est renseignée.
+// {key} est remplacé par MAPTILER_KEY. 'needsKey' : masqué quand aucune clé n'est configurée.
+const String MAP_DEFAULT_STYLE = 'voyager';
+const List<Map<String, dynamic>> MAP_STYLES = [
+  {'id': 'voyager', 'label': 'Standard', 'icon': 'map', 'url': 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png', 'darkUrl': 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', 'attr': '© OpenStreetMap contributors © CARTO'},
+  {'id': 'osm', 'label': 'OpenStreetMap', 'icon': 'public', 'url': 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', 'attr': '© OpenStreetMap contributors'},
+  {'id': 'hot', 'label': 'Humanitaire', 'icon': 'volunteer', 'url': 'https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', 'attr': '© OpenStreetMap contributors, HOT'},
+  {'id': 'topo', 'label': 'Relief', 'icon': 'terrain', 'url': 'https://a.tile.opentopomap.org/{z}/{x}/{y}.png', 'attr': '© OpenStreetMap contributors, SRTM, OpenTopoMap', 'maxZoom': 17},
+  {'id': 'sat', 'label': 'Satellite', 'icon': 'satellite', 'url': 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', 'attr': 'Imagery © Esri, Maxar, Earthstar Geographics', 'maxZoom': 18},
+  {'id': 'dark', 'label': 'Sombre', 'icon': 'dark', 'url': 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', 'attr': '© OpenStreetMap contributors © CARTO'},
+  {'id': 'mt_streets', 'label': 'MapTiler Rues', 'icon': 'map', 'needsKey': true, 'url': 'https://api.maptiler.com/maps/streets-v2/256/{z}/{x}/{y}.png?key={key}', 'darkUrl': 'https://api.maptiler.com/maps/streets-v2-dark/256/{z}/{x}/{y}.png?key={key}', 'attr': '© MapTiler © OpenStreetMap contributors'},
+  {'id': 'mt_outdoor', 'label': 'MapTiler Plein air', 'icon': 'terrain', 'needsKey': true, 'url': 'https://api.maptiler.com/maps/outdoor-v2/256/{z}/{x}/{y}.png?key={key}', 'attr': '© MapTiler © OpenStreetMap contributors'},
+  {'id': 'mt_sat', 'label': 'MapTiler Satellite', 'icon': 'satellite', 'needsKey': true, 'url': 'https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key={key}', 'attr': '© MapTiler © OpenStreetMap contributors'},
+];

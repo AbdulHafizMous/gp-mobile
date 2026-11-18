@@ -5,7 +5,7 @@ import 'package:flutter/material.dart' show Color, debugPrint, EdgeInsets;
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:get/get.dart';
-// import 'package:get_storage/get_storage.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:grand_public_v2/app/constants/index.dart';
@@ -47,6 +47,27 @@ class ClubMapController extends GetxController {
   // ne peut plus bloquer l'affichage. Le bouton « calques » bascule seulement pour la session en cours.
   final useOsm = (MAP_PROVIDER != 'google').obs;
 
+  // Style de carte choisi (mémorisé). Défaut : MapTiler si une clé est configurée, sinon le style standard gratuit.
+  static const _styleKey = 'club_map_style_v1';
+  final mapStyle = _initialStyle().obs;
+  static String _initialStyle() {
+    String? saved;
+    try {
+      saved = GetStorage().read<String>(_styleKey);
+    } catch (_) {}
+    final ok = MAP_STYLES.any((m) => m['id'] == saved && (m['needsKey'] != true || MAPTILER_KEY.isNotEmpty));
+    if (ok) return saved!;
+    return MAPTILER_KEY.isNotEmpty ? 'mt_streets' : MAP_DEFAULT_STYLE;
+  }
+
+  void setMapStyle(String id) {
+    mapStyle.value = id;
+    useOsm.value = true;
+    try {
+      GetStorage().write(_styleKey, id);
+    } catch (_) {}
+  }
+
   /// Centre par défaut (Cotonou) quand la position de l'utilisateur est indisponible.
   static const defaultCenter = LatLng(MAP_DEFAULT_LAT, MAP_DEFAULT_LNG);
   LatLng get center => userPos.value ?? defaultCenter;
@@ -67,7 +88,7 @@ class ClubMapController extends GetxController {
 
   /// Partenaires affichés (en mode « Offres » : uniquement ceux qui ont des offres actives).
   List<PartnerFiche> get visible =>
-      offersMode.value ? partners.where((p) => p.offers.isNotEmpty).toList() : partners.toList();
+      partners.where((p) => p.offers.isNotEmpty).toList(); // un partenaire sans offre active n'est pas affiché
 
   Future<void> start() async {
     loading.value = true;
