@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -21,6 +22,7 @@ class ChannelLivePage extends StatelessWidget {
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
         backgroundColor: const Color(0xFF0E0B12),
+        extendBodyBehindAppBar: true,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -47,7 +49,12 @@ class ChannelLivePage extends StatelessWidget {
             ),
           ],
         ),
-        body: !hasStream
+        body: Stack(
+          children: [
+            // Bannière du média derrière le contenu : pleine largeur, sans dépasser ni rogner.
+            _BannerBackdrop(url: ch.bannerUrl),
+            Positioned.fill(
+              child: !hasStream
             ? _NoStream(channel: ch)
             : LiveGate(
                 kind: 'channel',
@@ -70,6 +77,101 @@ class ChannelLivePage extends StatelessWidget {
                   );
                 },
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Bannière en arrière-plan. L'image est affichée entière (contain : jamais plus large que l'écran) ; le dégradé part de
+/// ses bords haut et bas et fond vers l'extérieur (au-dessus et au-dessous), jamais à l'intérieur.
+/// Le bas de la zone s'arrête juste sous le haut du rond du logo (chevauchement d'environ 15 à 20 %).
+class _BannerBackdrop extends StatefulWidget {
+  final String? url;
+  const _BannerBackdrop({this.url});
+
+  @override
+  State<_BannerBackdrop> createState() => _BannerBackdropState();
+}
+
+class _BannerBackdropState extends State<_BannerBackdrop> {
+  double? _ratio; // largeur / hauteur de l'image
+  ImageStream? _stream;
+  ImageStreamListener? _listener;
+
+  @override
+  void initState() {
+    super.initState();
+    final u = widget.url;
+    if (u == null || u.isEmpty) return;
+    _stream = NetworkImage(u).resolve(const ImageConfiguration());
+    _listener = ImageStreamListener((info, _) {
+      if (!mounted) return;
+      setState(() => _ratio = info.image.width / info.image.height);
+    }, onError: (_, __) {});
+    _stream!.addListener(_listener!);
+  }
+
+  @override
+  void dispose() {
+    if (_listener != null) _stream?.removeListener(_listener!);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final u = widget.url;
+    if (u == null || u.isEmpty || _ratio == null) return const SizedBox.shrink();
+    final size = MediaQuery.of(context).size;
+    final zoneH = size.height * 0.23;
+    // Taille exacte de l'image « contain » dans la zone : largeur écran au maximum, hauteur de zone au maximum.
+    var w = size.width;
+    var h = w / _ratio!;
+    if (h > zoneH) {
+      h = zoneH;
+      w = h * _ratio!;
+    }
+    // Prolongement vers l'EXTÉRIEUR : au-dessus et au-dessous de la bannière, son propre reflet (mêmes couleurs, même
+    // raccord au pixel près) s'efface vers la page. La bannière elle-même reste entière, nette et lisible.
+    final f = math.min(size.height * 0.07, h * 0.9);
+    Widget img() => Image.network(u, width: w, height: h, fit: BoxFit.fill, errorBuilder: (_, __, ___) => const SizedBox.shrink());
+    Widget strip({required bool top}) => ShaderMask(
+          blendMode: BlendMode.dstIn,
+          shaderCallback: (r) => LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: top ? const [Color(0x00000000), Color(0xB3000000)] : const [Color(0xB3000000), Color(0x00000000)],
+          ).createShader(r),
+          child: SizedBox(
+            width: w,
+            height: f,
+            child: ClipRect(
+              child: ImageFiltered(
+                imageFilter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5, tileMode: TileMode.clamp),
+                child: Align(
+                  alignment: top ? Alignment.bottomCenter : Alignment.topCenter,
+                  heightFactor: f / h,
+                  child: Transform.flip(flipY: true, child: img()),
+                ),
+              ),
+            ),
+          ),
+        );
+    return Positioned(
+      top: size.height * 0.06 + (zoneH - h) / 2 - f,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            strip(top: true),
+            SizedBox(width: w, height: h, child: img()),
+            strip(top: false),
+          ],
+        ),
       ),
     );
   }
